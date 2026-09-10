@@ -1,9 +1,8 @@
 import React, { useEffect } from 'react';
-import { View, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, Image } from 'react-native';
 import { colors, spacing } from '../../theme';
 import { SproutText } from '../../components';
 import { useAuthStore } from '../../store/useAuthStore';
-import { Wallet } from 'lucide-react-native';
 
 export const SplashScreen: React.FC = () => {
   const initializeSession = useAuthStore((s) => s.initializeSession);
@@ -19,11 +18,16 @@ export const SplashScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        <View style={styles.iconCircle}>
-          <Wallet size={46} color={colors.accent} strokeWidth={2.2} />
+        <View style={styles.logoContainer}>
+          <Image
+            source={require('../../../assets/splash-icon.png')}
+            style={styles.logoImage}
+            resizeMode="contain"
+            accessibilityLabel="Tabsy Logo"
+          />
         </View>
         <SproutText variant="hero" color={colors.text} style={styles.brand}>
-          SplitTrack
+          Tabsy
         </SproutText>
         <SproutText variant="bodyMuted" style={styles.tagline}>
           Split expenses, not friendships
@@ -51,16 +55,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  iconCircle: {
+  logoContainer: {
     width: 96,
     height: 96,
-    borderRadius: 48,
-    backgroundColor: colors.surface,
-    borderWidth: 1.5,
-    borderColor: colors.line,
+    borderRadius: 24,
+    overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.lg,
+    backgroundColor: '#183327',
+  },
+  logoImage: {
+    width: 96,
+    height: 96,
   },
   brand: {
     marginBottom: spacing.xs,

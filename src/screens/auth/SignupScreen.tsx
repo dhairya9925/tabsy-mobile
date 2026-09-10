@@ -89,7 +89,7 @@ export const SignupScreen: React.FC<Props> = ({ navigation }) => {
           Create Account
         </SproutText>
         <SproutText variant="bodyMuted">
-          Start tracking expenses with SplitTrack
+          Start tracking expenses with Tabsy
         </SproutText>
       </View>
 

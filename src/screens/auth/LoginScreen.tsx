@@ -78,7 +78,7 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
           Welcome Back
         </SproutText>
         <SproutText variant="bodyMuted">
-          Log in to your SplitTrack account
+          Log in to your Tabsy account
         </SproutText>
       </View>
 

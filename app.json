@@ -1,24 +1,25 @@
 {
   "expo": {
-    "name": "SplitTrack",
-    "slug": "splittrack",
+    "name": "Tabsy",
+    "slug": "tabsy",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "splittrack",
+    "scheme": "tabsy",
     "userInterfaceStyle": "light",
     "splash": {
       "backgroundColor": "#EFF5ED"
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.splittrack.app"
+      "bundleIdentifier": "com.tabsy.app"
     },
     "android": {
-      "package": "com.splittrack.app",
+      "package": "com.tabsy.app",
       "adaptiveIcon": {
-        "backgroundColor": "#EFF5ED",
-        "foregroundImage": "./assets/android-icon-foreground.png"
+        "backgroundColor": "#183327",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png"
       },
       "predictiveBackGestureEnabled": false
     },

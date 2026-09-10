@@ -4260,3 +4260,295 @@ h1 {
 .stack .group-rows .row {
   min-height: 59px
 }
+
+/* 11–13 / Sprout after dark — three low-light interpretations of direction 09 */
+.concept.sprout-night-board { background: #1d2b24 }
+.concept.sprout-moon-board { background: #1b2a30 }
+.concept.sprout-ember-board { background: #282320 }
+
+.sprout-night-board .board-title h2,
+.sprout-moon-board .board-title h2,
+.sprout-ember-board .board-title h2 { color: #f1f4eb }
+
+.sprout-night-board .board-heading p,
+.sprout-moon-board .board-heading p,
+.sprout-ember-board .board-heading p,
+.sprout-night-board .screen-caption,
+.sprout-moon-board .screen-caption,
+.sprout-ember-board .screen-caption { color: #afbeb3 }
+
+.sprout-night-board .board-number,
+.sprout-moon-board .board-number,
+.sprout-ember-board .board-number { color: #d8e6db; border-color: #5e7568 }
+
+.sprout-night,
+.sprout-moon,
+.sprout-ember {
+  --surface: #17251f;
+  --text: #f1f4eb;
+  --muted: #a7b6ac;
+  --line: #31483d;
+  --accent: #9acb74;
+  --on-accent: #102419;
+  --soft: #263b30;
+  --negative: #e49a7e;
+  --radius: 18px;
+  font-family: Manrope, sans-serif
+}
+
+.sprout-night { --bg: #0e1813 }
+.sprout-moon { --bg: #101d22; --surface: #172a30; --line: #314a51; --accent: #a5d2c8; --soft: #223a41; --negative: #e8ae8c }
+.sprout-ember { --bg: #191614; --surface: #28221e; --line: #4a4038; --accent: #c6d980; --soft: #36302a; --negative: #ed9a73 }
+
+.sprout-night .content,
+.sprout-moon .content,
+.sprout-ember .content { padding: 10px 22px 0 }
+
+.sprout-night .status,
+.sprout-moon .status,
+.sprout-ember .status { color: var(--text) }
+
+.sprout-night .island,
+.sprout-moon .island,
+.sprout-ember .island { background: #020403 }
+
+.dark-top,
+.moon-head,
+.ember-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin: 5px 0 14px
+}
+
+.dark-top span,
+.moon-head span,
+.ember-head span,
+.dark-form-top span,
+.night-pace span,
+.moon-meter span,
+.moon-entry>span,
+.ember-total>span,
+.ember-amount>span,
+.ember-group>span,
+.night-group>span {
+  font-size: 8px;
+  letter-spacing: 1.15px;
+  font-weight: 800;
+  color: var(--muted)
+}
+
+.dark-top h2,
+.moon-head h2,
+.sprout-ember .content>h2 {
+  margin: 5px 0 0;
+  font-size: 28px;
+  line-height: 1.06;
+  letter-spacing: -1.5px
+}
+
+.dark-top button,
+.moon-head button,
+.ember-head button {
+  height: 44px;
+  width: 44px;
+  border: 1px solid var(--line);
+  background: var(--soft);
+  color: var(--accent);
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 800
+}
+
+.night-week,
+.moon-days {
+  display: flex;
+  justify-content: space-between;
+  padding: 11px 4px 13px;
+  border-bottom: 1px solid var(--line)
+}
+
+.night-week>div,
+.moon-days>div { text-align: center }
+.night-week span,
+.moon-days span { display: block; color: var(--muted); font-size: 7px; margin-bottom: 6px }
+.night-week i,
+.moon-days i {
+  display: grid;
+  place-items: center;
+  width: 29px;
+  height: 29px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--muted);
+  font-size: 8px;
+  font-style: normal
+}
+
+.night-week .today i { border-color: #e7bd69; color: #f4d48f; box-shadow: 0 0 0 3px #e7bd6918 }
+.night-week>div:nth-child(-n+3) i { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 800 }
+.moon-days .done i { background: #a5d2c8; border-color: #a5d2c8; color: #112126; font-weight: 800 }
+
+.night-pace,
+.moon-meter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 14px;
+  padding: 17px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 23px 8px 23px 23px
+}
+
+.night-pace strong,
+.moon-meter strong { display: block; margin: 6px 0 2px; font-size: 25px; letter-spacing: -1.3px }
+.night-pace small,
+.moon-meter small { color: var(--muted); font-size: 8px }
+
+.night-orbit,
+.moon-arc {
+  width: 62px;
+  height: 62px;
+  display: grid;
+  place-content: center;
+  border-radius: 50%;
+  background: conic-gradient(#e7bd69 0 62%, #31483d 62%);
+  color: #101d16;
+  box-shadow: inset 0 0 0 8px var(--surface)
+}
+
+.moon-arc { background: conic-gradient(#a5d2c8 0 62%, #314a51 62%); color: #d7ece8 }
+.night-orbit b,
+.moon-arc b { font-size: 14px; line-height: 12px; text-align: center }
+.night-orbit small,
+.moon-arc small { color: inherit; font-size: 7px; text-align: center }
+
+.dark-split,
+.ember-counters { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 10px }
+.dark-split span,
+.ember-counters article { padding: 11px; border-radius: 13px; background: var(--soft); color: var(--text); font-size: 9px }
+.dark-split span:last-child,
+.ember-counters article:last-child { background: #3b2b26; color: #f3c0a8 }
+.dark-split svg { width: 13px; vertical-align: middle; color: var(--accent) }
+
+.dark-section { display: flex; justify-content: space-between; align-items: center; margin: 17px 0 2px; font-size: 14px; font-weight: 800 }
+.dark-section button { height: 40px; padding: 0; border: 0; background: transparent; color: var(--accent); font-size: 9px }
+.sprout-night .row,
+.sprout-moon .row,
+.sprout-ember .row { min-height: 55px; padding: 7px 0 }
+.sprout-night .row-icon,
+.sprout-moon .row-icon,
+.sprout-ember .row-icon { width: 37px; height: 37px; border-radius: 50%; background: var(--surface); color: var(--accent) }
+
+.sprout-dark-nav {
+  height: 87px;
+  flex-shrink: 0;
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  padding: 7px 70px 21px 10px;
+  border-top: 1px solid var(--line);
+  background: var(--bg)
+}
+
+.sprout-dark-nav button { min-height: 44px; border: 0; background: transparent; color: var(--muted); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 7px }
+.sprout-dark-nav svg { width: 18px }
+.sprout-dark-nav .active { color: var(--accent); font-weight: 800 }
+.sprout-dark-nav .sprout-dark-add { position: absolute; right: 17px; top: 10px; width: 48px; height: 48px; min-height: 48px; border-radius: 50%; background: var(--accent); color: var(--on-accent) }
+
+.dark-form-top { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; margin: 2px 0 13px }
+.dark-form-top>div { text-align: center }
+.dark-form-top h2 { margin: 3px 0 0; font-size: 20px; letter-spacing: -.8px }
+.dark-form-top button { width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; background: var(--surface); color: var(--text) }
+.dark-form-top svg { width: 18px }
+
+.dark-amount,
+.moon-entry,
+.ember-amount { text-align: center; padding: 18px 14px; border: 1px solid var(--line); border-radius: 19px; background: var(--surface) }
+.dark-amount>span { color: var(--muted); font-size: 9px }
+.dark-amount>div { font-size: 25px; margin-top: 2px }
+.dark-amount b,
+.moon-entry b,
+.ember-amount b { font-size: 53px; letter-spacing: -3px }
+.dark-amount small { font-size: 16px }
+
+.dark-mode,
+.ember-kind { display: flex; margin: 11px 0; padding: 3px; background: var(--soft); border-radius: 15px }
+.dark-mode button,
+.ember-kind button { flex: 1; height: 40px; border: 0; border-radius: 11px; background: transparent; color: var(--muted); font-size: 9px }
+.dark-mode .selected,
+.ember-kind .selected { background: var(--surface); color: var(--accent); font-weight: 800 }
+
+.dark-categories { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px }
+.dark-categories button { height: 64px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); color: var(--muted); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 8px }
+.dark-categories svg { width: 19px }
+.dark-categories .selected { background: var(--accent); color: var(--on-accent); border-color: var(--accent) }
+.sprout-night .field,
+.sprout-moon .field,
+.sprout-ember .field { height: 49px; margin-top: 8px; padding: 10px 13px; background: var(--surface); border-color: var(--line); color: var(--text) }
+.dark-confirm,
+.moon-save,
+.ember-tip,
+.moon-note { display: flex; align-items: center; gap: 7px; margin-top: 13px; color: var(--muted); font-size: 8px; line-height: 1.45 }
+.dark-confirm svg,
+.moon-save svg,
+.ember-tip svg,
+.moon-note svg { width: 15px; color: var(--accent); flex-shrink: 0 }
+
+.night-group,
+.moon-group,
+.ember-group { margin-top: 4px; padding: 19px; border: 1px solid var(--line); border-radius: 27px 8px 27px 27px; background: var(--surface) }
+.night-group strong,
+.moon-group strong,
+.ember-group strong { display: block; margin: 7px 0 2px; font-size: 34px; letter-spacing: -2px; color: var(--accent) }
+.night-group p,
+.ember-group small,
+.moon-group small { margin: 0; color: var(--muted); font-size: 9px }
+.night-group>div,
+.ember-group>div { margin: 14px 0 }
+.night-group .avatar,
+.ember-group .avatar,
+.moon-people .avatar { display: inline-grid; margin-left: -6px; background: var(--soft); color: var(--accent); border-color: var(--line) }
+.night-group .avatar:first-child,
+.ember-group .avatar:first-child,
+.moon-people .avatar:first-child { margin-left: 0 }
+.night-group button,
+.moon-group button,
+.ember-group button { width: 100%; height: 44px; border: 0; border-radius: 22px; background: var(--accent); color: var(--on-accent); font-size: 11px; font-weight: 800 }
+
+.moon-meter { border-radius: 22px; background: #142930 }
+.moon-meter-copy { max-width: 205px }
+.moon-days { padding: 15px 9px 12px; border: 0; background: #142930; border-radius: 0 0 22px 22px }
+.moon-note { margin-top: 12px; padding: 10px 12px; background: #172a30; border-radius: 12px }
+.moon-entry { padding: 20px 16px; border-radius: 24px 24px 7px 24px; background: #172a30 }
+.moon-entry>div { margin: 3px 0 7px; font-size: 28px }
+.moon-entry small { display: block; color: var(--muted); font-size: 8px }
+.moon-pills { display: flex; gap: 6px; margin: 11px 0 }
+.moon-pills button { flex: 1; height: 40px; border: 1px solid var(--line); border-radius: 20px; background: transparent; color: var(--muted); font-size: 8px }
+.moon-pills .selected { background: #a5d2c8; color: #112126; border-color: #a5d2c8; font-weight: 800 }
+.moon-save { justify-content: center; color: #a5d2c8 }
+.moon-group { background: #142930; border-radius: 24px; }
+.moon-group>div:first-child { text-align: center }
+.moon-people { text-align: center; margin: 16px 0 }
+
+.ember-head { margin-bottom: 7px }
+.ember-head+ h2 { font-size: 30px; margin-bottom: 15px }
+.ember-total { padding: 17px; background: #c6d980; border-radius: 4px 24px 24px; color: #1c1b14 }
+.ember-total>span { color: #4c5632 }
+.ember-total strong { display: block; margin: 6px 0 2px; font-size: 30px; letter-spacing: -1.7px }
+.ember-total small { font-size: 8px }
+.ember-total>div { height: 7px; margin: 15px 0 7px; overflow: hidden; border-radius: 8px; background: #88965a }
+.ember-total i { display: block; height: 100%; border-radius: inherit; background: #29291b }
+.ember-total b { font-size: 8px }
+.ember-counters article span { display: block; color: var(--muted); font-size: 7px; letter-spacing: .7px }
+.ember-counters article strong { display: block; margin-top: 6px; font-size: 17px }
+.ember-amount { background: #28221e; border-radius: 4px 24px 24px 24px }
+.ember-amount>div { margin-top: 5px; font-size: 28px }
+.ember-kind { border-radius: 5px; background: #36302a }
+.ember-kind button { border-radius: 3px; font-size: 8px; letter-spacing: .5px }
+.ember-tip { padding: 11px; border-left: 2px solid #ed9a73; background: #28221e; color: #d8c6ba }
+.ember-group { background: #28221e; border-radius: 4px 25px 25px 25px }
+.ember-group strong { color: #ed9a73 }
+.ember-group button { background: #ed9a73; color: #2a1c16; border-radius: 4px }
+.sprout-ember .sprout-dark-add { border-radius: 4px }

@@ -65,12 +65,13 @@ export const MainTabsNavigator: React.FC = () => {
         name={"Add" as any}
         component={EmptyComponent}
         options={{
-          tabBarLabel: '',
+          tabBarLabel: () => null,
           tabBarButton: () => (
-            <View style={styles.fabWrapper}>
+            <View style={styles.fabWrapper} pointerEvents="box-none">
               <TouchableOpacity
                 activeOpacity={0.85}
                 accessibilityLabel="Add Expense"
+                accessibilityRole="button"
                 onPress={() => rootNavigation.navigate('AddExpenseModal')}
                 style={styles.fabButton}
               >
@@ -111,9 +112,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderTopColor: colors.line,
     borderTopWidth: 1,
-    height: 70,
-    paddingBottom: 10,
-    paddingTop: 8,
+    height: 68,
+    paddingBottom: 8,
+    paddingTop: 6,
     position: 'absolute',
     left: 0,
     right: 0,
@@ -126,10 +127,11 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   fabWrapper: {
-    top: -12,
-    justifyContent: 'center',
+    flex: 1,
+    height: '100%',
     alignItems: 'center',
-    width: 56,
+    justifyContent: 'center',
+    alignSelf: 'center',
   },
   fabButton: {
     width: 48,
@@ -138,8 +140,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2.5,
-    borderColor: colors.background,
-    ...shadows.modal,
+    shadowColor: '#183228',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 5,
+    elevation: 4,
   },
 });

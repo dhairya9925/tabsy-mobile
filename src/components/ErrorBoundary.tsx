@@ -26,7 +26,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('SplitTrack ErrorBoundary caught error:', error, errorInfo);
+    console.error('Tabsy ErrorBoundary caught error:', error, errorInfo);
   }
 
   private handleReset = () => {

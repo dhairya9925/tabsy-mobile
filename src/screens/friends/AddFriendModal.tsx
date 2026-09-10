@@ -137,7 +137,7 @@ export const AddFriendModal: React.FC = () => {
           contentContainerStyle={styles.content}
         >
           <SproutText variant="bodyMuted" style={styles.description}>
-            Search by email. If they're on SplitTrack, send a request. If not, add them as a contact.
+            Search by email. If they're on Tabsy, send a request. If not, add them as a contact.
           </SproutText>
 
           {/* Email Search Box */}

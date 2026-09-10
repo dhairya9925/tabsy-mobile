@@ -45,7 +45,7 @@ export const ProfileScreen: React.FC = () => {
   const handleLogoutPress = () => {
     Alert.alert(
       'Log Out',
-      'Are you sure you want to log out of SplitTrack?',
+      'Are you sure you want to log out of Tabsy?',
       [
         { text: 'Cancel', style: 'cancel' },
         {

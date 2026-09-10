@@ -11,7 +11,7 @@ export function parseDeepLink(url: string): ParsedDeepLink | null {
 
   // Normalize: remove scheme and leading slashes
   const clean = url
-    .replace(/^splittrack:\/\//i, '')
+    .replace(/^(tabsy|splittrack):\/\//i, '')
     .replace(/^https?:\/\/[^/]+\//i, '')
     .replace(/^\/+/, '');
 

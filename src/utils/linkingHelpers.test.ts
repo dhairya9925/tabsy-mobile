@@ -3,10 +3,15 @@ import assert from 'node:assert';
 import { parseDeepLink } from './linkingHelpers';
 
 test('parseDeepLink resolves group join deep links', () => {
-  const parsed = parseDeepLink('splittrack://join/test-group-id-123');
-  assert.ok(parsed);
-  assert.strictEqual(parsed!.route, 'JoinGroupModal');
-  assert.strictEqual(parsed!.params.groupId, 'test-group-id-123');
+  const parsedSplitTrack = parseDeepLink('splittrack://join/test-group-id-123');
+  assert.ok(parsedSplitTrack);
+  assert.strictEqual(parsedSplitTrack!.route, 'JoinGroupModal');
+  assert.strictEqual(parsedSplitTrack!.params.groupId, 'test-group-id-123');
+
+  const parsedTabsy = parseDeepLink('tabsy://join/test-group-id-123');
+  assert.ok(parsedTabsy);
+  assert.strictEqual(parsedTabsy!.route, 'JoinGroupModal');
+  assert.strictEqual(parsedTabsy!.params.groupId, 'test-group-id-123');
 });
 
 test('parseDeepLink resolves group detail and monthly settlement deep links', () => {

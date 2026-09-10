@@ -194,7 +194,7 @@ export const SettingsScreen: React.FC = () => {
         <View style={styles.sectionHeader}>
           <Info size={18} color={colors.accent} />
           <SproutText variant="subtitle" color={colors.text} weight="700">
-            About SplitTrack
+            About Tabsy
           </SproutText>
         </View>
 

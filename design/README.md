@@ -1,6 +1,6 @@
 # Expense Manager — mobile design exploration
 
-Ten visual directions with three mobile screens each (30 total). Directions 06–10 use a 393 × 852 pt iPhone canvas. The two supplied HTML references are included as full-size gallery concepts, followed by two new directions that extend their strongest ideas.
+Thirteen visual directions with three mobile screens each (39 total). Directions 06–13 use a 393 × 852 pt iPhone canvas. The two supplied HTML references are included as full-size gallery concepts, followed by Sprout and its three low-light variants.
 
 Open **index.html** directly in a browser. Fonts and icons are bundled locally; no server, install, or internet connection is needed. On a narrow display, swipe horizontally within a concept to compare its screens.
 
@@ -18,8 +18,11 @@ Open **index.html** directly in a browser. Fonts and icons are bundled locally; 
 | 08 Duo Streak | Cream, green, and orange; supplied motivational reference | Streak overview, guided entry, group detail |
 | 09 Sprout | Mist, leaf, sun, and clay; calm consistency | Monthly rhythm, journal entry, shared rhythm |
 | 10 Stack | Navy with lemon, sky, and rose account layers | Layer overview, stack entry, group layer |
+| 11 Sprout Night | Forest-black, leaf, and sun-gold; an evening check-in | Evening rhythm, journal entry, shared after dark |
+| 12 Sprout Moon | Blue-green, silver, and mist; reflective and quiet | Low-tide rhythm, journal entry, shared under moonlight |
+| 13 Sprout Ember | Charcoal, moss, and clay; clear and editorial | After-hours overview, expense entry, shared ledger |
 
-Cashcoded and Duo Streak preserve the character of the supplied references. Sprout makes consistency useful without turning finance into a game, while Stack gives personal, friend, and group spending a persistent visual structure.
+Cashcoded and Duo Streak preserve the character of the supplied references. Sprout makes consistency useful without turning finance into a game, while its Night, Moon, and Ember variants explore three distinct dark-theme readings of that same system. Stack gives personal, friend, and group spending a persistent visual structure.
 
 ## Files
 
@@ -34,7 +37,7 @@ Cashcoded and Duo Streak preserve the character of the supplied references. Spro
 - `tokens.json`: palettes, typography, and sizing reference.
 - `assets/`: bundled fonts, font licenses, and Lucide SVG icons from the existing frontend dependency.
 
-PNGs are rendered at 2× resolution. Directions 01–05 export at 780 × 1688 px per screen; directions 06–10 export at 786 × 1704 px. Export boards can also be opened using `index.html?export=<direction>`.
+PNGs are rendered at 2× resolution. Directions 01–05 export at 780 × 1688 px per screen; directions 06–13 export at 786 × 1704 px. Export boards can also be opened using `index.html?export=<direction>`.
 
 ## Scope and interactions
 
@@ -52,7 +55,7 @@ The original product fonts are **Space Grotesk** for interface text and **JetBra
 
 ## Validation
 
-Checked all 30 screens in headless Chrome: all fonts used by the remaining concepts loaded, no content overflow in the fixed screen areas, no browser JavaScript errors, and no page-width overflow at a 393 px viewport. Visually reviewed all ten comparison boards. Category selection, segmented controls, numeric keypads, and sample Save confirmation were exercised. The latest concepts use 44 pt minimum targets for their primary controls and respect the iPhone home-indicator zone.
+Checked all 39 screens in headless Chrome: all fonts used by the remaining concepts loaded, no content overflow in the fixed screen areas, no browser JavaScript errors, and no page-width overflow at a 393 px viewport. Visually reviewed all thirteen comparison boards. Category selection, segmented controls, numeric keypads, and sample Save confirmation were exercised. The latest concepts use 44 pt minimum targets for their primary controls and respect the iPhone home-indicator zone.
 
 ## Figma status
 

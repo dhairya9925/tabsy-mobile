@@ -102,8 +102,8 @@ export const GroupSettingsScreen: React.FC<Props> = ({ route, navigation }) => {
   const handleShareCode = async () => {
     try {
       await Share.share({
-        title: `Join ${group?.name || 'Group'} on SplitTrack`,
-        message: `Join our group "${group?.name}" on SplitTrack! Use code: ${groupId}`,
+        title: `Join ${group?.name || 'Group'} on Tabsy`,
+        message: `Join our group "${group?.name}" on Tabsy! Use code: ${groupId}`,
       });
     } catch {
       // Ignored
