@@ -14,10 +14,14 @@ design/netlify.toml
 # Node modules (if any future framework is added)
 node_modules/
 
-# Build outputs
+# Build outputs & Expo
 dist/
 build/
 .output/
+.expo/
+android/
+ios/
+*.orig.*
 
 # Environment
 .env

@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "SplitTrack",
+    "slug": "splittrack",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "splittrack",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#EFF5ED"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.splittrack.app"
+    },
+    "android": {
+      "package": "com.splittrack.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#EFF5ED",
+        "foregroundImage": "./assets/android-icon-foreground.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "plugins": [
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/manrope.ttf",
+            "./assets/fonts/jetbrains-mono.ttf"
+          ]
+        }
+      ],
+      "expo-secure-store"
+    ]
+  }
+}
