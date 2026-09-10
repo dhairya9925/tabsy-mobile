@@ -291,3 +291,99 @@ export interface CreateShadowProfileResponse {
   profile: FriendProfile;
   shadow_user_id: string;
 }
+
+// ==============================================================================
+// Dashboard & Analytics Types (Phase 5)
+// ==============================================================================
+
+export interface GroupBalanceSummary {
+  groupId: string;
+  groupName: string;
+  groupType: string;
+  memberCount: number;
+  userNetBalance: number;
+}
+
+export interface GroupUserSplitItem {
+  id: string;
+  expense_date: string;
+  category: string;
+  amount: number;
+  group_id: string;
+}
+
+export interface DashboardActivityItem {
+  id: string;
+  type: 'personal_expense' | 'group_expense' | 'settlement' | string;
+  title: string;
+  subText: string;
+  amount: number;
+  date: string;
+  category: string;
+  link: string;
+}
+
+export interface DashboardFriendBalance {
+  friendId: string;
+  netBalance: number;
+  friendName?: string | null;
+}
+
+export interface DashboardData {
+  // Personal
+  personalTotal: number;
+  personalPrevMonthTotal: number;
+  personalExpenseCount: number;
+  personalExpenses: PersonalExpense[];
+
+  // Groups
+  groups: Group[];
+  groupShareTotal: number;
+  groupSharePrevMonthTotal: number;
+  groupBalances: GroupBalanceSummary[];
+  groupUserSplits: GroupUserSplitItem[];
+
+  // Friends
+  friendBalances: DashboardFriendBalance[];
+
+  // Unified totals
+  unifiedTotal: number;
+  unifiedPrevMonthTotal: number;
+  monthOverMonthPct: number | null;
+
+  // Debt totals
+  netOwed: number;
+  netOwes: number;
+  netBalance: number;
+  unsettledCount: number;
+
+  // Activity
+  monthlyTransactionCount: number;
+  recentActivity: DashboardActivityItem[];
+  lastExpenseDate: string | null;
+}
+
+export interface CategorySlice {
+  categoryId: string;
+  name: string;
+  value: number;
+  percentage: number;
+  color: string;
+}
+
+export interface MonthlyTrendPoint {
+  key: string;
+  label: string;
+  personal: number;
+  groupShare: number;
+  total: number;
+}
+
+export interface WeeklyRhythmDay {
+  dayKey: string;
+  dayLabel: string;
+  dateStr: string;
+  amount: number;
+  isToday: boolean;
+  hasActivity: boolean;
+}
