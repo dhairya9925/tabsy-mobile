@@ -18,6 +18,8 @@ import { SettingsScreen } from '../screens/profile/SettingsScreen';
 import { EditProfileModal } from '../screens/profile/EditProfileModal';
 import { SplashScreen } from '../screens/auth/SplashScreen';
 import { useAuthStore } from '../store/useAuthStore';
+import { linking } from './linking';
+import { ErrorBoundary } from '../components';
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 
@@ -30,12 +32,13 @@ export const RootNavigator: React.FC = () => {
   }
 
   return (
-    <NavigationContainer>
-      <RootStack.Navigator
-        screenOptions={{
-          headerShown: false,
-        }}
-      >
+    <ErrorBoundary>
+      <NavigationContainer linking={linking}>
+        <RootStack.Navigator
+          screenOptions={{
+            headerShown: false,
+          }}
+        >
         {!isAuthenticated ? (
           <RootStack.Screen name="Auth" component={AuthNavigator} />
         ) : (
@@ -139,5 +142,6 @@ export const RootNavigator: React.FC = () => {
         )}
       </RootStack.Navigator>
     </NavigationContainer>
+    </ErrorBoundary>
   );
 };

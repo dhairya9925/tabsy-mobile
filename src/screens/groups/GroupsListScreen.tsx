@@ -16,6 +16,8 @@ import {
   FriendCard,
   BalancePillsRow,
   Toast,
+  GroupListSkeleton,
+  EmptyState,
 } from '../../components';
 import { groupsApi } from '../../api/groups';
 import { friendsApi } from '../../api/friends';
@@ -255,25 +257,17 @@ export const GroupsListScreen: React.FC = () => {
             </TouchableOpacity>
           </View>
 
-          {groups.length === 0 && !isLoading ? (
-            <View style={styles.emptyCard}>
-              <Users size={40} color={colors.muted} strokeWidth={1.5} />
-              <SproutText variant="subtitle" color={colors.text} style={styles.emptyTitle}>
-                No groups yet
-              </SproutText>
-              <SproutText variant="caption" color={colors.muted} style={styles.emptyDesc}>
-                Create a group for your apartment, road trip, or dinner party.
-              </SproutText>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={() => rootNavigation.navigate('CreateGroupModal')}
-                style={styles.emptyBtn}
-              >
-                <SproutText variant="caption" color={colors.onAccent} weight="700">
-                  + Create Group
-                </SproutText>
-              </TouchableOpacity>
-            </View>
+          {isLoading && groups.length === 0 ? (
+            <GroupListSkeleton count={4} />
+          ) : groups.length === 0 ? (
+            <EmptyState
+              card
+              icon={<Users size={40} color={colors.muted} strokeWidth={1.5} />}
+              title="No groups yet"
+              subtitle="Create a group for your apartment, road trip, or dinner party."
+              actionLabel="+ Create Group"
+              onActionPress={() => rootNavigation.navigate('CreateGroupModal')}
+            />
           ) : (
             <View style={styles.list}>
               {groups.map((group) => (
@@ -313,25 +307,17 @@ export const GroupsListScreen: React.FC = () => {
                 </View>
               )}
 
-              {friends.length === 0 && !isLoading ? (
-                <View style={styles.emptyCard}>
-                  <UserCheck size={40} color={colors.muted} strokeWidth={1.5} />
-                  <SproutText variant="subtitle" color={colors.text} style={styles.emptyTitle}>
-                    No friends yet
-                  </SproutText>
-                  <SproutText variant="caption" color={colors.muted} style={styles.emptyDesc}>
-                    Add someone by email to start tracking 1-on-1 expenses.
-                  </SproutText>
-                  <TouchableOpacity
-                    activeOpacity={0.8}
-                    onPress={() => rootNavigation.navigate('AddFriendModal')}
-                    style={styles.emptyBtn}
-                  >
-                    <SproutText variant="caption" color={colors.onAccent} weight="700">
-                      + Add Friend
-                    </SproutText>
-                  </TouchableOpacity>
-                </View>
+              {isLoading && friends.length === 0 ? (
+                <GroupListSkeleton count={4} />
+              ) : friends.length === 0 ? (
+                <EmptyState
+                  card
+                  icon={<UserCheck size={40} color={colors.muted} strokeWidth={1.5} />}
+                  title="No friends yet"
+                  subtitle="Add someone by email to start tracking 1-on-1 expenses."
+                  actionLabel="+ Add Friend"
+                  onActionPress={() => rootNavigation.navigate('AddFriendModal')}
+                />
               ) : (
                 <View style={styles.list}>
                   {friends.map((friend) => {
@@ -365,16 +351,15 @@ export const GroupsListScreen: React.FC = () => {
           {/* Subtab: Pending Requests */}
           {friendsTab === 'pending' && (
             <View style={{ marginTop: spacing.md }}>
-              {pendingRequests.length === 0 && !isLoading ? (
-                <View style={styles.emptyCard}>
-                  <Users size={40} color={colors.muted} strokeWidth={1.5} />
-                  <SproutText variant="subtitle" color={colors.text} style={styles.emptyTitle}>
-                    No pending requests
-                  </SproutText>
-                  <SproutText variant="caption" color={colors.muted} style={styles.emptyDesc}>
-                    When someone sends you a friend request, it will appear here.
-                  </SproutText>
-                </View>
+              {isLoading && pendingRequests.length === 0 ? (
+                <GroupListSkeleton count={2} />
+              ) : pendingRequests.length === 0 ? (
+                <EmptyState
+                  card
+                  icon={<Users size={40} color={colors.muted} strokeWidth={1.5} />}
+                  title="No pending requests"
+                  subtitle="When someone sends you a friend request, it will appear here."
+                />
               ) : (
                 <View style={styles.list}>
                   {pendingRequests.map((req) => (
@@ -395,16 +380,15 @@ export const GroupsListScreen: React.FC = () => {
           {/* Subtab: Sent Requests */}
           {friendsTab === 'sent' && (
             <View style={{ marginTop: spacing.md }}>
-              {sentRequests.length === 0 && !isLoading ? (
-                <View style={styles.emptyCard}>
-                  <Users size={40} color={colors.muted} strokeWidth={1.5} />
-                  <SproutText variant="subtitle" color={colors.text} style={styles.emptyTitle}>
-                    No sent requests
-                  </SproutText>
-                  <SproutText variant="caption" color={colors.muted} style={styles.emptyDesc}>
-                    Friend requests you send to other users will appear here.
-                  </SproutText>
-                </View>
+              {isLoading && sentRequests.length === 0 ? (
+                <GroupListSkeleton count={2} />
+              ) : sentRequests.length === 0 ? (
+                <EmptyState
+                  card
+                  icon={<Users size={40} color={colors.muted} strokeWidth={1.5} />}
+                  title="No sent requests"
+                  subtitle="Friend requests you send to other users will appear here."
+                />
               ) : (
                 <View style={styles.list}>
                   {sentRequests.map((req) => (

@@ -10,6 +10,9 @@ import {
   BalancePillsRow,
   ExpenseRow,
   Toast,
+  CardSkeleton,
+  ExpenseListSkeleton,
+  EmptyState,
 } from '../../components';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useBudgetStore } from '../../store/useBudgetStore';
@@ -105,46 +108,59 @@ export const RhythmScreen: React.FC = () => {
       {/* 7-Day Activity Streak Row */}
       <StreakRow days={weekDays} />
 
-      {/* Monthly Spend vs Budget Card */}
-      <MonthlyPaceCard
-        spent={totalSpent}
-        budget={monthlyBudget}
-      />
-
-      {/* Balance Summary Row (You're Owed / You Owe) */}
-      <BalancePillsRow
-        toReceive={toReceive}
-        toPay={toPay}
-      />
-
-      {/* Recent Activity Section */}
-      <View style={styles.sectionHeader}>
-        <SproutText variant="title" color={colors.text}>
-          Recent Activity
-        </SproutText>
-        <TouchableOpacity onPress={() => navigation.navigate('AddExpenseModal')}>
-          <SproutText variant="caption" color={colors.accent} weight="700">
-            + Quick Add
-          </SproutText>
-        </TouchableOpacity>
-      </View>
-
-      {recentExpenses.length === 0 ? (
-        <View style={styles.emptyCard}>
-          <PlusCircle size={36} color={colors.muted} strokeWidth={1.5} />
-          <SproutText variant="subtitle" color={colors.text} style={styles.emptyTitle}>
-            No recent activity recorded
-          </SproutText>
-          <SproutText variant="caption" color={colors.muted} style={styles.emptyDesc}>
-            Add your first expense to start tracking.
-          </SproutText>
-        </View>
+      {isLoading && !summary ? (
+        <>
+          <CardSkeleton />
+          <View style={styles.sectionHeader}>
+            <SproutText variant="title" color={colors.text}>
+              Recent Activity
+            </SproutText>
+          </View>
+          <ExpenseListSkeleton count={3} />
+        </>
       ) : (
-        <View style={styles.expensesList}>
-          {recentExpenses.map((expense) => (
-            <ExpenseRow key={expense.id} expense={expense} />
-          ))}
-        </View>
+        <>
+          {/* Monthly Spend vs Budget Card */}
+          <MonthlyPaceCard
+            spent={totalSpent}
+            budget={monthlyBudget}
+          />
+
+          {/* Balance Summary Row (You're Owed / You Owe) */}
+          <BalancePillsRow
+            toReceive={toReceive}
+            toPay={toPay}
+          />
+
+          {/* Recent Activity Section */}
+          <View style={styles.sectionHeader}>
+            <SproutText variant="title" color={colors.text}>
+              Recent Activity
+            </SproutText>
+            <TouchableOpacity onPress={() => navigation.navigate('AddExpenseModal')}>
+              <SproutText variant="caption" color={colors.accent} weight="700">
+                + Quick Add
+              </SproutText>
+            </TouchableOpacity>
+          </View>
+
+          {recentExpenses.length === 0 ? (
+            <EmptyState
+              card
+              icon={<PlusCircle size={32} color={colors.accent} strokeWidth={1.75} />}
+              title="No recent activity recorded"
+              subtitle="Add your first expense to start your daily logging rhythm."
+              actionLabel="+ Quick Add"
+              onActionPress={() => navigation.navigate('AddExpenseModal')}
+            />
+          ) : (
+            <View style={styles.expensesList}>
+              {recentExpenses.map((expense) => (
+                <ExpenseRow key={expense.id} expense={expense} />
+              ))}
+            </View>
+          )}
+        </>
       )}
     </ScreenShell>
   );

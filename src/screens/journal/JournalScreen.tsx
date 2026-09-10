@@ -11,6 +11,8 @@ import {
   FieldRow,
   CircleButton,
   Toast,
+  ExpenseListSkeleton,
+  EmptyState,
 } from '../../components';
 import { expensesApi } from '../../api/expenses';
 import { PersonalExpense, Category } from '../../types';
@@ -215,31 +217,38 @@ export const JournalScreen: React.FC<Props> = ({ navigation }) => {
         </View>
       )}
 
-      {/* Expense Groups by Date */}
-      {groupedExpenses.length === 0 && !isLoading ? (
-        <View style={styles.emptyCard}>
-          <Wallet size={42} color={colors.muted} strokeWidth={1.5} />
-          <SproutText variant="subtitle" color={colors.text} style={styles.emptyTitle}>
-            {searchQuery || selectedCategory !== 'all'
+      {/* Expense Groups by Date or Loading Skeleton */}
+      {isLoading && expenses.length === 0 ? (
+        <ExpenseListSkeleton count={6} />
+      ) : groupedExpenses.length === 0 ? (
+        <EmptyState
+          card
+          icon={<Wallet size={40} color={colors.muted} strokeWidth={1.5} />}
+          title={
+            searchQuery || selectedCategory !== 'all'
               ? 'No expenses match your filters.'
-              : 'No personal expenses yet.'}
-          </SproutText>
-          <SproutText variant="caption" color={colors.muted} style={styles.emptySubtitle}>
-            {searchQuery || selectedCategory !== 'all'
+              : 'No personal expenses yet.'
+          }
+          subtitle={
+            searchQuery || selectedCategory !== 'all'
               ? 'Try adjusting or clearing your active filters.'
-              : 'Add your first expense to start tracking!'}
-          </SproutText>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => rootNavigation.navigate('AddExpenseModal')}
-            style={styles.emptyAddBtn}
-          >
-            <PlusCircle size={18} color={colors.accent} style={{ marginRight: 6 }} />
-            <SproutText variant="caption" color={colors.accent} weight="700">
-              Add Expense
-            </SproutText>
-          </TouchableOpacity>
-        </View>
+              : 'Add your first expense to start tracking!'
+          }
+          actionLabel={
+            searchQuery || selectedCategory !== 'all'
+              ? 'Clear Filters'
+              : 'Add Expense'
+          }
+          onActionPress={() => {
+            if (searchQuery || selectedCategory !== 'all') {
+              setSearchQuery('');
+              setSelectedCategory('all');
+            } else {
+              rootNavigation.navigate('AddExpenseModal');
+            }
+          }}
+          style={{ marginTop: spacing.lg }}
+        />
       ) : (
         <View style={styles.groupsContainer}>
           {groupedExpenses.map((group) => (
