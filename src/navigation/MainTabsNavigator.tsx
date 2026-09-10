@@ -7,7 +7,7 @@ import { MainTabsParamList, RootStackParamList } from './types';
 import { colors, radii, shadows } from '../theme';
 import { SproutText } from '../components';
 import { RhythmScreen } from '../screens/rhythm/RhythmScreen';
-import { JournalScreen } from '../screens/journal/JournalScreen';
+import { JournalNavigator } from './JournalNavigator';
 import { SharedScreen } from '../screens/shared/SharedScreen';
 import { InsightScreen } from '../screens/insight/InsightScreen';
 import {
@@ -52,7 +52,7 @@ export const MainTabsNavigator: React.FC = () => {
 
       <Tab.Screen
         name="Journal"
-        component={JournalScreen}
+        component={JournalNavigator}
         options={{
           tabBarLabel: 'Journal',
           tabBarIcon: ({ color, size }) => (

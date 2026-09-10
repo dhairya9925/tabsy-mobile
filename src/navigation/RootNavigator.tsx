@@ -5,6 +5,7 @@ import { RootStackParamList } from './types';
 import { AuthNavigator } from './AuthNavigator';
 import { MainTabsNavigator } from './MainTabsNavigator';
 import { AddExpenseModal } from '../screens/journal/AddExpenseModal';
+import { EditExpenseModal } from '../screens/journal/EditExpenseModal';
 import { SplashScreen } from '../screens/auth/SplashScreen';
 import { useAuthStore } from '../store/useAuthStore';
 
@@ -33,6 +34,14 @@ export const RootNavigator: React.FC = () => {
             <RootStack.Screen
               name="AddExpenseModal"
               component={AddExpenseModal}
+              options={{
+                presentation: 'modal',
+                animation: 'slide_from_bottom',
+              }}
+            />
+            <RootStack.Screen
+              name="EditExpenseModal"
+              component={EditExpenseModal}
               options={{
                 presentation: 'modal',
                 animation: 'slide_from_bottom',

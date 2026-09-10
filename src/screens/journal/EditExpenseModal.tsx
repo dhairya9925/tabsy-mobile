@@ -7,63 +7,57 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../navigation/types';
 import { colors, radii, spacing, shadows } from '../../theme';
 import {
   SproutText,
   SproutButton,
   CircleButton,
-  SegmentControl,
   CategoryChip,
   FieldRow,
   Toast,
 } from '../../components';
 import { expensesApi } from '../../api/expenses';
 import { Category } from '../../types';
-import { toLocalDateString } from '../../utils/formatters';
-import { X, MoreHorizontal, FileText, Calendar } from 'lucide-react-native';
+import { X, FileText, Calendar } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-export const AddExpenseModal: React.FC = () => {
-  const navigation = useNavigation();
+type Props = NativeStackScreenProps<RootStackParamList, 'EditExpenseModal'>;
 
-  const [mode, setMode] = useState<'personal' | 'friend' | 'group'>('personal');
-  const [amountStr, setAmountStr] = useState('');
-  const [description, setDescription] = useState('');
-  const [dateStr, setDateStr] = useState(toLocalDateString(new Date()));
+export const EditExpenseModal: React.FC<Props> = ({ route, navigation }) => {
+  const { expense } = route.params;
+
+  const [amountStr, setAmountStr] = useState(String(expense.amount));
+  const [description, setDescription] = useState(expense.description || expense.note || '');
+  const [dateStr, setDateStr] = useState(expense.date || expense.expense_date || '');
   const [categories, setCategories] = useState<Category[]>([]);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
+  const [selectedCategoryName, setSelectedCategoryName] = useState<string>(
+    typeof expense.category === 'string' ? expense.category : 'General'
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-
-  // Fallback categories if server category list is empty
-  const defaultCategories: Category[] = [
-    { id: 'cat-food', name: 'Food' },
-    { id: 'cat-travel', name: 'Travel' },
-    { id: 'cat-shop', name: 'Shopping' },
-    { id: 'cat-bills', name: 'Bills' },
-    { id: 'cat-other', name: 'Other' },
-  ];
 
   useEffect(() => {
     expensesApi.getCategories()
       .then((data) => {
         if (Array.isArray(data) && data.length > 0) {
           setCategories(data);
-          setSelectedCategoryId(data[0].id);
         } else {
-          setCategories(defaultCategories);
-          setSelectedCategoryId(defaultCategories[0].id);
+          setCategories([
+            { id: 'cat-food', name: 'Food' },
+            { id: 'cat-travel', name: 'Travel' },
+            { id: 'cat-shop', name: 'Shopping' },
+            { id: 'cat-bills', name: 'Bills' },
+            { id: 'cat-other', name: 'Other' },
+          ]);
         }
       })
-      .catch(() => {
-        setCategories(defaultCategories);
-        setSelectedCategoryId(defaultCategories[0].id);
-      });
+      .catch(() => {});
   }, []);
 
-  const handleSave = async () => {
+  const handleUpdate = async () => {
     setErrorMessage('');
     const parsedAmount = parseFloat(amountStr);
 
@@ -73,42 +67,29 @@ export const AddExpenseModal: React.FC = () => {
     }
 
     if (!description.trim()) {
-      setErrorMessage('Please enter a short description');
+      setErrorMessage('Please enter a description');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      if (mode === 'personal') {
-        const selectedCat = categories.find((c) => c.id === selectedCategoryId);
-        const catName = selectedCat?.name || 'General';
+      await expensesApi.updatePersonalExpense(expense.id, {
+        amount: parsedAmount,
+        category: selectedCategoryName,
+        note: description.trim(),
+        expense_date: dateStr,
+      });
 
-        await expensesApi.createPersonalExpense({
-          amount: parsedAmount,
-          category: catName,
-          note: description.trim(),
-          expense_date: dateStr,
-        });
-
-        setSuccessMessage('Expense saved to your rhythm!');
-        setTimeout(() => {
-          navigation.goBack();
-        }, 500);
-      } else {
-        setErrorMessage(`${mode === 'friend' ? 'Friend' : 'Group'} expense flow is scheduled for Phase 3/4.`);
-      }
+      setSuccessMessage('Expense updated successfully!');
+      setTimeout(() => {
+        navigation.goBack();
+      }, 500);
     } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to record expense');
+      setErrorMessage(err.message || 'Failed to update expense');
     } finally {
       setIsSubmitting(false);
     }
   };
-
-  const modeOptions = [
-    { value: 'personal' as const, label: 'Personal' },
-    { value: 'friend' as const, label: 'Friend' },
-    { value: 'group' as const, label: 'Group' },
-  ];
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
@@ -129,19 +110,16 @@ export const AddExpenseModal: React.FC = () => {
           onDismiss={() => setSuccessMessage('')}
         />
 
-        {/* Top Header Bar */}
+        {/* Top Header */}
         <View style={styles.header}>
           <CircleButton
             icon={<X size={20} color={colors.text} />}
             onPress={() => navigation.goBack()}
           />
           <SproutText variant="title" color={colors.text} style={styles.headerTitle}>
-            New expense
+            Edit expense
           </SproutText>
-          <CircleButton
-            icon={<MoreHorizontal size={20} color={colors.text} />}
-            onPress={() => {}}
-          />
+          <View style={{ width: 44 }} />
         </View>
 
         <ScrollView
@@ -149,7 +127,7 @@ export const AddExpenseModal: React.FC = () => {
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={styles.scrollContent}
         >
-          {/* Amount Display with Currency Symbol */}
+          {/* Amount Display */}
           <View style={styles.amountContainer}>
             <SproutText variant="eyebrow" color={colors.muted} style={styles.amountEyebrow}>
               AMOUNT
@@ -165,28 +143,12 @@ export const AddExpenseModal: React.FC = () => {
                 value={amountStr}
                 onChangeText={setAmountStr}
                 keyboardType="numeric"
-                autoFocus
                 maxLength={9}
               />
             </View>
           </View>
 
-          {/* Mode Switcher */}
-          <SegmentControl
-            options={modeOptions}
-            value={mode}
-            onChange={(val) => setMode(val)}
-          />
-
-          {mode !== 'personal' && (
-            <View style={styles.infoBanner}>
-              <SproutText variant="caption" color={colors.text} weight="600">
-                Shared {mode} mode active. You can split equally or assign exact amounts.
-              </SproutText>
-            </View>
-          )}
-
-          {/* Categories Horizontal Carousel */}
+          {/* Categories Selector */}
           <View style={styles.section}>
             <SproutText variant="eyebrow" color={colors.muted} style={styles.sectionLabel}>
               CATEGORY
@@ -201,8 +163,8 @@ export const AddExpenseModal: React.FC = () => {
                   key={cat.id}
                   id={cat.id}
                   name={cat.name}
-                  isSelected={selectedCategoryId === cat.id}
-                  onSelect={(id) => setSelectedCategoryId(id)}
+                  isSelected={selectedCategoryName.toLowerCase() === cat.name.toLowerCase()}
+                  onSelect={() => setSelectedCategoryName(cat.name)}
                 />
               ))}
             </ScrollView>
@@ -212,7 +174,7 @@ export const AddExpenseModal: React.FC = () => {
           <View style={styles.section}>
             <FieldRow
               label="Description / Note"
-              placeholder="e.g. Lunch at Botanical Cafe"
+              placeholder="e.g. Lunch with friends"
               value={description}
               onChangeText={setDescription}
               icon={<FileText size={18} color={colors.muted} />}
@@ -231,9 +193,9 @@ export const AddExpenseModal: React.FC = () => {
         {/* Bottom Save Action */}
         <View style={styles.bottomBar}>
           <SproutButton
-            label="Save expense"
+            label="Update expense"
             isLoading={isSubmitting}
-            onPress={handleSave}
+            onPress={handleUpdate}
           />
         </View>
       </KeyboardAvoidingView>
@@ -292,12 +254,6 @@ const styles = StyleSheet.create({
     minWidth: 80,
     textAlign: 'center',
     padding: 0,
-  },
-  infoBanner: {
-    backgroundColor: colors.soft,
-    borderRadius: radii.md,
-    padding: spacing.md,
-    marginBottom: spacing.lg,
   },
   section: {
     marginBottom: spacing.lg,

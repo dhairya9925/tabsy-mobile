@@ -24,31 +24,51 @@ export interface AuthResponse {
 
 export interface Category {
   id: string;
+  user_id?: string;
   name: string;
+  slug?: string;
+  color_index?: number;
   icon?: string | null;
   color?: string | null;
   is_default?: boolean;
+}
+
+export interface CategoryCreate {
+  name: string;
+}
+
+export interface CategoryUpdate {
+  name?: string;
+  color_index?: number;
 }
 
 export interface PersonalExpense {
   id: string;
   user_id: string;
   amount: number;
-  description: string;
-  category_id?: string | null;
-  category?: Category | null;
-  date: string;
-  notes?: string | null;
+  category: string;
+  note?: string | null;
+  description?: string | null; // UI helper alias for note
+  expense_date: string; // 'YYYY-MM-DD'
+  date?: string; // UI helper alias for expense_date
   created_at: string;
   updated_at: string;
 }
 
 export interface PersonalExpenseCreate {
   amount: number;
-  description: string;
-  category_id?: string | null;
-  date: string;
-  notes?: string | null;
+  category: string;
+  note?: string | null;
+  expense_date: string; // 'YYYY-MM-DD'
+  description?: string; // fallback alias
+  date?: string; // fallback alias
+}
+
+export interface PersonalExpenseUpdate {
+  amount?: number;
+  category?: string;
+  note?: string | null;
+  expense_date?: string;
 }
 
 export interface DashboardSummary {

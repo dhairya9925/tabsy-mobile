@@ -12,7 +12,6 @@ import {
   Car,
   Film,
   Sparkles,
-  HelpCircle,
 } from 'lucide-react-native';
 
 export interface ExpenseRowProps {
@@ -44,8 +43,11 @@ export function getCategoryIcon(name?: string | null) {
 }
 
 export const ExpenseRow: React.FC<ExpenseRowProps> = ({ expense, onPress }) => {
-  const categoryName = expense.category?.name || 'Personal Expense';
+  const categoryName = typeof expense.category === 'string'
+    ? expense.category
+    : (expense.category as any)?.name || 'Personal';
   const icon = getCategoryIcon(categoryName);
+  const displayDate = expense.date || expense.expense_date || '';
 
   return (
     <TouchableOpacity
@@ -58,10 +60,10 @@ export const ExpenseRow: React.FC<ExpenseRowProps> = ({ expense, onPress }) => {
 
       <View style={styles.infoCol}>
         <SproutText variant="subtitle" color={colors.text} numberOfLines={1}>
-          {expense.description || categoryName}
+          {expense.description || expense.note || categoryName}
         </SproutText>
         <SproutText variant="caption" color={colors.muted}>
-          {categoryName} • {formatDate(expense.date)}
+          {categoryName} • {formatDate(displayDate)}
         </SproutText>
       </View>
 
