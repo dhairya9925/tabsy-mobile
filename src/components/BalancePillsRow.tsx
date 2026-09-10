@@ -1,9 +1,8 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { colors, radii, spacing, shadows } from '../theme';
+import { fontFamilies, colors, spacing } from '../theme';
 import { SproutText } from './SproutText';
 import { formatCurrency } from '../utils/formatters';
-import { ArrowDownLeft, ArrowUpRight } from 'lucide-react-native';
 
 export interface BalancePillsRowProps {
   toReceive?: number;
@@ -26,17 +25,9 @@ export const BalancePillsRow: React.FC<BalancePillsRowProps> = ({
         disabled={!onPressReceive}
         style={[styles.pill, styles.pillReceive]}
       >
-        <View style={styles.iconCircleReceive}>
-          <ArrowDownLeft size={16} color={colors.accent} />
-        </View>
-        <View style={styles.pillContent}>
-          <SproutText variant="caption" color={colors.muted} style={styles.pillLabel}>
-            YOU'RE OWED
-          </SproutText>
-          <SproutText variant="subtitle" color={colors.text} weight="700">
-            {formatCurrency(toReceive)}
-          </SproutText>
-        </View>
+        <SproutText style={styles.pillText}>
+          {formatCurrency(toReceive)} to receive
+        </SproutText>
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -45,17 +36,9 @@ export const BalancePillsRow: React.FC<BalancePillsRowProps> = ({
         disabled={!onPressPay}
         style={[styles.pill, styles.pillPay]}
       >
-        <View style={styles.iconCirclePay}>
-          <ArrowUpRight size={16} color={colors.negative} />
-        </View>
-        <View style={styles.pillContent}>
-          <SproutText variant="caption" color={colors.muted} style={styles.pillLabel}>
-            YOU OWE
-          </SproutText>
-          <SproutText variant="subtitle" color={colors.text} weight="700">
-            {formatCurrency(toPay)}
-          </SproutText>
-        </View>
+        <SproutText style={styles.pillText}>
+          {formatCurrency(toPay)} to pay
+        </SproutText>
       </TouchableOpacity>
     </View>
   );
@@ -64,52 +47,27 @@ export const BalancePillsRow: React.FC<BalancePillsRowProps> = ({
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    gap: spacing.md,
-    marginBottom: spacing.lg,
+    gap: 8,
+    marginBottom: spacing.md,
   },
   pill: {
     flex: 1,
-    flexDirection: 'row',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 13,
     alignItems: 'center',
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    ...shadows.card,
+    justifyContent: 'center',
   },
   pillReceive: {
-    backgroundColor: colors.soft, // Tender leaf green #D8E8CB
-    borderColor: '#C3D9B5',
+    backgroundColor: '#D8E8CB', // Soft tender sage
   },
   pillPay: {
-    backgroundColor: colors.clay, // Soft peach #F4DACD
-    borderColor: '#E7C5B5',
+    backgroundColor: '#F4DACD', // Soft peach blush
   },
-  iconCircleReceive: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF88',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.sm,
-  },
-  iconCirclePay: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF88',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.sm,
-  },
-  pillContent: {
-    flex: 1,
-  },
-  pillLabel: {
-    fontSize: 9,
-    fontWeight: '800',
-    letterSpacing: 0.8,
-    marginBottom: 1,
+  pillText: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 12,
+    color: '#183228',
+    textAlign: 'center',
   },
 });

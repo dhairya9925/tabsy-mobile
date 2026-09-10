@@ -1,16 +1,15 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { colors, radii, spacing, shadows } from '../theme';
+import { fontFamilies, colors, spacing } from '../theme';
 import { SproutText } from './SproutText';
 import { PersonalExpense } from '../types';
-import { formatCurrencyExact, formatDate } from '../utils/formatters';
+import { formatCurrency } from '../utils/formatters';
 import {
-  Utensils,
-  Plane,
-  ShoppingBag,
-  Receipt,
+  Coffee,
   Car,
-  Film,
+  Utensils,
+  ShoppingBag,
+  ReceiptText,
   Sparkles,
 } from 'lucide-react-native';
 
@@ -21,37 +20,51 @@ export interface ExpenseRowProps {
 
 export function getCategoryIcon(name?: string | null) {
   const lower = (name || '').toLowerCase();
-  if (lower.includes('food') || lower.includes('dining') || lower.includes('restaurant')) {
-    return <Utensils size={18} color={colors.accent} />;
+  if (lower.includes('coffee') || lower.includes('cafe') || lower.includes('chai') || lower.includes('tea')) {
+    return <Coffee size={18} color={colors.accent} strokeWidth={1.7} />;
   }
-  if (lower.includes('travel') || lower.includes('flight') || lower.includes('trip')) {
-    return <Plane size={18} color={colors.accent} />;
+  if (lower.includes('cab') || lower.includes('uber') || lower.includes('ola') || lower.includes('car') || lower.includes('travel') || lower.includes('transit')) {
+    return <Car size={18} color={colors.accent} strokeWidth={1.7} />;
   }
-  if (lower.includes('shop') || lower.includes('grocer') || lower.includes('store')) {
-    return <ShoppingBag size={18} color={colors.accent} />;
+  if (lower.includes('food') || lower.includes('dining') || lower.includes('dinner') || lower.includes('lunch') || lower.includes('restaurant')) {
+    return <Utensils size={18} color={colors.accent} strokeWidth={1.7} />;
   }
-  if (lower.includes('bill') || lower.includes('util') || lower.includes('rent')) {
-    return <Receipt size={18} color={colors.accent} />;
+  if (lower.includes('shop') || lower.includes('grocer') || lower.includes('store') || lower.includes('market')) {
+    return <ShoppingBag size={18} color={colors.accent} strokeWidth={1.7} />;
   }
-  if (lower.includes('transport') || lower.includes('cab') || lower.includes('fuel')) {
-    return <Car size={18} color={colors.accent} />;
+  if (lower.includes('bill') || lower.includes('util') || lower.includes('rent') || lower.includes('recharge')) {
+    return <ReceiptText size={18} color={colors.accent} strokeWidth={1.7} />;
   }
-  if (lower.includes('entertain') || lower.includes('movie')) {
-    return <Film size={18} color={colors.accent} />;
-  }
-  return <Sparkles size={18} color={colors.accent} />;
+  return <Sparkles size={18} color={colors.accent} strokeWidth={1.7} />;
 }
 
 export const ExpenseRow: React.FC<ExpenseRowProps> = ({ expense, onPress }) => {
   const categoryName = typeof expense.category === 'string'
     ? expense.category
-    : (expense.category as any)?.name || 'Personal';
+    : (expense.category as any)?.name || 'Food';
   const icon = getCategoryIcon(categoryName);
-  const displayDate = expense.date || expense.expense_date || '';
+  const rawDate = expense.date || expense.expense_date || '';
+  
+  // Format subtitle like "Today · Food" or "Yesterday · Travel"
+  let datePart = 'Recent';
+  if (rawDate) {
+    const d = new Date(rawDate.split('T')[0]);
+    const today = new Date();
+    const isToday = d.toDateString() === today.toDateString();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+    const isYesterday = d.toDateString() === yesterday.toDateString();
+
+    if (isToday) datePart = 'Today';
+    else if (isYesterday) datePart = 'Yesterday';
+    else {
+      datePart = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+    }
+  }
 
   return (
     <TouchableOpacity
-      activeOpacity={0.82}
+      activeOpacity={0.7}
       onPress={onPress}
       disabled={!onPress}
       style={styles.container}
@@ -59,17 +72,17 @@ export const ExpenseRow: React.FC<ExpenseRowProps> = ({ expense, onPress }) => {
       <View style={styles.iconCircle}>{icon}</View>
 
       <View style={styles.infoCol}>
-        <SproutText variant="subtitle" color={colors.text} numberOfLines={1}>
+        <SproutText style={styles.title} numberOfLines={1}>
           {expense.description || expense.note || categoryName}
         </SproutText>
-        <SproutText variant="caption" color={colors.muted}>
-          {categoryName} • {formatDate(displayDate)}
+        <SproutText style={styles.subtitle}>
+          {datePart} · {categoryName}
         </SproutText>
       </View>
 
       <View style={styles.amountCol}>
-        <SproutText variant="amountRow" color={colors.negative}>
-          -{formatCurrencyExact(expense.amount)}
+        <SproutText style={styles.amount}>
+          {formatCurrency(expense.amount)}
         </SproutText>
       </View>
     </TouchableOpacity>
@@ -80,29 +93,42 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: colors.line,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    marginBottom: spacing.sm,
-    ...shadows.card,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#CBD7CC',
   },
   iconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.accentSoft,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.line,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.md,
+    marginRight: 14,
   },
   infoCol: {
     flex: 1,
   },
+  title: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 15,
+    color: '#183228',
+    marginBottom: 2,
+  },
+  subtitle: {
+    fontFamily: fontFamilies.medium,
+    fontSize: 12,
+    color: '#6D7C72',
+  },
   amountCol: {
     alignItems: 'flex-end',
     marginLeft: spacing.sm,
+  },
+  amount: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 16,
+    color: '#183228',
   },
 });

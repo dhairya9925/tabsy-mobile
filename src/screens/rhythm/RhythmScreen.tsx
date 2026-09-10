@@ -71,6 +71,8 @@ export const RhythmScreen: React.FC = () => {
 
   const displayName = user?.display_name || (user?.email ? user.email.split('@')[0] : '');
 
+  const currentMonth = new Date().toLocaleDateString('en-US', { month: 'long' }).toUpperCase();
+
   return (
     <ScreenShell
       isRefreshing={isLoading}
@@ -87,11 +89,11 @@ export const RhythmScreen: React.FC = () => {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <SproutText variant="eyebrow" color={colors.accent}>
-            OVERVIEW
+          <SproutText variant="eyebrow" color={colors.muted} style={styles.eyebrow}>
+            {`${currentMonth} RHYTHM`}
           </SproutText>
           <SproutText variant="hero" style={styles.heroText}>
-            Welcome{displayName ? `, ${displayName}` : ''}
+            Keep it clear,{'\n'}day by day.
           </SproutText>
         </View>
 
@@ -112,8 +114,8 @@ export const RhythmScreen: React.FC = () => {
         <>
           <CardSkeleton />
           <View style={styles.sectionHeader}>
-            <SproutText variant="title" color={colors.text}>
-              Recent Activity
+            <SproutText variant="title" color={colors.text} style={styles.sectionTitle}>
+              This week
             </SproutText>
           </View>
           <ExpenseListSkeleton count={3} />
@@ -132,14 +134,17 @@ export const RhythmScreen: React.FC = () => {
             toPay={toPay}
           />
 
-          {/* Recent Activity Section */}
+          {/* This Week / Recent Activity Section */}
           <View style={styles.sectionHeader}>
-            <SproutText variant="title" color={colors.text}>
-              Recent Activity
+            <SproutText variant="title" color={colors.text} style={styles.sectionTitle}>
+              This week
             </SproutText>
-            <TouchableOpacity onPress={() => navigation.navigate('AddExpenseModal')}>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => (navigation as any).navigate('Main', { screen: 'Journal' })}
+            >
               <SproutText variant="caption" color={colors.accent} weight="700">
-                + Quick Add
+                See month
               </SproutText>
             </TouchableOpacity>
           </View>
@@ -156,7 +161,16 @@ export const RhythmScreen: React.FC = () => {
           ) : (
             <View style={styles.expensesList}>
               {recentExpenses.map((expense) => (
-                <ExpenseRow key={expense.id} expense={expense} />
+                <ExpenseRow
+                  key={expense.id}
+                  expense={expense}
+                  onPress={() =>
+                    (navigation as any).navigate('Main', {
+                      screen: 'Journal',
+                      params: { screen: 'ExpenseDetail', params: { expense } },
+                    })
+                  }
+                />
               ))}
             </View>
           )}
@@ -175,16 +189,23 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginTop: spacing.sm,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   headerLeft: {
     flex: 1,
     paddingRight: spacing.sm,
   },
+  eyebrow: {
+    fontSize: 8,
+    letterSpacing: 1.2,
+    color: '#6D7C72',
+  },
   heroText: {
     marginTop: 4,
-    fontSize: 26,
+    fontSize: 28,
     lineHeight: 30,
+    letterSpacing: -1.4,
+    color: colors.text,
   },
   headerRight: {
     alignItems: 'center',
@@ -193,11 +214,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: spacing.md,
-    marginBottom: spacing.md,
+    marginTop: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    letterSpacing: -0.4,
+    color: colors.text,
   },
   expensesList: {
-    gap: 4,
+    marginTop: 2,
   },
   emptyCard: {
     backgroundColor: colors.surface,

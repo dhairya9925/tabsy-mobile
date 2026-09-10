@@ -4,16 +4,16 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MainTabsParamList, RootStackParamList } from './types';
-import { colors, shadows } from '../theme';
+import { fontFamilies, colors, shadows } from '../theme';
 import { RhythmScreen } from '../screens/rhythm/RhythmScreen';
 import { JournalNavigator } from './JournalNavigator';
 import { SharedNavigator } from './SharedNavigator';
 import { InsightScreen } from '../screens/insight/InsightScreen';
 import {
-  Home,
-  Wallet,
+  CalendarDays,
+  ReceiptText,
   Users,
-  BarChart3,
+  ChartNoAxesCombined,
   Plus,
 } from 'lucide-react-native';
 
@@ -34,7 +34,7 @@ export const MainTabsNavigator: React.FC = () => {
         tabBarStyle: styles.tabBar,
         tabBarShowLabel: true,
         tabBarActiveTintColor: colors.accent,
-        tabBarInactiveTintColor: colors.muted,
+        tabBarInactiveTintColor: '#7B887F',
         tabBarLabelStyle: styles.tabBarLabel,
       }}
     >
@@ -42,9 +42,9 @@ export const MainTabsNavigator: React.FC = () => {
         name="Rhythm"
         component={RhythmScreen}
         options={{
-          tabBarLabel: 'Home',
+          tabBarLabel: 'Rhythm',
           tabBarIcon: ({ color, size }) => (
-            <Home size={size || 22} color={color} strokeWidth={2} />
+            <CalendarDays size={size || 20} color={color} strokeWidth={1.7} />
           ),
         }}
       />
@@ -53,9 +53,9 @@ export const MainTabsNavigator: React.FC = () => {
         name="Journal"
         component={JournalNavigator}
         options={{
-          tabBarLabel: 'Expenses',
+          tabBarLabel: 'Journal',
           tabBarIcon: ({ color, size }) => (
-            <Wallet size={size || 22} color={color} strokeWidth={2} />
+            <ReceiptText size={size || 20} color={color} strokeWidth={1.7} />
           ),
         }}
       />
@@ -74,7 +74,7 @@ export const MainTabsNavigator: React.FC = () => {
                 onPress={() => rootNavigation.navigate('AddExpenseModal')}
                 style={styles.fabButton}
               >
-                <Plus size={26} color={colors.onAccent} strokeWidth={2.8} />
+                <Plus size={24} color={colors.onAccent} strokeWidth={2.4} />
               </TouchableOpacity>
             </View>
           ),
@@ -85,9 +85,9 @@ export const MainTabsNavigator: React.FC = () => {
         name="Shared"
         component={SharedNavigator}
         options={{
-          tabBarLabel: 'Groups',
+          tabBarLabel: 'Shared',
           tabBarIcon: ({ color, size }) => (
-            <Users size={size || 22} color={color} strokeWidth={2} />
+            <Users size={size || 20} color={color} strokeWidth={1.7} />
           ),
         }}
       />
@@ -96,9 +96,9 @@ export const MainTabsNavigator: React.FC = () => {
         name="Insight"
         component={InsightScreen}
         options={{
-          tabBarLabel: 'Analytics',
+          tabBarLabel: 'Insight',
           tabBarIcon: ({ color, size }) => (
-            <BarChart3 size={size || 22} color={color} strokeWidth={2} />
+            <ChartNoAxesCombined size={size || 20} color={color} strokeWidth={1.7} />
           ),
         }}
       />
@@ -111,8 +111,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderTopColor: colors.line,
     borderTopWidth: 1,
-    height: 72,
-    paddingBottom: 12,
+    height: 70,
+    paddingBottom: 10,
     paddingTop: 8,
     position: 'absolute',
     left: 0,
@@ -121,25 +121,24 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   tabBarLabel: {
-    fontFamily: 'Manrope',
-    fontSize: 10,
-    fontWeight: '700',
+    fontFamily: fontFamilies.bold,
+    fontSize: 9,
     marginTop: 2,
   },
   fabWrapper: {
-    top: -14,
+    top: -12,
     justifyContent: 'center',
     alignItems: 'center',
-    width: 60,
+    width: 56,
   },
   fabButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: colors.accent,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 3,
+    borderWidth: 2.5,
     borderColor: colors.background,
     ...shadows.modal,
   },

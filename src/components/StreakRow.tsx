@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { colors, radii, spacing, shadows } from '../theme';
+import { fontFamilies, colors, radii, spacing, shadows } from '../theme';
 import { SproutText } from './SproutText';
 import { StreakDay } from '../types';
 import { Check } from 'lucide-react-native';
@@ -27,12 +27,11 @@ export const StreakRow: React.FC<StreakRowProps> = ({ days }) => {
               ]}
             >
               {isDone ? (
-                <Check size={16} color={colors.onAccent} strokeWidth={3} />
+                <Check size={14} color={colors.onAccent} strokeWidth={2.6} />
               ) : (
                 <SproutText
                   variant="caption"
-                  color={isToday ? colors.accent : day.isFuture ? colors.muted : colors.text}
-                  weight={isToday ? '800' : '600'}
+                  color={isToday ? colors.accent : colors.text}
                   style={styles.bubbleText}
                 >
                   {day.dayNumber}
@@ -42,7 +41,6 @@ export const StreakRow: React.FC<StreakRowProps> = ({ days }) => {
             <SproutText
               variant="caption"
               color={isToday ? colors.accent : colors.muted}
-              weight={isToday ? '800' : '600'}
               style={styles.dayLabel}
             >
               {day.dayName}
@@ -63,9 +61,9 @@ const styles = StyleSheet.create({
     borderRadius: radii.lg,
     borderWidth: 1,
     borderColor: colors.line,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.sm,
-    marginBottom: spacing.lg,
+    paddingVertical: 13,
+    paddingHorizontal: 10,
+    marginBottom: spacing.md,
     ...shadows.card,
   },
   dayCol: {
@@ -73,15 +71,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   bubble: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 1.5,
+    width: 31,
+    height: 31,
+    borderRadius: 15.5,
+    borderWidth: 1,
     borderColor: colors.line,
     backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 6,
+    marginBottom: 4,
   },
   bubbleDone: {
     backgroundColor: colors.accent,
@@ -89,15 +87,18 @@ const styles = StyleSheet.create({
   },
   bubbleToday: {
     borderColor: colors.accent,
-    backgroundColor: colors.surface,
+    borderWidth: 1.5,
   },
   bubbleFuture: {
     opacity: 0.5,
   },
   bubbleText: {
-    fontSize: 12,
+    fontFamily: fontFamilies.bold,
+    fontSize: 10,
   },
   dayLabel: {
-    fontSize: 11,
+    fontFamily: fontFamilies.bold,
+    fontSize: 8,
+    marginTop: 2,
   },
 });
