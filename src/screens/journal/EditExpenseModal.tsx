@@ -46,11 +46,11 @@ export const EditExpenseModal: React.FC<Props> = ({ route, navigation }) => {
           setCategories(data);
         } else {
           setCategories([
-            { id: 'cat-food', name: 'Food' },
-            { id: 'cat-travel', name: 'Travel' },
-            { id: 'cat-shop', name: 'Shopping' },
-            { id: 'cat-bills', name: 'Bills' },
-            { id: 'cat-other', name: 'Other' },
+            { id: 'food', name: 'Food & Dining' },
+            { id: 'transport', name: 'Transport' },
+            { id: 'shopping', name: 'Shopping' },
+            { id: 'bills', name: 'Bills & Utilities' },
+            { id: 'other', name: 'Other' },
           ]);
         }
       })
@@ -66,26 +66,21 @@ export const EditExpenseModal: React.FC<Props> = ({ route, navigation }) => {
       return;
     }
 
-    if (!description.trim()) {
-      setErrorMessage('Please enter a description');
-      return;
-    }
-
     setIsSubmitting(true);
     try {
       await expensesApi.updatePersonalExpense(expense.id, {
         amount: parsedAmount,
         category: selectedCategoryName,
-        note: description.trim(),
+        note: description.trim() || undefined,
         expense_date: dateStr,
       });
 
-      setSuccessMessage('Expense updated successfully!');
+      setSuccessMessage('Expense updated successfully');
       setTimeout(() => {
         navigation.goBack();
       }, 500);
     } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to update expense');
+      setErrorMessage(err.message || 'Error saving expense');
     } finally {
       setIsSubmitting(false);
     }
@@ -117,7 +112,7 @@ export const EditExpenseModal: React.FC<Props> = ({ route, navigation }) => {
             onPress={() => navigation.goBack()}
           />
           <SproutText variant="title" color={colors.text} style={styles.headerTitle}>
-            Edit expense
+            Edit Expense
           </SproutText>
           <View style={{ width: 44 }} />
         </View>
@@ -173,15 +168,15 @@ export const EditExpenseModal: React.FC<Props> = ({ route, navigation }) => {
           {/* Details Form Fields */}
           <View style={styles.section}>
             <FieldRow
-              label="Description / Note"
-              placeholder="e.g. Lunch with friends"
+              label="Note (Optional)"
+              placeholder="Dinner, cab..."
               value={description}
               onChangeText={setDescription}
               icon={<FileText size={18} color={colors.muted} />}
             />
 
             <FieldRow
-              label="Date (YYYY-MM-DD)"
+              label="Date"
               placeholder="YYYY-MM-DD"
               value={dateStr}
               onChangeText={setDateStr}
@@ -193,7 +188,7 @@ export const EditExpenseModal: React.FC<Props> = ({ route, navigation }) => {
         {/* Bottom Save Action */}
         <View style={styles.bottomBar}>
           <SproutButton
-            label="Update expense"
+            label="Update Expense"
             isLoading={isSubmitting}
             onPress={handleUpdate}
           />

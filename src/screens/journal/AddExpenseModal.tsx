@@ -8,7 +8,7 @@ import {
   Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { colors, radii, spacing, shadows } from '../../theme';
+import { colors, radii, spacing } from '../../theme';
 import {
   SproutText,
   SproutButton,
@@ -37,12 +37,12 @@ export const AddExpenseModal: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
-  // Fallback categories if server category list is empty
+  // Default categories matching frontend/src/lib/categories.ts
   const defaultCategories: Category[] = [
-    { id: 'cat-food', name: 'Food' },
-    { id: 'cat-travel', name: 'Travel' },
+    { id: 'cat-food', name: 'Food & Dining' },
+    { id: 'cat-transport', name: 'Transport' },
     { id: 'cat-shop', name: 'Shopping' },
-    { id: 'cat-bills', name: 'Bills' },
+    { id: 'cat-bills', name: 'Bills & Utilities' },
     { id: 'cat-other', name: 'Other' },
   ];
 
@@ -72,33 +72,28 @@ export const AddExpenseModal: React.FC = () => {
       return;
     }
 
-    if (!description.trim()) {
-      setErrorMessage('Please enter a short description');
-      return;
-    }
-
     setIsSubmitting(true);
     try {
       if (mode === 'personal') {
         const selectedCat = categories.find((c) => c.id === selectedCategoryId);
-        const catName = selectedCat?.name || 'General';
+        const catName = selectedCat?.name || 'Other';
 
         await expensesApi.createPersonalExpense({
           amount: parsedAmount,
           category: catName,
-          note: description.trim(),
+          note: description.trim() || undefined,
           expense_date: dateStr,
         });
 
-        setSuccessMessage('Expense saved to your rhythm!');
+        setSuccessMessage('Expense added successfully');
         setTimeout(() => {
           navigation.goBack();
         }, 500);
       } else {
-        setErrorMessage(`${mode === 'friend' ? 'Friend' : 'Group'} expense flow is scheduled for Phase 3/4.`);
+        setErrorMessage(`${mode === 'friend' ? '1-on-1' : 'Group'} expense flow is scheduled for Phase 3/4.`);
       }
     } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to record expense');
+      setErrorMessage(err.message || 'Error saving expense');
     } finally {
       setIsSubmitting(false);
     }
@@ -106,7 +101,7 @@ export const AddExpenseModal: React.FC = () => {
 
   const modeOptions = [
     { value: 'personal' as const, label: 'Personal' },
-    { value: 'friend' as const, label: 'Friend' },
+    { value: 'friend' as const, label: '1-on-1' },
     { value: 'group' as const, label: 'Group' },
   ];
 
@@ -136,7 +131,7 @@ export const AddExpenseModal: React.FC = () => {
             onPress={() => navigation.goBack()}
           />
           <SproutText variant="title" color={colors.text} style={styles.headerTitle}>
-            New expense
+            Add Expense
           </SproutText>
           <CircleButton
             icon={<MoreHorizontal size={20} color={colors.text} />}
@@ -181,7 +176,7 @@ export const AddExpenseModal: React.FC = () => {
           {mode !== 'personal' && (
             <View style={styles.infoBanner}>
               <SproutText variant="caption" color={colors.text} weight="600">
-                Shared {mode} mode active. You can split equally or assign exact amounts.
+                Shared {mode === 'friend' ? '1-on-1' : 'group'} mode active. Choose who split and who paid.
               </SproutText>
             </View>
           )}
@@ -211,15 +206,15 @@ export const AddExpenseModal: React.FC = () => {
           {/* Details Form Fields */}
           <View style={styles.section}>
             <FieldRow
-              label="Description / Note"
-              placeholder="e.g. Lunch at Botanical Cafe"
+              label="Note (Optional)"
+              placeholder="Dinner, cab..."
               value={description}
               onChangeText={setDescription}
               icon={<FileText size={18} color={colors.muted} />}
             />
 
             <FieldRow
-              label="Date (YYYY-MM-DD)"
+              label="Date"
               placeholder="YYYY-MM-DD"
               value={dateStr}
               onChangeText={setDateStr}
@@ -231,7 +226,7 @@ export const AddExpenseModal: React.FC = () => {
         {/* Bottom Save Action */}
         <View style={styles.bottomBar}>
           <SproutButton
-            label="Save expense"
+            label="Save Expense"
             isLoading={isSubmitting}
             onPress={handleSave}
           />

@@ -4,7 +4,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../navigation/types';
 import { colors, radii, spacing, shadows } from '../../theme';
 import { SproutText, SproutButton, ScreenShell } from '../../components';
-import { Sprout } from 'lucide-react-native';
+import { Wallet, ShieldCheck } from 'lucide-react-native';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Welcome'>;
 
@@ -13,34 +13,34 @@ export const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
     <ScreenShell scrollable={false} contentContainerStyle={styles.container}>
       <View style={styles.topSection}>
         <View style={styles.iconCircle}>
-          <Sprout size={44} color={colors.accent} strokeWidth={2.2} />
+          <Wallet size={40} color={colors.accent} strokeWidth={2.2} />
         </View>
         <SproutText variant="eyebrow" color={colors.accent} style={styles.eyebrow}>
-          EXPENSE RHYTHM
+          SMART EXPENSE TRACKING
         </SproutText>
         <SproutText variant="hero" style={styles.hero}>
-          Keep it clear,{'\n'}day by day.
+          Split expenses,{'\n'}not friendships.
         </SproutText>
         <SproutText variant="bodyMuted" style={styles.description}>
-          A mindful, calm rhythm for your personal expenses and shared splitwise balance.
+          Track personal spending, split group bills, and settle debts — all in one simple app.
         </SproutText>
       </View>
 
       <View style={styles.cardPreview}>
-        <View style={styles.previewDot} />
+        <ShieldCheck size={20} color={colors.accent} style={{ marginRight: spacing.sm }} />
         <SproutText variant="caption" color={colors.text} weight="700">
-          Sync with your friends & groups seamlessly.
+          Automatic debt simplification & instant sync.
         </SproutText>
       </View>
 
       <View style={styles.bottomSection}>
         <SproutButton
-          label="Create account"
+          label="Get Started Free"
           onPress={() => navigation.navigate('Signup')}
           style={styles.primaryButton}
         />
         <SproutButton
-          label="Log in"
+          label="Log In"
           variant="outline"
           onPress={() => navigation.navigate('Login')}
         />
@@ -89,13 +89,6 @@ const styles = StyleSheet.create({
     borderColor: colors.line,
     padding: spacing.md,
     ...shadows.card,
-  },
-  previewDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: colors.accent,
-    marginRight: spacing.sm,
   },
   bottomSection: {
     gap: spacing.md,

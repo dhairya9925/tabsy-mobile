@@ -4,17 +4,16 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MainTabsParamList, RootStackParamList } from './types';
-import { colors, radii, shadows } from '../theme';
-import { SproutText } from '../components';
+import { colors, shadows } from '../theme';
 import { RhythmScreen } from '../screens/rhythm/RhythmScreen';
 import { JournalNavigator } from './JournalNavigator';
 import { SharedScreen } from '../screens/shared/SharedScreen';
 import { InsightScreen } from '../screens/insight/InsightScreen';
 import {
-  CalendarDays,
-  ReceiptText,
+  Home,
+  Wallet,
   Users,
-  ChartNoAxesCombined,
+  BarChart3,
   Plus,
 } from 'lucide-react-native';
 
@@ -43,9 +42,9 @@ export const MainTabsNavigator: React.FC = () => {
         name="Rhythm"
         component={RhythmScreen}
         options={{
-          tabBarLabel: 'Rhythm',
+          tabBarLabel: 'Home',
           tabBarIcon: ({ color, size }) => (
-            <CalendarDays size={size || 22} color={color} strokeWidth={2} />
+            <Home size={size || 22} color={color} strokeWidth={2} />
           ),
         }}
       />
@@ -54,9 +53,9 @@ export const MainTabsNavigator: React.FC = () => {
         name="Journal"
         component={JournalNavigator}
         options={{
-          tabBarLabel: 'Journal',
+          tabBarLabel: 'Expenses',
           tabBarIcon: ({ color, size }) => (
-            <ReceiptText size={size || 22} color={color} strokeWidth={2} />
+            <Wallet size={size || 22} color={color} strokeWidth={2} />
           ),
         }}
       />
@@ -71,6 +70,7 @@ export const MainTabsNavigator: React.FC = () => {
             <View style={styles.fabWrapper}>
               <TouchableOpacity
                 activeOpacity={0.85}
+                accessibilityLabel="Add Expense"
                 onPress={() => rootNavigation.navigate('AddExpenseModal')}
                 style={styles.fabButton}
               >
@@ -85,7 +85,7 @@ export const MainTabsNavigator: React.FC = () => {
         name="Shared"
         component={SharedScreen}
         options={{
-          tabBarLabel: 'Shared',
+          tabBarLabel: 'Groups',
           tabBarIcon: ({ color, size }) => (
             <Users size={size || 22} color={color} strokeWidth={2} />
           ),
@@ -96,9 +96,9 @@ export const MainTabsNavigator: React.FC = () => {
         name="Insight"
         component={InsightScreen}
         options={{
-          tabBarLabel: 'Insight',
+          tabBarLabel: 'Analytics',
           tabBarIcon: ({ color, size }) => (
-            <ChartNoAxesCombined size={size || 22} color={color} strokeWidth={2} />
+            <BarChart3 size={size || 22} color={color} strokeWidth={2} />
           ),
         }}
       />

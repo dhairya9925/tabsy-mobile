@@ -16,7 +16,7 @@ import { useBudgetStore } from '../../store/useBudgetStore';
 import { expensesApi } from '../../api/expenses';
 import { DashboardSummary, PersonalExpense } from '../../types';
 import { getCurrentWeekDays, formatMonthYear } from '../../utils/formatters';
-import { LogOut, PlusCircle } from 'lucide-react-native';
+import { PlusCircle } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
@@ -64,7 +64,7 @@ export const RhythmScreen: React.FC = () => {
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Log out',
+          text: 'Log Out',
           style: 'destructive',
           onPress: () => logout(),
         },
@@ -76,6 +76,8 @@ export const RhythmScreen: React.FC = () => {
   const totalSpent = summary?.monthly_spent ?? recentExpenses.reduce((acc, curr) => acc + (curr.amount || 0), 0);
   const toReceive = summary?.to_receive ?? 0;
   const toPay = summary?.to_pay ?? 0;
+
+  const displayName = user?.display_name || (user?.email ? user.email.split('@')[0] : '');
 
   return (
     <ScreenShell
@@ -94,10 +96,10 @@ export const RhythmScreen: React.FC = () => {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <SproutText variant="eyebrow" color={colors.accent}>
-            {formatMonthYear()} RHYTHM
+            OVERVIEW
           </SproutText>
           <SproutText variant="hero" style={styles.heroText}>
-            Keep it clear,{'\n'}day by day.
+            Welcome{displayName ? `, ${displayName}` : ''}
           </SproutText>
         </View>
 
@@ -114,13 +116,13 @@ export const RhythmScreen: React.FC = () => {
       {/* 7-Day Activity Streak Row */}
       <StreakRow days={weekDays} />
 
-      {/* Signature Monthly Pace Card */}
+      {/* Monthly Spend vs Budget Card */}
       <MonthlyPaceCard
         spent={totalSpent}
         budget={monthlyBudget}
       />
 
-      {/* Balance Summary Row */}
+      {/* Balance Summary Row (You're Owed / You Owe) */}
       <BalancePillsRow
         toReceive={toReceive}
         toPay={toPay}
@@ -133,7 +135,7 @@ export const RhythmScreen: React.FC = () => {
         </SproutText>
         <TouchableOpacity onPress={() => navigation.navigate('AddExpenseModal')}>
           <SproutText variant="caption" color={colors.accent} weight="700">
-            + Add New
+            + Quick Add
           </SproutText>
         </TouchableOpacity>
       </View>
@@ -142,10 +144,10 @@ export const RhythmScreen: React.FC = () => {
         <View style={styles.emptyCard}>
           <PlusCircle size={36} color={colors.muted} strokeWidth={1.5} />
           <SproutText variant="subtitle" color={colors.text} style={styles.emptyTitle}>
-            No expenses logged yet
+            No recent activity recorded
           </SproutText>
           <SproutText variant="caption" color={colors.muted} style={styles.emptyDesc}>
-            Tap the + button below to log your first expense and start your streak.
+            Add your first expense to start tracking.
           </SproutText>
         </View>
       ) : (

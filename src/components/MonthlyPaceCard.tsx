@@ -22,13 +22,13 @@ export const MonthlyPaceCard: React.FC<MonthlyPaceCardProps> = ({
     <View style={styles.card}>
       <View style={styles.leftCol}>
         <SproutText variant="eyebrow" color={colors.sun} style={styles.eyebrow}>
-          MONTHLY PACE
+          MONTHLY SPENDING
         </SproutText>
         <SproutText variant="heroPace" style={styles.amountLeft}>
           {formatCurrency(remaining)} left
         </SproutText>
         <SproutText variant="caption" color={colors.accentSoft} style={styles.subtitle}>
-          {percentageUsed}% of plan used ({formatCurrency(spent)} spent)
+          {percentageUsed}% of budget used ({formatCurrency(spent)} spent)
         </SproutText>
       </View>
 

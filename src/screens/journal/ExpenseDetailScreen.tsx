@@ -32,8 +32,8 @@ export const ExpenseDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
   const handleDelete = () => {
     Alert.alert(
-      'Delete Expense',
-      'Are you sure you want to delete this expense? This action cannot be undone.',
+      'Delete expense?',
+      `This will permanently delete this ₹${Number(expense.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })} expense. This action cannot be undone.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -74,7 +74,7 @@ export const ExpenseDetailScreen: React.FC<Props> = ({ route, navigation }) => {
           onPress={() => navigation.goBack()}
         />
         <SproutText variant="subtitle" color={colors.text} weight="700">
-          Expense Detail
+          Expense Details
         </SproutText>
         <CircleButton
           icon={<Edit3 size={18} color={colors.accent} />}
@@ -108,7 +108,7 @@ export const ExpenseDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             </View>
             <View style={styles.detailContent}>
               <SproutText variant="caption" color={colors.muted} style={styles.detailLabel}>
-                NOTE / DESCRIPTION
+                NOTE
               </SproutText>
               <SproutText variant="body" color={colors.text} weight="600">
                 {expense.description || expense.note || 'No note added'}
@@ -139,7 +139,7 @@ export const ExpenseDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                 TYPE
               </SproutText>
               <SproutText variant="body" color={colors.text} weight="600">
-                Personal Expense (Paid by you)
+                Personal Expense
               </SproutText>
             </View>
           </View>
@@ -149,7 +149,7 @@ export const ExpenseDetailScreen: React.FC<Props> = ({ route, navigation }) => {
       {/* Action Buttons */}
       <View style={styles.bottomBar}>
         <SproutButton
-          label="Edit expense"
+          label="Edit Expense"
           variant="outline"
           onPress={handleEdit}
           style={styles.actionBtn}

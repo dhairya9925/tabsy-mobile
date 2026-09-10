@@ -75,17 +75,17 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
           LOG IN
         </SproutText>
         <SproutText variant="hero" style={styles.title}>
-          Welcome back.
+          Welcome Back
         </SproutText>
         <SproutText variant="bodyMuted">
-          Sign in to keep your rhythm consistent.
+          Log in to your SplitTrack account
         </SproutText>
       </View>
 
       <View style={styles.form}>
         <FieldRow
-          label="Email Address"
-          placeholder="name@example.com"
+          label="Email"
+          placeholder="you@example.com"
           value={email}
           onChangeText={(val) => {
             setEmail(val);
@@ -120,7 +120,7 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
         />
 
         <SproutButton
-          label="Log in"
+          label="Log In"
           isLoading={isLoading}
           onPress={handleLogin}
           style={styles.submitButton}

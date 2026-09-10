@@ -16,13 +16,13 @@ export const SharedScreen: React.FC = () => {
     <ScreenShell contentContainerStyle={styles.container}>
       <View style={styles.header}>
         <SproutText variant="eyebrow" color={colors.accent}>
-          SHARED SPLITS
+          GROUPS & FRIENDS
         </SproutText>
         <SproutText variant="hero" style={styles.title}>
-          Shared
+          Groups
         </SproutText>
         <SproutText variant="bodyMuted">
-          Coordinate expenses with friends and shared trip groups.
+          Coordinate expenses with friends and shared groups.
         </SproutText>
       </View>
 
@@ -37,20 +37,20 @@ export const SharedScreen: React.FC = () => {
           <>
             <FolderPlus size={36} color={colors.accent} strokeWidth={1.5} />
             <SproutText variant="subtitle" color={colors.text} style={styles.cardTitle}>
-              Group Expenses & Settlements
+              Group Splitting
             </SproutText>
             <SproutText variant="caption" color={colors.muted} style={styles.cardDesc}>
-              Manage 5 group types, multi-currency splits, and 1-tap settlements. Coming in Phase 3.
+              Create groups for roommates, trips, or dinners. Split bills equally or with custom amounts. Coming in Phase 3.
             </SproutText>
           </>
         ) : (
           <>
             <UserPlus size={36} color={colors.accent} strokeWidth={1.5} />
             <SproutText variant="subtitle" color={colors.text} style={styles.cardTitle}>
-              1-on-1 Friend Balances
+              1-on-1 Friends
             </SproutText>
             <SproutText variant="caption" color={colors.muted} style={styles.cardDesc}>
-              Track individual debts, shadow profiles, and record peer payments. Coming in Phase 4.
+              Track individual balances, simplify debts, and record peer payments. Coming in Phase 4.
             </SproutText>
           </>
         )}

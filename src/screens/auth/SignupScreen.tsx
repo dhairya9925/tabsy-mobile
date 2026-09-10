@@ -61,7 +61,7 @@ export const SignupScreen: React.FC<Props> = ({ navigation }) => {
         display_name: displayName.trim() || undefined,
       });
     } catch (err: any) {
-      setErrorMessage(err.message || 'Signup failed. Please try again.');
+      setErrorMessage(err.message || 'Failed to create account');
     }
   };
 
@@ -86,17 +86,17 @@ export const SignupScreen: React.FC<Props> = ({ navigation }) => {
           NEW ACCOUNT
         </SproutText>
         <SproutText variant="hero" style={styles.title}>
-          Start your rhythm.
+          Create Account
         </SproutText>
         <SproutText variant="bodyMuted">
-          Create your account to sync expenses day by day.
+          Start tracking expenses with SplitTrack
         </SproutText>
       </View>
 
       <View style={styles.form}>
         <FieldRow
-          label="Your Name (Optional)"
-          placeholder="e.g. Dhairya Patel"
+          label="Display Name"
+          placeholder="Your name"
           value={displayName}
           onChangeText={setDisplayName}
           icon={<User size={18} color={colors.muted} />}
@@ -104,8 +104,8 @@ export const SignupScreen: React.FC<Props> = ({ navigation }) => {
         />
 
         <FieldRow
-          label="Email Address"
-          placeholder="name@example.com"
+          label="Email"
+          placeholder="you@example.com"
           value={email}
           onChangeText={(val) => {
             setEmail(val);
@@ -118,8 +118,8 @@ export const SignupScreen: React.FC<Props> = ({ navigation }) => {
         />
 
         <FieldRow
-          label="Password (min 6 characters)"
-          placeholder="••••••••"
+          label="Password"
+          placeholder="Min. 6 characters"
           value={password}
           onChangeText={(val) => {
             setPassword(val);
@@ -140,7 +140,7 @@ export const SignupScreen: React.FC<Props> = ({ navigation }) => {
         />
 
         <SproutButton
-          label="Create account"
+          label="Create Account"
           isLoading={isLoading}
           onPress={handleSignup}
           style={styles.submitButton}

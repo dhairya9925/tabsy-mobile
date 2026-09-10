@@ -10,13 +10,12 @@ import {
   ExpenseRow,
   FieldRow,
   CircleButton,
-  CategoryChip,
   Toast,
 } from '../../components';
 import { expensesApi } from '../../api/expenses';
 import { PersonalExpense, Category } from '../../types';
 import { toLocalDateString } from '../../utils/formatters';
-import { Search, SlidersHorizontal, Tag, ReceiptText, PlusCircle, X } from 'lucide-react-native';
+import { Search, SlidersHorizontal, Tag, Wallet, PlusCircle, X } from 'lucide-react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 type Props = NativeStackScreenProps<JournalStackParamList, 'JournalList'>;
@@ -43,7 +42,7 @@ export const JournalScreen: React.FC<Props> = ({ navigation }) => {
       setExpenses(expData);
       setCategories(catData);
     } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to load journal expenses');
+      setErrorMessage(err.message || 'Failed to load personal expenses');
     } finally {
       setIsLoading(false);
     }
@@ -130,10 +129,10 @@ export const JournalScreen: React.FC<Props> = ({ navigation }) => {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <SproutText variant="eyebrow" color={colors.accent}>
-            PERSONAL LEDGER
+            PERSONAL
           </SproutText>
           <SproutText variant="hero" style={styles.title}>
-            Journal
+            Expenses
           </SproutText>
         </View>
 
@@ -155,7 +154,7 @@ export const JournalScreen: React.FC<Props> = ({ navigation }) => {
       {showFilterBar && (
         <View style={styles.filterCard}>
           <FieldRow
-            placeholder="Search description or note..."
+            placeholder="Search notes, categories, or amounts..."
             value={searchQuery}
             onChangeText={setSearchQuery}
             icon={<Search size={18} color={colors.muted} />}
@@ -186,7 +185,7 @@ export const JournalScreen: React.FC<Props> = ({ navigation }) => {
                 color={selectedCategory === 'all' ? colors.onAccent : colors.text}
                 weight="700"
               >
-                All
+                All Categories
               </SproutText>
             </TouchableOpacity>
 
@@ -219,16 +218,16 @@ export const JournalScreen: React.FC<Props> = ({ navigation }) => {
       {/* Expense Groups by Date */}
       {groupedExpenses.length === 0 && !isLoading ? (
         <View style={styles.emptyCard}>
-          <ReceiptText size={42} color={colors.muted} strokeWidth={1.5} />
+          <Wallet size={42} color={colors.muted} strokeWidth={1.5} />
           <SproutText variant="subtitle" color={colors.text} style={styles.emptyTitle}>
             {searchQuery || selectedCategory !== 'all'
-              ? 'No matching entries found'
-              : 'No expenses in Journal yet'}
+              ? 'No expenses match your filters.'
+              : 'No personal expenses yet.'}
           </SproutText>
           <SproutText variant="caption" color={colors.muted} style={styles.emptySubtitle}>
             {searchQuery || selectedCategory !== 'all'
-              ? 'Try adjusting your filters or search terms.'
-              : 'Tap the + button to record your first expense entry.'}
+              ? 'Try adjusting or clearing your active filters.'
+              : 'Add your first expense to start tracking!'}
           </SproutText>
           <TouchableOpacity
             activeOpacity={0.8}

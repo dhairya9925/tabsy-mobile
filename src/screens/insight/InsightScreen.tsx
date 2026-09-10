@@ -9,13 +9,13 @@ export const InsightScreen: React.FC = () => {
     <ScreenShell contentContainerStyle={styles.container}>
       <View style={styles.header}>
         <SproutText variant="eyebrow" color={colors.accent}>
-          ANALYTICS & BREAKDOWN
+          ANALYTICS
         </SproutText>
         <SproutText variant="hero" style={styles.title}>
-          Insight
+          Analytics
         </SproutText>
         <SproutText variant="bodyMuted">
-          Understand where your money flows month by month.
+          See where your money goes with charts and trends.
         </SproutText>
       </View>
 
@@ -25,7 +25,7 @@ export const InsightScreen: React.FC = () => {
           Category & Spending Trends
         </SproutText>
         <SproutText variant="caption" color={colors.muted} style={styles.cardDesc}>
-          Interactive pie charts, monthly comparison, and habit pace analysis. Coming in Phase 5.
+          Interactive charts, category breakdown, and monthly trends. Coming in Phase 5.
         </SproutText>
       </View>
     </ScreenShell>

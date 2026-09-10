@@ -31,7 +31,7 @@ export const BalancePillsRow: React.FC<BalancePillsRowProps> = ({
         </View>
         <View style={styles.pillContent}>
           <SproutText variant="caption" color={colors.muted} style={styles.pillLabel}>
-            TO RECEIVE
+            YOU'RE OWED
           </SproutText>
           <SproutText variant="subtitle" color={colors.text} weight="700">
             {formatCurrency(toReceive)}
@@ -50,7 +50,7 @@ export const BalancePillsRow: React.FC<BalancePillsRowProps> = ({
         </View>
         <View style={styles.pillContent}>
           <SproutText variant="caption" color={colors.muted} style={styles.pillLabel}>
-            TO PAY
+            YOU OWE
           </SproutText>
           <SproutText variant="subtitle" color={colors.text} weight="700">
             {formatCurrency(toPay)}

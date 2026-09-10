@@ -68,7 +68,7 @@ export const CategoryManagerScreen: React.FC<Props> = ({ navigation }) => {
 
   const handleDelete = (category: Category) => {
     Alert.alert(
-      'Delete Category',
+      'Delete category?',
       `Are you sure you want to delete "${category.name}"? Existing expenses will preserve their history.`,
       [
         { text: 'Cancel', style: 'cancel' },
@@ -122,24 +122,24 @@ export const CategoryManagerScreen: React.FC<Props> = ({ navigation }) => {
 
       <View style={styles.header}>
         <SproutText variant="eyebrow" color={colors.accent}>
-          CUSTOM TAXONOMY
+          CATEGORIES
         </SproutText>
         <SproutText variant="hero" style={styles.title}>
           Manage Categories
         </SproutText>
         <SproutText variant="bodyMuted">
-          Create categories to organize your journal and analytics.
+          Create custom categories to organize your expenses.
         </SproutText>
       </View>
 
       {/* Add New Category Box */}
       <View style={styles.addCard}>
         <SproutText variant="caption" color={colors.muted} weight="700" style={styles.addLabel}>
-          NEW CATEGORY
+          ADD CATEGORY
         </SproutText>
         <View style={styles.addRow}>
           <FieldRow
-            placeholder="e.g. Groceries, Fitness"
+            placeholder="Category name..."
             value={newCategoryName}
             onChangeText={setNewCategoryName}
             icon={<Tag size={18} color={colors.muted} />}

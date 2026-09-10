@@ -3,7 +3,7 @@ import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { colors, spacing } from '../../theme';
 import { SproutText } from '../../components';
 import { useAuthStore } from '../../store/useAuthStore';
-import { Sprout } from 'lucide-react-native';
+import { Wallet } from 'lucide-react-native';
 
 export const SplashScreen: React.FC = () => {
   const initializeSession = useAuthStore((s) => s.initializeSession);
@@ -20,13 +20,13 @@ export const SplashScreen: React.FC = () => {
     <View style={styles.container}>
       <View style={styles.content}>
         <View style={styles.iconCircle}>
-          <Sprout size={48} color={colors.accent} strokeWidth={2.2} />
+          <Wallet size={46} color={colors.accent} strokeWidth={2.2} />
         </View>
         <SproutText variant="hero" color={colors.text} style={styles.brand}>
           SplitTrack
         </SproutText>
         <SproutText variant="bodyMuted" style={styles.tagline}>
-          Keep it clear, day by day.
+          Split expenses, not friendships
         </SproutText>
       </View>
 
