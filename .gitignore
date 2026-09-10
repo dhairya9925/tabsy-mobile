@@ -1,0 +1,29 @@
+# ==============================================================================
+# Mobile .gitignore
+# ==============================================================================
+
+# Design exploration temporary files
+design/.cache/
+design/.browser-profile/
+design/.tmp/
+
+# Netlify deployment config (environment-specific)
+design/netlify/
+design/netlify.toml
+
+# Node modules (if any future framework is added)
+node_modules/
+
+# Build outputs
+dist/
+build/
+.output/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# OS files
+.DS_Store
+Thumbs.db
