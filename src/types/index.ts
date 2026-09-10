@@ -209,3 +209,85 @@ export interface GroupSettleUpRequest {
   from_user_id: string;
   to_user_id: string;
 }
+
+// ==============================================================================
+// Friend & 1-on-1 Expense Types (Phase 4)
+// ==============================================================================
+
+export type FriendStatus = 'pending' | 'accepted' | 'rejected' | 'sent';
+
+export interface FriendProfile {
+  user_id: string;
+  display_name: string | null;
+  email: string | null;
+  avatar_url?: string | null;
+  is_shadow: boolean;
+}
+
+export interface FriendRecord {
+  id: string;
+  user_id: string;
+  friend_id: string;
+  status: FriendStatus;
+  created_at: string;
+  updated_at: string;
+  profile?: FriendProfile | null;
+}
+
+export interface FriendBalance {
+  friendId: string;
+  netBalance: number; // Positive = friend owes user, Negative = user owes friend
+}
+
+export interface FriendExpenseSplit {
+  user_id: string;
+  amount: number;
+  is_settled: boolean;
+}
+
+export interface FriendExpenseFeedItem {
+  id: string;
+  user_id: string;
+  amount: number;
+  category: string;
+  note: string | null;
+  expense_date: string;
+  paid_by: string;
+  created_at: string;
+  edited_at: string | null;
+  expense_splits: FriendExpenseSplit[];
+}
+
+export interface FriendExpenseCreate {
+  amount: number;
+  category: string;
+  note?: string;
+  expense_date: string;
+  paid_by: string;
+  split_type: 'equal' | 'full';
+}
+
+export interface FriendExpenseUpdate {
+  amount?: number;
+  category?: string;
+  note?: string;
+  expense_date?: string;
+  paid_by?: string;
+  split_type?: 'equal' | 'full';
+}
+
+export interface ProfileSearchResult {
+  user_id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+}
+
+export interface CreateShadowProfileRequest {
+  display_name: string;
+  email: string;
+}
+
+export interface CreateShadowProfileResponse {
+  profile: FriendProfile;
+  shadow_user_id: string;
+}

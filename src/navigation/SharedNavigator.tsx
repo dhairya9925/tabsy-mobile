@@ -4,6 +4,7 @@ import { SharedStackParamList } from './types';
 import { GroupsListScreen } from '../screens/groups/GroupsListScreen';
 import { GroupDetailScreen } from '../screens/groups/GroupDetailScreen';
 import { GroupSettingsScreen } from '../screens/groups/GroupSettingsScreen';
+import { FriendDetailScreen } from '../screens/friends/FriendDetailScreen';
 
 const Stack = createNativeStackNavigator<SharedStackParamList>();
 
@@ -19,6 +20,7 @@ export const SharedNavigator: React.FC = () => {
       <Stack.Screen name="SharedOverview" component={GroupsListScreen} />
       <Stack.Screen name="GroupDetail" component={GroupDetailScreen} />
       <Stack.Screen name="GroupSettings" component={GroupSettingsScreen} />
+      <Stack.Screen name="FriendDetail" component={FriendDetailScreen} />
     </Stack.Navigator>
   );
 };

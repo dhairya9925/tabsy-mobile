@@ -15,3 +15,6 @@ export * from './GroupCard';
 export * from './GroupBalanceBanner';
 export * from './GroupMemberRow';
 export * from './GroupBalanceRow';
+export * from './FriendCard';
+export * from './FriendBalanceBanner';
+export * from './FriendExpenseRow';

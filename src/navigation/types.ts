@@ -11,6 +11,7 @@ export type SharedStackParamList = {
   SharedOverview: undefined;
   GroupDetail: { groupId: string };
   GroupSettings: { groupId: string };
+  FriendDetail: { friendId: string; friendName?: string };
 };
 
 export type MainTabsParamList = {
@@ -35,4 +36,7 @@ export type RootStackParamList = {
   AddGroupExpenseModal: { groupId?: string } | undefined;
   SettleUpModal: { groupId: string; balance: GroupBalance };
   JoinGroupModal: undefined;
+  AddFriendModal: undefined;
+  AddFriendExpenseModal: { friendId?: string; friendName?: string } | undefined;
+  FriendSettleUpModal: { friendId: string; friendName: string; netBalance: number };
 };

@@ -10,6 +10,9 @@ import { CreateGroupModal } from '../screens/groups/CreateGroupModal';
 import { AddGroupExpenseModal } from '../screens/groups/AddGroupExpenseModal';
 import { SettleUpModal } from '../screens/groups/SettleUpModal';
 import { JoinGroupModal } from '../screens/groups/JoinGroupModal';
+import { AddFriendModal } from '../screens/friends/AddFriendModal';
+import { AddFriendExpenseModal } from '../screens/friends/AddFriendExpenseModal';
+import { FriendSettleUpModal } from '../screens/friends/FriendSettleUpModal';
 import { SplashScreen } from '../screens/auth/SplashScreen';
 import { useAuthStore } from '../store/useAuthStore';
 
@@ -78,6 +81,30 @@ export const RootNavigator: React.FC = () => {
             <RootStack.Screen
               name="JoinGroupModal"
               component={JoinGroupModal}
+              options={{
+                presentation: 'modal',
+                animation: 'slide_from_bottom',
+              }}
+            />
+            <RootStack.Screen
+              name="AddFriendModal"
+              component={AddFriendModal}
+              options={{
+                presentation: 'modal',
+                animation: 'slide_from_bottom',
+              }}
+            />
+            <RootStack.Screen
+              name="AddFriendExpenseModal"
+              component={AddFriendExpenseModal}
+              options={{
+                presentation: 'modal',
+                animation: 'slide_from_bottom',
+              }}
+            />
+            <RootStack.Screen
+              name="FriendSettleUpModal"
+              component={FriendSettleUpModal}
               options={{
                 presentation: 'modal',
                 animation: 'slide_from_bottom',
