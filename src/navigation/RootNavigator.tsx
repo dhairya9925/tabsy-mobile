@@ -6,6 +6,10 @@ import { AuthNavigator } from './AuthNavigator';
 import { MainTabsNavigator } from './MainTabsNavigator';
 import { AddExpenseModal } from '../screens/journal/AddExpenseModal';
 import { EditExpenseModal } from '../screens/journal/EditExpenseModal';
+import { CreateGroupModal } from '../screens/groups/CreateGroupModal';
+import { AddGroupExpenseModal } from '../screens/groups/AddGroupExpenseModal';
+import { SettleUpModal } from '../screens/groups/SettleUpModal';
+import { JoinGroupModal } from '../screens/groups/JoinGroupModal';
 import { SplashScreen } from '../screens/auth/SplashScreen';
 import { useAuthStore } from '../store/useAuthStore';
 
@@ -42,6 +46,38 @@ export const RootNavigator: React.FC = () => {
             <RootStack.Screen
               name="EditExpenseModal"
               component={EditExpenseModal}
+              options={{
+                presentation: 'modal',
+                animation: 'slide_from_bottom',
+              }}
+            />
+            <RootStack.Screen
+              name="CreateGroupModal"
+              component={CreateGroupModal}
+              options={{
+                presentation: 'modal',
+                animation: 'slide_from_bottom',
+              }}
+            />
+            <RootStack.Screen
+              name="AddGroupExpenseModal"
+              component={AddGroupExpenseModal}
+              options={{
+                presentation: 'modal',
+                animation: 'slide_from_bottom',
+              }}
+            />
+            <RootStack.Screen
+              name="SettleUpModal"
+              component={SettleUpModal}
+              options={{
+                presentation: 'modal',
+                animation: 'slide_from_bottom',
+              }}
+            />
+            <RootStack.Screen
+              name="JoinGroupModal"
+              component={JoinGroupModal}
               options={{
                 presentation: 'modal',
                 animation: 'slide_from_bottom',

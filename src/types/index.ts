@@ -89,3 +89,123 @@ export interface StreakDay {
   isToday: boolean;
   isFuture: boolean;
 }
+
+export type GroupTypeKey = 'shared_living' | 'trip' | 'day_to_day' | 'event' | 'reimbursable';
+
+export interface Group {
+  id: string;
+  name: string;
+  description?: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  type: GroupTypeKey | string;
+  monthly_rent?: number | null;
+  sponsor_id?: string | null;
+}
+
+export interface GroupCreate {
+  name: string;
+  description?: string | null;
+  type?: string;
+  monthly_rent?: number | null;
+  sponsor_id?: string | null;
+}
+
+export interface GroupUpdate {
+  name?: string | null;
+  description?: string | null;
+  type?: string | null;
+  monthly_rent?: number | null;
+  sponsor_id?: string | null;
+}
+
+export interface MemberProfile {
+  display_name?: string | null;
+  email?: string | null;
+  avatar_url?: string | null;
+  is_shadow?: boolean;
+}
+
+export interface GroupMember {
+  id: string;
+  group_id: string;
+  user_id: string;
+  role: 'admin' | 'member' | string;
+  joined_at: string;
+  profile?: MemberProfile | null;
+}
+
+export interface GroupMemberAdd {
+  user_id?: string;
+  email?: string;
+  role?: 'admin' | 'member';
+}
+
+export interface GroupExpenseSplit {
+  id: string;
+  expense_id: string;
+  user_id: string;
+  amount: number;
+  is_settled: boolean;
+  created_at: string;
+  member_name?: string | null;
+}
+
+export interface GroupExpenseSplitWrite {
+  user_id: string;
+  amount: number;
+}
+
+export interface GroupExpense {
+  id: string;
+  amount: number;
+  category: string;
+  note?: string | null;
+  expense_date: string;
+  user_id: string;
+  group_id?: string | null;
+  paid_by?: string | null;
+  status: 'submitted' | 'approved' | 'reimbursed' | string;
+  receipt_url?: string | null;
+  created_at: string;
+  updated_at: string;
+  edited_at?: string | null;
+  payer_name?: string | null;
+  splits: GroupExpenseSplit[];
+}
+
+export interface GroupExpenseCreate {
+  amount: number;
+  category: string;
+  note?: string | null;
+  expense_date?: string;
+  paid_by?: string;
+  status?: 'submitted' | 'approved' | 'reimbursed';
+  receipt_url?: string | null;
+  splits: GroupExpenseSplitWrite[];
+}
+
+export interface GroupExpenseUpdate {
+  amount?: number;
+  category?: string;
+  note?: string | null;
+  expense_date?: string;
+  paid_by?: string;
+  status?: 'submitted' | 'approved' | 'reimbursed';
+  receipt_url?: string | null;
+  splits?: GroupExpenseSplitWrite[];
+}
+
+export interface GroupBalance {
+  from_user_id: string;
+  from_name: string;
+  to_user_id: string;
+  to_name: string;
+  amount: number;
+}
+
+export interface GroupSettleUpRequest {
+  from_user_id: string;
+  to_user_id: string;
+}

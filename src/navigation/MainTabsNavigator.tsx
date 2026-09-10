@@ -7,7 +7,7 @@ import { MainTabsParamList, RootStackParamList } from './types';
 import { colors, shadows } from '../theme';
 import { RhythmScreen } from '../screens/rhythm/RhythmScreen';
 import { JournalNavigator } from './JournalNavigator';
-import { SharedScreen } from '../screens/shared/SharedScreen';
+import { SharedNavigator } from './SharedNavigator';
 import { InsightScreen } from '../screens/insight/InsightScreen';
 import {
   Home,
@@ -83,7 +83,7 @@ export const MainTabsNavigator: React.FC = () => {
 
       <Tab.Screen
         name="Shared"
-        component={SharedScreen}
+        component={SharedNavigator}
         options={{
           tabBarLabel: 'Groups',
           tabBarIcon: ({ color, size }) => (

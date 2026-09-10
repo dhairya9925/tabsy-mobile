@@ -1,5 +1,5 @@
 import { NavigatorScreenParams } from '@react-navigation/native';
-import { PersonalExpense } from '../types';
+import { PersonalExpense, GroupBalance } from '../types';
 
 export type JournalStackParamList = {
   JournalList: undefined;
@@ -7,10 +7,16 @@ export type JournalStackParamList = {
   CategoryManager: undefined;
 };
 
+export type SharedStackParamList = {
+  SharedOverview: undefined;
+  GroupDetail: { groupId: string };
+  GroupSettings: { groupId: string };
+};
+
 export type MainTabsParamList = {
   Rhythm: undefined;
   Journal: NavigatorScreenParams<JournalStackParamList>;
-  Shared: undefined;
+  Shared: NavigatorScreenParams<SharedStackParamList>;
   Insight: undefined;
 };
 
@@ -25,4 +31,8 @@ export type RootStackParamList = {
   Main: NavigatorScreenParams<MainTabsParamList>;
   AddExpenseModal: undefined;
   EditExpenseModal: { expense: PersonalExpense };
+  CreateGroupModal: undefined;
+  AddGroupExpenseModal: { groupId?: string } | undefined;
+  SettleUpModal: { groupId: string; balance: GroupBalance };
+  JoinGroupModal: undefined;
 };
