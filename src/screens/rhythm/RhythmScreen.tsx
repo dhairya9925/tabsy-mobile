@@ -58,18 +58,7 @@ export const RhythmScreen: React.FC = () => {
   }, [loadData]);
 
   const handleAvatarPress = () => {
-    Alert.alert(
-      user?.display_name || user?.email || 'Account',
-      `Logged in as: ${user?.email || 'Unknown'}\nUser ID: ${user?.user_id?.slice(0, 8) || 'Unknown'}...`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Log Out',
-          style: 'destructive',
-          onPress: () => logout(),
-        },
-      ]
-    );
+    navigation.navigate('Profile');
   };
 
   const weekDays = getCurrentWeekDays(streakDates);

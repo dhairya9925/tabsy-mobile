@@ -12,6 +12,7 @@ export type SharedStackParamList = {
   GroupDetail: { groupId: string };
   GroupSettings: { groupId: string };
   FriendDetail: { friendId: string; friendName?: string };
+  MonthlySettlementDetail: { groupId: string; groupName?: string; month?: number; year?: number };
 };
 
 export type MainTabsParamList = {
@@ -30,6 +31,9 @@ export type AuthStackParamList = {
 export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList>;
   Main: NavigatorScreenParams<MainTabsParamList>;
+  Profile: undefined;
+  Settings: undefined;
+  EditProfileModal: undefined;
   AddExpenseModal: undefined;
   EditExpenseModal: { expense: PersonalExpense };
   CreateGroupModal: undefined;

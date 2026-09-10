@@ -39,4 +39,12 @@ export const authApi = {
   async getMe(): Promise<UserProfile> {
     return apiClient.get('/api/v1/users/me');
   },
+
+  async updateProfile(payload: { display_name?: string | null; avatar_url?: string | null }): Promise<UserProfile> {
+    return apiClient.patch('/api/v1/users/me', payload);
+  },
+
+  async deleteAccount(): Promise<{ message: string }> {
+    return apiClient.delete('/api/v1/auth/account');
+  },
 };

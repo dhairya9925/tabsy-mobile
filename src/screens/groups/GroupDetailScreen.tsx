@@ -37,6 +37,8 @@ import {
   Receipt,
   UserPlus,
   Users,
+  Calendar,
+  ChevronRight,
 } from 'lucide-react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
@@ -314,6 +316,27 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
       {subTab === 'balances' && (
         <View style={styles.section}>
+          <TouchableOpacity
+            style={styles.settlementBanner}
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate('MonthlySettlementDetail', { groupId, groupName: group?.name })}
+          >
+            <View style={styles.settlementBannerLeft}>
+              <View style={styles.settlementIconCircle}>
+                <Calendar size={18} color={colors.accent} />
+              </View>
+              <View>
+                <SproutText variant="body" color={colors.text} weight="700">
+                  Monthly Settlements
+                </SproutText>
+                <SproutText variant="caption" color={colors.muted}>
+                  Member finalization & lock status
+                </SproutText>
+              </View>
+            </View>
+            <ChevronRight size={18} color={colors.accent} />
+          </TouchableOpacity>
+
           <SproutText variant="title" color={colors.text} style={styles.sectionTitle}>
             Who Owes Whom
           </SproutText>
@@ -514,5 +537,30 @@ const styles = StyleSheet.create({
   },
   membersList: {
     gap: 4,
+  },
+  settlementBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.surface,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.line,
+    marginBottom: spacing.md,
+    ...shadows.card,
+  },
+  settlementBannerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  settlementIconCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: radii.md,
+    backgroundColor: colors.soft,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

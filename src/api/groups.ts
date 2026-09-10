@@ -10,6 +10,9 @@ import {
   GroupExpenseUpdate,
   GroupBalance,
   GroupSettleUpRequest,
+  MonthlySettlement,
+  MemberMonthlyStatus,
+  SettlementExpense,
 } from '../types';
 
 export const groupsApi = {
@@ -108,5 +111,42 @@ export const groupsApi = {
   async settleUp(id: string, payload: GroupSettleUpRequest): Promise<{ settled_count: number }> {
     const res: any = await apiClient.post(`/api/v1/groups/${id}/settle`, payload);
     return res || { settled_count: 0 };
+  },
+
+  /** Get monthly settlement status for a specific month and year */
+  async getMonthlySettlement(groupId: string, month: number, year: number): Promise<MonthlySettlement | null> {
+    try {
+      const res: any = await apiClient.get(`/api/v1/groups/${groupId}/settlements/${month}/${year}`);
+      return res || null;
+    } catch {
+      return null;
+    }
+  },
+
+  /** Get expenses included in a specific monthly settlement */
+  async getMonthlySettlementExpenses(groupId: string, month: number, year: number): Promise<SettlementExpense[]> {
+    const res: any = await apiClient.get(`/api/v1/groups/${groupId}/settlements/${month}/${year}/expenses`);
+    return Array.isArray(res) ? res : [];
+  },
+
+  /** Get member finalization statuses for a settlement */
+  async getMemberMonthlyStatus(groupId: string, settlementId: string): Promise<MemberMonthlyStatus[]> {
+    const res: any = await apiClient.get(`/api/v1/groups/${groupId}/settlements/${settlementId}/member-status`);
+    return Array.isArray(res) ? res : [];
+  },
+
+  /** Create or initialize a monthly settlement */
+  async createMonthlySettlement(groupId: string, month: number, year: number): Promise<MonthlySettlement> {
+    return apiClient.post(`/api/v1/groups/${groupId}/settlements/${month}/${year}`);
+  },
+
+  /** Finalize a monthly settlement */
+  async finalizeMonthlySettlement(groupId: string, month: number, year: number): Promise<MonthlySettlement> {
+    return apiClient.post(`/api/v1/groups/${groupId}/settlements/${month}/${year}/finalize`);
+  },
+
+  /** Mark current user expenses complete for a monthly settlement */
+  async markMemberCompleted(groupId: string, settlementId: string): Promise<MemberMonthlyStatus> {
+    return apiClient.post(`/api/v1/groups/${groupId}/settlements/${settlementId}/member-status`);
   },
 };

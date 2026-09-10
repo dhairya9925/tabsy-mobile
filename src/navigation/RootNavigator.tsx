@@ -13,6 +13,9 @@ import { JoinGroupModal } from '../screens/groups/JoinGroupModal';
 import { AddFriendModal } from '../screens/friends/AddFriendModal';
 import { AddFriendExpenseModal } from '../screens/friends/AddFriendExpenseModal';
 import { FriendSettleUpModal } from '../screens/friends/FriendSettleUpModal';
+import { ProfileScreen } from '../screens/profile/ProfileScreen';
+import { SettingsScreen } from '../screens/profile/SettingsScreen';
+import { EditProfileModal } from '../screens/profile/EditProfileModal';
 import { SplashScreen } from '../screens/auth/SplashScreen';
 import { useAuthStore } from '../store/useAuthStore';
 
@@ -38,6 +41,28 @@ export const RootNavigator: React.FC = () => {
         ) : (
           <>
             <RootStack.Screen name="Main" component={MainTabsNavigator} />
+            <RootStack.Screen
+              name="Profile"
+              component={ProfileScreen}
+              options={{
+                animation: 'slide_from_right',
+              }}
+            />
+            <RootStack.Screen
+              name="Settings"
+              component={SettingsScreen}
+              options={{
+                animation: 'slide_from_right',
+              }}
+            />
+            <RootStack.Screen
+              name="EditProfileModal"
+              component={EditProfileModal}
+              options={{
+                presentation: 'modal',
+                animation: 'slide_from_bottom',
+              }}
+            />
             <RootStack.Screen
               name="AddExpenseModal"
               component={AddExpenseModal}

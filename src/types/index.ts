@@ -387,3 +387,43 @@ export interface WeeklyRhythmDay {
   isToday: boolean;
   hasActivity: boolean;
 }
+
+// ==============================================================================
+// Profile & Settlement Types (Phase 6)
+// ==============================================================================
+
+export interface ProfileUpdatePayload {
+  display_name?: string | null;
+  avatar_url?: string | null;
+}
+
+export type MonthlySettlementStatus = 'open' | 'locked' | 'finalized';
+
+export interface MonthlySettlement {
+  id: string;
+  group_id: string;
+  month: number;
+  year: number;
+  status: MonthlySettlementStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MemberMonthlyStatus {
+  id: string;
+  settlement_id: string;
+  user_id: string;
+  is_completed: boolean;
+  completed_at?: string | null;
+  profile?: MemberProfile | null;
+}
+
+export interface SettlementExpense {
+  id: string;
+  amount: number;
+  category: string;
+  note?: string | null;
+  expense_date: string;
+  payer_name?: string | null;
+  paid_by?: string | null;
+}
