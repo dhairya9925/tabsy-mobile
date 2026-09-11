@@ -410,7 +410,7 @@ export const GroupsListScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: {
-    paddingBottom: 90,
+    paddingBottom: 116,
   },
   header: {
     flexDirection: 'row',

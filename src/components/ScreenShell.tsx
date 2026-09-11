@@ -73,13 +73,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
-    paddingBottom: 40,
+    paddingHorizontal: spacing.xl,
+    paddingTop: 10,
+    paddingBottom: 112,
   },
   staticContent: {
     flex: 1,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
+    paddingHorizontal: spacing.xl,
+    paddingTop: 10,
   },
 });

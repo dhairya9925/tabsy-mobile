@@ -422,7 +422,7 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
 const styles = StyleSheet.create({
   container: {
-    paddingBottom: 90,
+    paddingBottom: 116,
   },
   topBar: {
     flexDirection: 'row',

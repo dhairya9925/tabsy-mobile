@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, radii, spacing, shadows } from '../../theme';
+import { colors, fontFamilies, radii, spacing, shadows } from '../../theme';
 import {
   SproutText,
   SproutButton,
@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
   },
   amountInput: {
     fontSize: 44,
-    fontFamily: 'JetBrainsMono',
+    fontFamily: fontFamilies.mono,
     fontWeight: '700',
     color: colors.text,
     minWidth: 100,

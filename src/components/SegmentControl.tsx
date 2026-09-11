@@ -35,7 +35,7 @@ export function SegmentControl<T = string>({
           >
             <SproutText
               variant="caption"
-              color={isSelected ? colors.onAccent : colors.muted}
+              color={isSelected ? colors.accent : colors.muted}
               weight={isSelected ? '700' : '600'}
               style={styles.label}
             >
@@ -51,22 +51,27 @@ export function SegmentControl<T = string>({
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    backgroundColor: '#E4EDE2',
+    backgroundColor: '#DFE9DC',
     borderRadius: radii.full,
-    padding: 4,
+    padding: 3,
     marginBottom: spacing.lg,
   },
   segment: {
     flex: 1,
-    paddingVertical: 8,
+    minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radii.full,
   },
   segmentSelected: {
-    backgroundColor: colors.accent,
+    backgroundColor: colors.surface,
+    shadowColor: colors.text,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 1,
   },
   label: {
-    fontSize: 13,
+    fontSize: 12,
   },
 });

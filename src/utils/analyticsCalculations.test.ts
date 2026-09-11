@@ -17,14 +17,67 @@ test('prettifyCategoryLabel maps standard and slug categories', () => {
   assert.strictEqual(prettifyCategoryLabel('custom_groceries'), 'Custom Groceries');
 });
 
-test('getCategoryColor returns consistent colors', () => {
-  const foodColor = getCategoryColor('food');
-  assert.strictEqual(foodColor, '#F0BF67');
-  const transportColor = getCategoryColor('transport');
-  assert.strictEqual(transportColor, '#407A58');
-  const customColor = getCategoryColor('unique_custom_1', 0);
-  assert.strictEqual(typeof customColor, 'string');
+test('getCategoryColor returns muted chart tokens for standard categories', () => {
+  assert.strictEqual(getCategoryColor('food'), '#C89D57');
+  assert.strictEqual(getCategoryColor('food & dining'), '#C89D57');
+  assert.strictEqual(getCategoryColor('transport'), '#4C7965');
+  assert.strictEqual(getCategoryColor('travel'), '#4C7965');
+  assert.strictEqual(getCategoryColor('shopping'), '#B97C83');
+  assert.strictEqual(getCategoryColor('bills'), '#718AA0');
+  assert.strictEqual(getCategoryColor('bills & utilities'), '#718AA0');
+  assert.strictEqual(getCategoryColor('entertainment'), '#897A98');
+  assert.strictEqual(getCategoryColor('other'), '#7A867D');
 });
+
+test('getCategoryColor returns deterministic fallback color regardless of index or order', () => {
+  const color1 = getCategoryColor('my_custom_pet_care', 0);
+  const color2 = getCategoryColor('my_custom_pet_care', 5);
+  const color3 = getCategoryColor('  MY_CUSTOM_PET_CARE  ');
+  assert.strictEqual(color1, color2);
+  assert.strictEqual(color1, color3);
+  assert.strictEqual(typeof color1, 'string');
+});
+
+test('computeCategoryBreakdown preserves category color across All and Personal modes', () => {
+  const personalExpenses: PersonalExpense[] = [
+    {
+      id: '1',
+      user_id: 'u1',
+      amount: 400,
+      category: 'custom_books',
+      expense_date: '2026-09-02',
+      created_at: '',
+      updated_at: '',
+    },
+  ];
+  const groupSplits: GroupUserSplitItem[] = [
+    {
+      id: 's1',
+      expense_date: '2026-09-03',
+      category: 'custom_books',
+      amount: 600,
+      group_id: 'g1',
+    },
+    {
+      id: 's2',
+      expense_date: '2026-09-04',
+      category: 'food',
+      amount: 1000,
+      group_id: 'g1',
+    },
+  ];
+
+  const personalRes = computeCategoryBreakdown(personalExpenses, groupSplits, 'personal', '2026-09');
+  const allRes = computeCategoryBreakdown(personalExpenses, groupSplits, 'all', '2026-09');
+
+  const personalBookSlice = personalRes.slices.find((s) => s.categoryId === 'custom_books');
+  const allBookSlice = allRes.slices.find((s) => s.categoryId === 'custom_books');
+
+  assert.ok(personalBookSlice);
+  assert.ok(allBookSlice);
+  assert.strictEqual(personalBookSlice?.color, allBookSlice?.color);
+});
+
 
 test('computeCategoryBreakdown aggregates personal expenses only in personal mode', () => {
   const personalExpenses: PersonalExpense[] = [

@@ -5,38 +5,50 @@ import {
   MonthlyTrendPoint,
   WeeklyRhythmDay,
 } from '../types';
+import { chartColors } from '../theme';
 import { roundMoney } from './money';
 
 export const CATEGORY_PALETTE: Record<string, string> = {
-  food: '#F0BF67',         // Sun gold
-  'food & dining': '#F0BF67',
-  transport: '#407A58',    // Sprout Forest Green
-  travel: '#407A58',
-  shopping: '#D87D9A',     // Berry Rose
-  bills: '#6096BA',        // Slate Teal
-  'bills & utilities': '#6096BA',
-  entertainment: '#8F72AA',// Soft Purple
-  other: '#6D7C72',        // Muted Sage
+  food: chartColors.food,
+  'food & dining': chartColors.food,
+  transport: chartColors.transport,
+  travel: chartColors.transport,
+  shopping: chartColors.shopping,
+  bills: chartColors.bills,
+  'bills & utilities': chartColors.bills,
+  entertainment: chartColors.entertainment,
+  other: chartColors.other,
 };
 
 export const CHART_PALETTE_FALLBACK = [
-  '#407A58', // Sprout accent
-  '#F0BF67', // Sun gold
-  '#D87D9A', // Berry rose
-  '#6096BA', // Slate teal
-  '#C86145', // Brick terracotta
-  '#8F72AA', // Soft violet
-  '#3C887E', // Pine teal
-  '#C29458', // Warm caramel
+  chartColors.food,
+  chartColors.transport,
+  chartColors.shopping,
+  chartColors.bills,
+  chartColors.entertainment,
+  chartColors.personal,
+  chartColors.groupShare,
+  chartColors.other,
 ];
 
-export function getCategoryColor(categoryId: string, index: number = 0): string {
+function hashString(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
+
+export function getCategoryColor(categoryId: string, _index?: number): string {
   const normalized = categoryId.toLowerCase().trim();
   if (CATEGORY_PALETTE[normalized]) {
     return CATEGORY_PALETTE[normalized];
   }
-  return CHART_PALETTE_FALLBACK[index % CHART_PALETTE_FALLBACK.length];
+  const hash = hashString(normalized);
+  return CHART_PALETTE_FALLBACK[hash % CHART_PALETTE_FALLBACK.length];
 }
+
 
 export function prettifyCategoryLabel(categoryId: string): string {
   const normalized = categoryId.toLowerCase().trim();

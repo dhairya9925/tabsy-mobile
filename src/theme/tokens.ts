@@ -44,10 +44,10 @@ export const spacing = {
 export const shadows = {
   card: {
     shadowColor: '#183228',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.07,
-    shadowRadius: 6,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.035,
+    shadowRadius: 4,
+    elevation: 1,
   },
   modal: {
     shadowColor: '#183228',
@@ -58,6 +58,25 @@ export const shadows = {
   },
 } as const;
 
+export const chartColors = {
+  // 6-month stacked bars
+  personal: '#3F7254',      // Moss green lower stack & legend
+  groupShare: '#78919D',    // Muted slate-blue upper stack & legend
+
+  // Category palette
+  food: '#C89D57',          // Food & Dining
+  transport: '#4C7965',     // Transport / Travel
+  shopping: '#B97C83',      // Shopping
+  bills: '#718AA0',         // Bills / Utilities
+  entertainment: '#897A98', // Entertainment
+  other: '#7A867D',         // Other
+
+  // Chart surfaces & tracks
+  track: '#DCE7DE',         // Quiet donut/allocation/empty support surface
+  selectedWash: '#E7F0E6',  // Six-month selection background
+} as const;
+
 export type Colors = typeof colors;
+export type ChartColors = typeof chartColors;
 export type Radii = typeof radii;
 export type Spacing = typeof spacing;

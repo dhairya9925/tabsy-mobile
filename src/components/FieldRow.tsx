@@ -6,7 +6,7 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
-import { colors, radii, spacing, shadows } from '../theme';
+import { colors, fontFamilies, radii, spacing } from '../theme';
 import { SproutText } from './SproutText';
 
 export interface FieldRowProps extends TextInputProps {
@@ -98,13 +98,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.surface,
     borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: colors.line,
+    borderWidth: 0,
     paddingHorizontal: spacing.md,
-    minHeight: 56,
-    ...shadows.card,
+    minHeight: 49,
   },
   containerError: {
+    borderWidth: 1,
     borderColor: colors.negative,
   },
   iconContainer: {
@@ -124,7 +123,7 @@ const styles = StyleSheet.create({
   },
   input: {
     fontSize: 15,
-    fontFamily: 'Manrope',
+    fontFamily: fontFamilies.regular,
     color: colors.text,
     paddingVertical: 2,
   },

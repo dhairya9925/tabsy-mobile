@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { CategorySlice } from '../../types';
-import { colors, radii } from '../../theme';
+import { chartColors, radii } from '../../theme';
 
 interface CategoryAllocationBarProps {
   slices: CategorySlice[];
@@ -10,7 +10,7 @@ interface CategoryAllocationBarProps {
 
 export const CategoryAllocationBar: React.FC<CategoryAllocationBarProps> = ({
   slices,
-  height = 14,
+  height = 8,
 }) => {
   if (!slices || slices.length === 0) {
     return (
@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
     width: '100%',
     borderRadius: radii.full,
     overflow: 'hidden',
-    backgroundColor: colors.line,
+    backgroundColor: chartColors.track,
   },
   segment: {
     height: '100%',
@@ -68,6 +68,7 @@ const styles = StyleSheet.create({
   emptyBar: {
     width: '100%',
     borderRadius: radii.full,
-    backgroundColor: colors.line,
+    backgroundColor: chartColors.track,
   },
 });
+

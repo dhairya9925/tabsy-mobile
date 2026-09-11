@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { fontFamilies, colors, radii, spacing, shadows } from '../theme';
+import { fontFamilies, colors, radii, spacing } from '../theme';
 import { SproutText } from './SproutText';
 import { StreakDay } from '../types';
 import { Check } from 'lucide-react-native';
@@ -64,7 +64,6 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
     paddingHorizontal: 10,
     marginBottom: spacing.md,
-    ...shadows.card,
   },
   dayCol: {
     flex: 1,

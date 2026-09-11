@@ -83,8 +83,8 @@ export const SproutButton: React.FC<SproutButtonProps> = ({
 
 const styles = StyleSheet.create({
   base: {
-    height: 52,
-    borderRadius: radii.xl,
+    height: 48,
+    borderRadius: 22,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

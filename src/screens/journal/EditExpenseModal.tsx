@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
-import { colors, radii, spacing, shadows } from '../../theme';
+import { colors, fontFamilies, radii, spacing, shadows } from '../../theme';
 import {
   SproutText,
   SproutButton,
@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
   },
   amountInput: {
     fontSize: 48,
-    fontFamily: 'JetBrainsMono',
+    fontFamily: fontFamilies.mono,
     fontWeight: '700',
     color: colors.text,
     minWidth: 80,

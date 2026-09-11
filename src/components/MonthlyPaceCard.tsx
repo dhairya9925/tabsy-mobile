@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
-import { fontFamilies, colors, spacing, shadows } from '../theme';
+import { fontFamilies, colors, spacing } from '../theme';
 import { SproutText } from './SproutText';
 import { formatCurrency } from '../utils/formatters';
 
@@ -95,12 +95,11 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 8,
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
-    padding: 18,
+    padding: 17,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: spacing.md,
-    ...shadows.card,
   },
   leftCol: {
     flex: 1,

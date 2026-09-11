@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import { colors, radii, spacing } from '../theme';
+import { colors, fontFamilies, spacing } from '../theme';
 import { SproutText } from './SproutText';
 import { FriendExpenseFeedItem } from '../types';
 import { formatCurrencyExact, formatDate } from '../utils/formatters';
@@ -117,21 +117,18 @@ export const FriendExpenseRow: React.FC<FriendExpenseRowProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.surface,
-    borderRadius: radii.md,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
+    minHeight: 55,
+    paddingVertical: 7,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.xs,
-    borderWidth: 1,
-    borderColor: colors.line,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.line,
   },
   iconCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: colors.soft,
+    width: 37,
+    height: 37,
+    borderRadius: 18.5,
+    backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,
@@ -141,7 +138,8 @@ const styles = StyleSheet.create({
     paddingRight: spacing.sm,
   },
   title: {
-    fontWeight: '700',
+    fontFamily: fontFamilies.medium,
+    fontSize: 13,
     marginBottom: 2,
   },
   rightCol: {
@@ -150,7 +148,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   amountText: {
-    fontFamily: 'JetBrainsMono',
+    fontFamily: fontFamilies.mono,
+    fontSize: 13,
   },
   deleteBtn: {
     padding: 4,

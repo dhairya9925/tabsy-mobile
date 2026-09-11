@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import Svg, { Path, Circle, G } from 'react-native-svg';
 import { CategorySlice } from '../../types';
-import { colors } from '../../theme';
+import { colors, chartColors, fontFamilies } from '../../theme';
 import { SproutText } from '../SproutText';
 import { formatCurrencyExact } from '../../utils/formatters';
 
@@ -17,8 +17,8 @@ interface DonutPieChartProps {
 export const DonutPieChart: React.FC<DonutPieChartProps> = ({
   slices,
   total,
-  size = 220,
-  strokeWidth = 26,
+  size = 196,
+  strokeWidth = 20,
   centerSubtitle = 'this month',
 }) => {
   const radius = size / 2;
@@ -30,7 +30,7 @@ export const DonutPieChart: React.FC<DonutPieChartProps> = ({
 
   const validSlices = slices.filter((s) => s.value > 0);
 
-  // If no data, render placeholder ring
+  // If no data, render subtle placeholder track ring
   if (total <= 0 || validSlices.length === 0) {
     return (
       <View style={[styles.container, { width: size, height: size }]}>
@@ -40,15 +40,15 @@ export const DonutPieChart: React.FC<DonutPieChartProps> = ({
             cy={cy}
             r={midR}
             fill="none"
-            stroke={colors.line}
+            stroke={chartColors.track}
             strokeWidth={strokeWidth}
           />
         </Svg>
         <View style={styles.centerOverlay}>
-          <SproutText variant="amountSm" color={colors.muted}>
+          <SproutText style={[styles.centerAmount, { color: colors.muted }]}>
             ₹0.00
           </SproutText>
-          <SproutText variant="caption" color={colors.muted}>
+          <SproutText variant="caption" color={colors.muted} style={styles.subtext}>
             No spend yet
           </SproutText>
         </View>
@@ -72,7 +72,7 @@ export const DonutPieChart: React.FC<DonutPieChartProps> = ({
           />
         </Svg>
         <View style={styles.centerOverlay}>
-          <SproutText variant="amountSm" color={colors.text}>
+          <SproutText style={styles.centerAmount}>
             {formatCurrencyExact(total)}
           </SproutText>
           <SproutText variant="eyebrow" color={colors.muted} style={styles.subtext}>
@@ -85,12 +85,14 @@ export const DonutPieChart: React.FC<DonutPieChartProps> = ({
 
   // Multiple slices: compute arc paths starting from top (-90 deg / -pi/2)
   let currentAngle = -Math.PI / 2;
-  const padAngle = 0.03; // small gap between slices in radians
 
   const paths = validSlices.map((slice) => {
     const sliceAngle = (slice.value / total) * (2 * Math.PI);
-    const startAngle = currentAngle + padAngle / 2;
-    const endAngle = currentAngle + sliceAngle - padAngle / 2;
+    // Clamp slice gap relative to slice angle to prevent inversions on very small slices
+    const maxPad = sliceAngle * 0.35;
+    const actualPad = Math.min(0.03, maxPad);
+    const startAngle = currentAngle + actualPad / 2;
+    const endAngle = currentAngle + sliceAngle - actualPad / 2;
     currentAngle += sliceAngle;
 
     // Outer arc endpoints
@@ -125,6 +127,15 @@ export const DonutPieChart: React.FC<DonutPieChartProps> = ({
   return (
     <View style={[styles.container, { width: size, height: size }]}>
       <Svg width={size} height={size}>
+        {/* Underlying subtle base ring */}
+        <Circle
+          cx={cx}
+          cy={cy}
+          r={midR}
+          fill="none"
+          stroke={chartColors.track}
+          strokeWidth={strokeWidth}
+        />
         <G>
           {paths.map((p) => (
             <Path
@@ -137,7 +148,7 @@ export const DonutPieChart: React.FC<DonutPieChartProps> = ({
       </Svg>
 
       <View style={styles.centerOverlay}>
-        <SproutText variant="amountSm" color={colors.text}>
+        <SproutText style={styles.centerAmount}>
           {formatCurrencyExact(total)}
         </SproutText>
         <SproutText variant="eyebrow" color={colors.muted} style={styles.subtext}>
@@ -161,8 +172,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 16,
   },
+  centerAmount: {
+    fontFamily: fontFamilies.mono,
+    fontSize: 20,
+    lineHeight: 24,
+    letterSpacing: -0.5,
+    color: colors.text,
+    textAlign: 'center',
+  },
   subtext: {
-    marginTop: 3,
+    marginTop: 4,
     letterSpacing: 0.8,
   },
 });
+

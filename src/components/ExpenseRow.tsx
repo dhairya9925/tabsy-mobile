@@ -93,33 +93,32 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    minHeight: 55,
+    paddingVertical: 7,
     borderBottomWidth: 1,
     borderBottomColor: '#CBD7CC',
   },
   iconCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 37,
+    height: 37,
+    borderRadius: 18.5,
     backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.line,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 14,
+    marginRight: 12,
   },
   infoCol: {
     flex: 1,
   },
   title: {
-    fontFamily: fontFamilies.bold,
-    fontSize: 15,
+    fontFamily: fontFamilies.medium,
+    fontSize: 13,
     color: '#183228',
     marginBottom: 2,
   },
   subtitle: {
     fontFamily: fontFamilies.medium,
-    fontSize: 12,
+    fontSize: 10,
     color: '#6D7C72',
   },
   amountCol: {
@@ -127,8 +126,8 @@ const styles = StyleSheet.create({
     marginLeft: spacing.sm,
   },
   amount: {
-    fontFamily: fontFamilies.bold,
-    fontSize: 16,
+    fontFamily: fontFamilies.medium,
+    fontSize: 13,
     color: '#183228',
   },
 });

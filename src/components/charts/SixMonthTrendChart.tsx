@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
-import Svg, { Rect, Line, Text as SvgText, G } from 'react-native-svg';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import Svg, { Rect, Line, Text as SvgText, G, Path } from 'react-native-svg';
 import { MonthlyTrendPoint } from '../../types';
-import { colors, radii, spacing } from '../../theme';
+import { colors, chartColors, radii, spacing, fontFamilies } from '../../theme';
 import { SproutText } from '../SproutText';
 import { formatCurrencyExact, formatCurrency } from '../../utils/formatters';
 
@@ -12,21 +12,55 @@ interface SixMonthTrendChartProps {
   height?: number;
 }
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
+function getRoundedBarPath(
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  rTop: number,
+  rBottom: number
+): string {
+  if (h <= 0 || w <= 0) return '';
+  const rt = Math.min(rTop, w / 2, h / 2);
+  const rb = Math.min(rBottom, w / 2, h / 2);
+
+  let d = `M ${x + rt} ${y} `;
+  d += `H ${x + w - rt} `;
+  if (rt > 0) {
+    d += `A ${rt} ${rt} 0 0 1 ${x + w} ${y + rt} `;
+  }
+  d += `V ${y + h - rb} `;
+  if (rb > 0) {
+    d += `A ${rb} ${rb} 0 0 1 ${x + w - rb} ${y + h} `;
+  }
+  d += `H ${x + rb} `;
+  if (rb > 0) {
+    d += `A ${rb} ${rb} 0 0 1 ${x} ${y + h - rb} `;
+  }
+  d += `V ${y + rt} `;
+  if (rt > 0) {
+    d += `A ${rt} ${rt} 0 0 1 ${x + rt} ${y} `;
+  }
+  d += 'Z';
+  return d.trim();
+}
 
 export const SixMonthTrendChart: React.FC<SixMonthTrendChartProps> = ({
   data,
-  width = SCREEN_WIDTH - 48,
+  width: propWidth,
   height = 180,
 }) => {
+  const [containerWidth, setContainerWidth] = useState<number>(0);
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
 
-  const paddingTop = 24;
+  const effectiveWidth = propWidth || containerWidth || 320;
+
+  const paddingTop = 20;
   const paddingBottom = 28;
   const paddingLeft = 14;
   const paddingRight = 14;
 
-  const chartWidth = width - paddingLeft - paddingRight;
+  const chartWidth = Math.max(0, effectiveWidth - paddingLeft - paddingRight);
   const chartHeight = height - paddingTop - paddingBottom;
   const chartBottom = height - paddingBottom;
 
@@ -36,44 +70,52 @@ export const SixMonthTrendChart: React.FC<SixMonthTrendChartProps> = ({
   );
 
   const colWidth = chartWidth / (data.length || 1);
-  const barWidth = Math.min(26, colWidth * 0.58);
+  const barWidth = Math.min(26, Math.max(14, colWidth * 0.56));
 
   const activePoint = selectedIdx !== null && selectedIdx >= 0 && selectedIdx < data.length
     ? data[selectedIdx]
     : null;
 
   return (
-    <View style={styles.wrapper}>
-      {/* Selected month tooltip banner */}
-      {activePoint ? (
-        <View style={styles.tooltipCard}>
-          <View style={styles.tooltipRow}>
-            <SproutText variant="eyebrow" color={colors.accent}>
-              {activePoint.label}
-            </SproutText>
-            <SproutText variant="monoSm" color={colors.text}>
-              {formatCurrencyExact(activePoint.total)}
-            </SproutText>
-          </View>
-          <View style={styles.tooltipSubRow}>
-            <SproutText variant="caption" color={colors.muted}>
-              Personal: {formatCurrency(activePoint.personal)} · Group: {formatCurrency(activePoint.groupShare)}
-            </SproutText>
-          </View>
-        </View>
-      ) : (
-        <View style={styles.tooltipPlaceholder}>
-          <SproutText variant="caption" color={colors.muted}>
-            Tap any bar to inspect monthly breakdown
+    <View
+      style={styles.wrapper}
+      onLayout={(e) => {
+        const w = e.nativeEvent.layout.width;
+        if (w > 0 && Math.abs(w - containerWidth) > 1) {
+          setContainerWidth(w);
+        }
+      }}
+    >
+      {/* Fixed-height inspection strip prevents chart layout shifts */}
+      <View style={[styles.inspectionStrip, activePoint ? styles.inspectionStripActive : styles.inspectionStripDefault]}>
+        {activePoint ? (
+          <>
+            <View style={styles.tooltipRow}>
+              <SproutText variant="eyebrow" color={chartColors.personal}>
+                {activePoint.label.toUpperCase()}
+              </SproutText>
+              <SproutText style={styles.tooltipTotal}>
+                {formatCurrencyExact(activePoint.total)}
+              </SproutText>
+            </View>
+            <View style={styles.tooltipSubRow}>
+              <SproutText variant="caption" color={colors.muted}>
+                Personal: {formatCurrency(activePoint.personal)} · Group: {formatCurrency(activePoint.groupShare)}
+              </SproutText>
+            </View>
+          </>
+        ) : (
+          <SproutText variant="caption" color={colors.muted} style={styles.hintText}>
+            Tap a bar to inspect monthly breakdown
           </SproutText>
-        </View>
-      )}
+        )}
+      </View>
 
       {/* SVG Canvas */}
-      <View style={{ width, height, alignSelf: 'center' }}>
-        <Svg width={width} height={height}>
+      <View style={{ width: effectiveWidth, height, alignSelf: 'center' }}>
+        <Svg width={effectiveWidth} height={height}>
           <G>
-            {/* Horizontal Grid lines */}
+            {/* Quiet solid hairline grid lines */}
             {[0, 0.5, 1].map((ratio) => {
               const y = chartBottom - chartHeight * ratio;
               return (
@@ -81,11 +123,10 @@ export const SixMonthTrendChart: React.FC<SixMonthTrendChartProps> = ({
                   key={`grid-${ratio}`}
                   x1={paddingLeft}
                   y1={y}
-                  x2={width - paddingRight}
+                  x2={effectiveWidth - paddingRight}
                   y2={y}
                   stroke={colors.line}
-                  strokeDasharray="3 3"
-                  strokeWidth={1}
+                  strokeWidth={StyleSheet.hairlineWidth}
                 />
               );
             })}
@@ -97,7 +138,6 @@ export const SixMonthTrendChart: React.FC<SixMonthTrendChartProps> = ({
 
               const personalH = (point.personal / maxTotal) * chartHeight;
               const groupH = (point.groupShare / maxTotal) * chartHeight;
-              const totalH = personalH + groupH;
 
               const personalY = chartBottom - personalH;
               const groupY = personalY - groupH;
@@ -105,17 +145,24 @@ export const SixMonthTrendChart: React.FC<SixMonthTrendChartProps> = ({
               const isSelected = selectedIdx === index;
               const hasSpend = point.total > 0;
 
+              // Outer-only rounding: flush join where personal and group share meet
+              const personalPath = personalH > 0
+                ? getRoundedBarPath(x, personalY, barWidth, personalH, groupH > 0 ? 0 : 3.5, 3.5)
+                : '';
+              const groupPath = groupH > 0
+                ? getRoundedBarPath(x, groupY, barWidth, groupH, 3.5, personalH > 0 ? 0 : 3.5)
+                : '';
+
               return (
                 <G key={point.key}>
-                  {/* Selection highlight track */}
+                  {/* Selection highlight wash */}
                   {isSelected && (
                     <Rect
                       x={cx - colWidth / 2}
                       y={paddingTop}
                       width={colWidth}
                       height={chartHeight}
-                      fill={colors.background}
-                      opacity={0.7}
+                      fill={chartColors.selectedWash}
                       rx={6}
                     />
                   )}
@@ -127,42 +174,35 @@ export const SixMonthTrendChart: React.FC<SixMonthTrendChartProps> = ({
                       y={chartBottom - 3}
                       width={barWidth}
                       height={3}
-                      fill={colors.line}
+                      fill={chartColors.track}
                       rx={1.5}
                     />
                   )}
 
-                  {/* Personal bar (Bottom segment) */}
+                  {/* Personal bar (Bottom segment - moss green) */}
                   {personalH > 0 && (
-                    <Rect
-                      x={x}
-                      y={personalY}
-                      width={barWidth}
-                      height={personalH}
-                      fill={colors.accent}
-                      rx={groupH > 0 ? 0 : 4}
+                    <Path
+                      d={personalPath}
+                      fill={chartColors.personal}
                     />
                   )}
 
-                  {/* Group Share bar (Top segment) */}
+                  {/* Group Share bar (Top segment - muted slate-blue) */}
                   {groupH > 0 && (
-                    <Rect
-                      x={x}
-                      y={groupY}
-                      width={barWidth}
-                      height={groupH}
-                      fill="#6366F1"
-                      rx={4}
+                    <Path
+                      d={groupPath}
+                      fill={chartColors.groupShare}
                     />
                   )}
 
-                  {/* Month Label */}
+                  {/* Month Label with Manrope typography */}
                   <SvgText
                     x={cx}
                     y={height - 8}
                     fontSize={11}
+                    fontFamily={isSelected ? fontFamilies.bold : fontFamilies.medium}
                     fill={isSelected ? colors.text : colors.muted}
-                    fontWeight={isSelected ? 'bold' : 'normal'}
+                    fontWeight={isSelected ? '700' : '500'}
                     textAnchor="middle"
                   >
                     {point.label.split(' ')[0]}
@@ -173,29 +213,36 @@ export const SixMonthTrendChart: React.FC<SixMonthTrendChartProps> = ({
           </G>
         </Svg>
 
-        {/* Touchable overlay for selecting bars */}
+        {/* Touchable overlay for selecting bars with accessibility */}
         <View style={[StyleSheet.absoluteFill, { flexDirection: 'row', paddingLeft, paddingRight }]}>
-          {data.map((_, index) => (
-            <TouchableOpacity
-              key={`touch-${index}`}
-              activeOpacity={0.7}
-              onPress={() => setSelectedIdx(selectedIdx === index ? null : index)}
-              style={{ width: colWidth, height }}
-            />
-          ))}
+          {data.map((point, index) => {
+            const isSelected = selectedIdx === index;
+            return (
+              <TouchableOpacity
+                key={`touch-${index}`}
+                activeOpacity={0.7}
+                accessible={true}
+                accessibilityRole="button"
+                accessibilityLabel={`${point.label}: ${formatCurrencyExact(point.total)} total; Personal ${formatCurrencyExact(point.personal)}; Group Share ${formatCurrencyExact(point.groupShare)}`}
+                accessibilityState={{ selected: isSelected }}
+                onPress={() => setSelectedIdx(selectedIdx === index ? null : index)}
+                style={{ width: colWidth, height }}
+              />
+            );
+          })}
         </View>
       </View>
 
       {/* Legend */}
       <View style={styles.legendRow}>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: colors.accent }]} />
+          <View style={[styles.legendDot, { backgroundColor: chartColors.personal }]} />
           <SproutText variant="caption" color={colors.muted}>
             Personal
           </SproutText>
         </View>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: '#6366F1' }]} />
+          <View style={[styles.legendDot, { backgroundColor: chartColors.groupShare }]} />
           <SproutText variant="caption" color={colors.muted}>
             Group Share
           </SproutText>
@@ -209,24 +256,35 @@ const styles = StyleSheet.create({
   wrapper: {
     width: '100%',
   },
-  tooltipCard: {
-    backgroundColor: colors.surface,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+  inspectionStrip: {
+    height: 52,
     borderRadius: radii.md,
+    paddingHorizontal: spacing.md,
+    justifyContent: 'center',
+    marginBottom: spacing.xs,
     borderWidth: 1,
-    borderColor: colors.line,
-    marginBottom: spacing.xs,
   },
-  tooltipPlaceholder: {
-    paddingVertical: spacing.xs,
+  inspectionStripDefault: {
+    backgroundColor: 'transparent',
+    borderColor: 'transparent',
     alignItems: 'center',
-    marginBottom: spacing.xs,
+  },
+  inspectionStripActive: {
+    backgroundColor: colors.surface,
+    borderColor: colors.line,
+  },
+  hintText: {
+    textAlign: 'center',
   },
   tooltipRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  tooltipTotal: {
+    fontFamily: fontFamilies.mono,
+    fontSize: 14,
+    color: colors.text,
   },
   tooltipSubRow: {
     marginTop: 2,
@@ -249,3 +307,4 @@ const styles = StyleSheet.create({
     borderRadius: 2.5,
   },
 });
+

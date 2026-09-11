@@ -6,7 +6,7 @@ import {
   RefreshControl,
   ActivityIndicator,
 } from 'react-native';
-import { colors, radii, spacing, shadows } from '../../theme';
+import { colors, radii, spacing, shadows, fontFamilies } from '../../theme';
 import {
   SproutText,
   ScreenShell,
@@ -161,10 +161,21 @@ export const InsightScreen: React.FC = () => {
 
       {/* 2. Hero Total Spend Card */}
       <View style={[styles.heroCard, shadows.card]}>
-        <View style={styles.heroTopRow}>
+        <View style={styles.heroHeaderRow}>
           <SproutText variant="eyebrow" color={colors.muted}>
             TOTAL SPEND (THIS MONTH)
           </SproutText>
+        </View>
+
+        <SproutText style={styles.heroAmount}>
+          {formatCurrencyExact(displayTotal)}
+        </SproutText>
+
+        <View style={styles.heroFooterRow}>
+          <SproutText variant="caption" color={colors.muted} style={styles.heroSubtext}>
+            Personal: {formatCurrency(data?.personalTotal || 0)} · Group Share: {formatCurrency(data?.groupShareTotal || 0)}
+          </SproutText>
+
           {monthComparison.trend !== 'same' && (
             <View
               style={[
@@ -189,21 +200,12 @@ export const InsightScreen: React.FC = () => {
             </View>
           )}
         </View>
-
-        <SproutText variant="amount" color={colors.text} style={styles.heroAmount}>
-          {formatCurrencyExact(displayTotal)}
-        </SproutText>
-
-        <View style={styles.heroSubRow}>
-          <SproutText variant="caption" color={colors.muted}>
-            Personal: {formatCurrency(data?.personalTotal || 0)} · Group Share: {formatCurrency(data?.groupShareTotal || 0)}
-          </SproutText>
-        </View>
       </View>
 
       {/* 3. Category Breakdown Card */}
       <View style={[styles.card, shadows.card]}>
-        <View style={styles.cardHeader}>
+        {/* Recomposed Vertical Header */}
+        <View style={styles.categoryHeader}>
           <View style={styles.headerTitleRow}>
             <PieChartIcon size={18} color={colors.accent} />
             <SproutText variant="subtitle" color={colors.text}>
@@ -211,20 +213,20 @@ export const InsightScreen: React.FC = () => {
             </SproutText>
           </View>
 
-          {/* Mode Toggle Pill */}
-          <View style={styles.togglePill}>
+          {/* Mode Selector - Second row with stretch and equal flex width, minHeight 48 */}
+          <View style={styles.categoryToggleBar}>
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={() => setCategoryViewMode('all')}
               style={[
-                styles.toggleButton,
-                categoryViewMode === 'all' && styles.toggleButtonActive,
+                styles.categoryToggleButton,
+                categoryViewMode === 'all' && styles.categoryToggleButtonActive,
               ]}
             >
               <SproutText
                 variant="caption"
                 color={categoryViewMode === 'all' ? colors.text : colors.muted}
-                style={categoryViewMode === 'all' ? styles.toggleTextActive : undefined}
+                style={categoryViewMode === 'all' ? styles.categoryToggleTextActive : styles.categoryToggleTextInactive}
               >
                 All Spending
               </SproutText>
@@ -234,14 +236,14 @@ export const InsightScreen: React.FC = () => {
               activeOpacity={0.8}
               onPress={() => setCategoryViewMode('personal')}
               style={[
-                styles.toggleButton,
-                categoryViewMode === 'personal' && styles.toggleButtonActive,
+                styles.categoryToggleButton,
+                categoryViewMode === 'personal' && styles.categoryToggleButtonActive,
               ]}
             >
               <SproutText
                 variant="caption"
                 color={categoryViewMode === 'personal' ? colors.text : colors.muted}
-                style={categoryViewMode === 'personal' ? styles.toggleTextActive : undefined}
+                style={categoryViewMode === 'personal' ? styles.categoryToggleTextActive : styles.categoryToggleTextInactive}
               >
                 Personal
               </SproutText>
@@ -273,13 +275,13 @@ export const InsightScreen: React.FC = () => {
                   <View style={styles.categoryIconWrap}>
                     {getCategoryIcon(slice.categoryId)}
                   </View>
-                  <SproutText variant="body" color={colors.text} style={styles.categoryName}>
+                  <SproutText variant="body" color={colors.text} style={styles.categoryName} numberOfLines={1}>
                     {slice.name}
                   </SproutText>
                 </View>
 
                 <View style={styles.categoryRight}>
-                  <SproutText variant="monoSm" color={colors.text}>
+                  <SproutText style={styles.categoryAmount}>
                     {formatCurrencyExact(slice.value)}
                   </SproutText>
                   <View style={styles.percentageBadge}>
@@ -407,14 +409,14 @@ export const InsightScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: {
-    paddingBottom: 110,
+    paddingBottom: 116,
   },
   centerContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     padding: spacing.xl,
-    paddingBottom: 110,
+    paddingBottom: 116,
   },
   loadingText: {
     marginTop: spacing.md,
@@ -449,10 +451,27 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     marginBottom: spacing.md,
   },
-  heroTopRow: {
+  heroHeaderRow: {
+    marginBottom: 4,
+  },
+  heroAmount: {
+    fontFamily: fontFamilies.mono,
+    fontSize: 40,
+    lineHeight: 46,
+    letterSpacing: -1,
+    color: colors.text,
+    marginVertical: 4,
+  },
+  heroFooterRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: spacing.sm,
+    marginTop: 6,
+  },
+  heroSubtext: {
+    flexShrink: 1,
   },
   trendBadge: {
     flexDirection: 'row',
@@ -465,12 +484,6 @@ const styles = StyleSheet.create({
   trendText: {
     fontSize: 10,
     fontWeight: '700',
-  },
-  heroAmount: {
-    marginVertical: spacing.xs,
-  },
-  heroSubRow: {
-    marginTop: 2,
   },
   card: {
     backgroundColor: colors.surface,
@@ -486,30 +499,48 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: spacing.md,
   },
+  categoryHeader: {
+    marginBottom: spacing.md,
+  },
   headerTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-  togglePill: {
+  categoryToggleBar: {
     flexDirection: 'row',
+    alignSelf: 'stretch',
     backgroundColor: colors.background,
     borderRadius: radii.sm,
-    padding: 2,
+    padding: 3,
     borderWidth: 1,
     borderColor: colors.line,
+    marginTop: spacing.md,
   },
-  toggleButton: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+  categoryToggleButton: {
+    flex: 1,
+    minHeight: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderRadius: radii.xs,
   },
-  toggleButtonActive: {
+  categoryToggleButtonActive: {
     backgroundColor: colors.surface,
     elevation: 1,
+    shadowColor: '#183228',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
   },
-  toggleTextActive: {
+  categoryToggleTextActive: {
+    fontFamily: fontFamilies.bold,
     fontWeight: '700',
+    color: colors.text,
+  },
+  categoryToggleTextInactive: {
+    fontFamily: fontFamilies.medium,
+    fontWeight: '500',
+    color: colors.muted,
   },
   allocationBarContainer: {
     marginBottom: spacing.md,
@@ -554,6 +585,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  categoryAmount: {
+    fontFamily: fontFamilies.mono,
+    fontSize: 13,
+    color: colors.text,
   },
   percentageBadge: {
     backgroundColor: colors.background,

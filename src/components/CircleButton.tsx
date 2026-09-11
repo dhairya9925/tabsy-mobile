@@ -1,6 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
-import { colors, radii, shadows } from '../theme';
+import { colors, radii } from '../theme';
 
 export interface CircleButtonProps {
   onPress?: () => void;
@@ -32,7 +32,6 @@ export const CircleButton: React.FC<CircleButtonProps> = ({
           borderRadius: size / 2,
           backgroundColor,
         },
-        shadows.card,
         style,
       ]}
     >
@@ -45,7 +44,6 @@ const styles = StyleSheet.create({
   circle: {
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.line,
+    borderWidth: 0,
   },
 });
