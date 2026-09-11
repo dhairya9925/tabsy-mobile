@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   tooltipTotal: {
-    fontFamily: fontFamilies.mono,
+    fontFamily: fontFamilies.bold,
     fontSize: 14,
     color: colors.text,
   },

@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   centerAmount: {
-    fontFamily: fontFamilies.mono,
+    fontFamily: fontFamilies.bold,
     fontSize: 20,
     lineHeight: 24,
     letterSpacing: -0.5,

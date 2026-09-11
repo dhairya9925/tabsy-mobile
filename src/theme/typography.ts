@@ -7,11 +7,11 @@ export const fontFamilies = {
   semiBold: 'Manrope_600SemiBold',
   bold: 'Manrope_700Bold',
   extraBold: 'Manrope_800ExtraBold',
-  mono: 'JetBrainsMono_700Bold',
-  monoRegular: 'JetBrainsMono_400Regular',
+  mono: 'Manrope_700Bold',
+  monoRegular: 'Manrope_400Regular',
   // Backward compatibility aliases
   interface: 'Manrope_400Regular',
-  numeric: 'JetBrainsMono_700Bold',
+  numeric: 'Manrope_700Bold',
 } as const;
 
 export const typography: Record<string, TextStyle> = {
@@ -73,13 +73,13 @@ export const typography: Record<string, TextStyle> = {
     color: colors.onAccent,
   },
   amount: {
-    fontFamily: fontFamilies.mono,
+    fontFamily: fontFamilies.bold,
     fontSize: 48,
     letterSpacing: -1,
     color: colors.text,
   },
   amountLarge: {
-    fontFamily: fontFamilies.mono,
+    fontFamily: fontFamilies.bold,
     fontSize: 36,
     color: colors.text,
   },

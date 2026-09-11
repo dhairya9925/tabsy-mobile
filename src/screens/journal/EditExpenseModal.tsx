@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
   },
   amountInput: {
     fontSize: 48,
-    fontFamily: fontFamilies.mono,
+    fontFamily: fontFamilies.bold,
     fontWeight: '700',
     color: colors.text,
     minWidth: 80,

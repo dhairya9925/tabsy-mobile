@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
     marginLeft: spacing.sm,
   },
   amountText: {
-    fontFamily: fontFamilies.mono,
+    fontFamily: fontFamilies.bold,
     fontSize: 13,
     color: colors.text,
   },

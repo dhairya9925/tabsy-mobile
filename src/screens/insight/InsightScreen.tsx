@@ -455,7 +455,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   heroAmount: {
-    fontFamily: fontFamilies.mono,
+    fontFamily: fontFamilies.bold,
     fontSize: 40,
     lineHeight: 46,
     letterSpacing: -1,
@@ -587,7 +587,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   categoryAmount: {
-    fontFamily: fontFamilies.mono,
+    fontFamily: fontFamilies.medium,
     fontSize: 13,
     color: colors.text,
   },

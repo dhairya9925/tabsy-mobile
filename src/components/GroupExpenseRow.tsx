@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
     marginLeft: spacing.sm,
   },
   amount: {
-    fontFamily: fontFamilies.mono,
+    fontFamily: fontFamilies.medium,
     fontSize: 13,
     color: '#183228',
   },

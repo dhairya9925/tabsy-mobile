@@ -182,7 +182,7 @@ export const SettingsScreen: React.FC = () => {
               Typography
             </SproutText>
             <SproutText variant="caption" color={colors.muted}>
-              Manrope + JetBrains Mono
+              Manrope (Sprout standard)
             </SproutText>
           </View>
           <Check size={18} color={colors.accent} />

@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   amountText: {
-    fontFamily: fontFamilies.mono,
+    fontFamily: fontFamilies.medium,
     fontSize: 13,
   },
   deleteBtn: {
