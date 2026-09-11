@@ -14,6 +14,7 @@ export interface SegmentControlProps<T = string> {
   value: T;
   onChange: (value: T) => void;
   style?: StyleProp<ViewStyle>;
+  size?: 'sm' | 'md' | 'lg';
 }
 
 export function SegmentControl<T = string>({
@@ -21,9 +22,18 @@ export function SegmentControl<T = string>({
   value,
   onChange,
   style,
+  size = 'md',
 }: SegmentControlProps<T>) {
+  const isLg = size === 'lg';
+
   return (
-    <View style={[styles.container, style]}>
+    <View
+      style={[
+        styles.container,
+        isLg && styles.containerLg,
+        style,
+      ]}
+    >
       {options.map((option) => {
         const isSelected = option.value === value;
         return (
@@ -33,14 +43,18 @@ export function SegmentControl<T = string>({
             onPress={() => onChange(option.value)}
             style={[
               styles.segment,
-              isSelected && styles.segmentSelected,
+              isLg && styles.segmentLg,
+              isSelected && (isLg ? styles.segmentSelectedLg : styles.segmentSelected),
             ]}
           >
             <SproutText
               style={[
                 styles.label,
+                isLg && styles.labelLg,
                 {
-                  color: isSelected ? colors.accent : colors.muted,
+                  color: isSelected
+                    ? (isLg ? '#183228' : colors.accent)
+                    : (isLg ? '#5D6E62' : colors.muted),
                   fontFamily: isSelected ? fontFamilies.bold : fontFamilies.medium,
                 },
               ]}
@@ -61,12 +75,22 @@ const styles = StyleSheet.create({
     borderRadius: radii.full,
     padding: 3,
   },
+  containerLg: {
+    backgroundColor: '#DFE7DC',
+    borderRadius: 14,
+    padding: 3,
+    minHeight: 42,
+  },
   segment: {
     flex: 1,
-    minHeight: 40,
+    minHeight: 36,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radii.full,
+  },
+  segmentLg: {
+    minHeight: 36,
+    borderRadius: 11,
   },
   segmentSelected: {
     backgroundColor: colors.surface,
@@ -76,7 +100,19 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 1,
   },
+  segmentSelectedLg: {
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#183228',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.07,
+    shadowRadius: 3,
+    elevation: 1.5,
+  },
   label: {
     fontSize: 12,
   },
+  labelLg: {
+    fontSize: 13,
+  },
 });
+

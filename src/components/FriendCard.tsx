@@ -6,12 +6,12 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { colors, radii, spacing } from '../theme';
+import { fontFamilies, spacing } from '../theme';
 import { SproutText } from './SproutText';
 import { AvatarCircle } from './AvatarCircle';
 import { FriendRecord } from '../types';
 import { formatCurrencyExact } from '../utils/formatters';
-import { Ghost, Check, X, Clock, UserMinus } from 'lucide-react-native';
+import { Ghost, Check, X, Clock, UserMinus, ChevronRight } from 'lucide-react-native';
 
 interface FriendCardProps {
   friend: FriendRecord;
@@ -28,7 +28,6 @@ interface FriendCardProps {
 
 export const FriendCard: React.FC<FriendCardProps> = ({
   friend,
-  currentUserId,
   netBalance = 0,
   mode = 'friend',
   isActionLoading = false,
@@ -42,6 +41,9 @@ export const FriendCard: React.FC<FriendCardProps> = ({
   const name = profile?.display_name || profile?.email || 'Unknown';
   const email = profile?.email || '';
   const isShadow = !!profile?.is_shadow;
+
+  const isSettled = Math.abs(netBalance) <= 0.01;
+  const isOwed = netBalance > 0.01;
 
   const handleConfirmRemove = () => {
     Alert.alert(
@@ -58,113 +60,147 @@ export const FriendCard: React.FC<FriendCardProps> = ({
     <TouchableOpacity
       activeOpacity={mode === 'friend' && onPress ? 0.82 : 1}
       onPress={mode === 'friend' ? onPress : undefined}
+      disabled={mode !== 'friend' || !onPress}
       style={styles.card}
     >
-      <View style={styles.leftRow}>
-        <AvatarCircle name={name} size={42} />
+      {/* Top Row: Avatar, Name & Actions */}
+      <View style={styles.topRow}>
+        <AvatarCircle name={name} email={email} size={38} />
 
         <View style={styles.infoCol}>
-          <View style={styles.nameRow}>
-            <SproutText variant="subtitle" color={colors.text} numberOfLines={1} style={styles.name}>
-              {name}
-            </SproutText>
-            {isShadow && (
-              <View style={styles.contactBadge}>
-                <Ghost size={11} color={colors.muted} style={{ marginRight: 3 }} />
-                <SproutText variant="caption" color={colors.muted} weight="600">
-                  Contact
-                </SproutText>
-              </View>
-            )}
-          </View>
+          <SproutText style={styles.name} numberOfLines={1}>
+            {name}
+          </SproutText>
+          <SproutText style={styles.subtitle} numberOfLines={1}>
+            {email || (isShadow ? 'Contact only' : 'Tabsy member')}
+          </SproutText>
+        </View>
 
-          {email ? (
-            <SproutText variant="caption" color={colors.muted} numberOfLines={1}>
-              {email}
-            </SproutText>
-          ) : null}
+        {/* Top Right Actions */}
+        <View style={styles.topRightActions}>
+          {mode === 'request' && (
+            <View style={styles.requestActions}>
+              {isActionLoading ? (
+                <ActivityIndicator size="small" color="#335C44" />
+              ) : (
+                <>
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={onAccept}
+                    style={styles.acceptBtn}
+                    accessibilityLabel="Accept friend request"
+                  >
+                    <Check size={15} color="#2D523C" strokeWidth={2.5} />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={onReject}
+                    style={styles.rejectBtn}
+                    accessibilityLabel="Reject friend request"
+                  >
+                    <X size={15} color="#AF4932" strokeWidth={2.5} />
+                  </TouchableOpacity>
+                </>
+              )}
+            </View>
+          )}
+
+          {mode === 'sent' && (
+            <View style={styles.sentBadge}>
+              <Clock size={11} color="#6B7A70" style={{ marginRight: 4 }} />
+              <SproutText style={styles.sentBadgeText}>
+                Pending
+              </SproutText>
+            </View>
+          )}
 
           {mode === 'friend' && (
-            <View style={styles.balanceRow}>
-              {netBalance > 0 ? (
-                <SproutText variant="caption" color={colors.accent} weight="700">
-                  Owes you {formatCurrencyExact(netBalance)}
-                </SproutText>
-              ) : netBalance < 0 ? (
-                <SproutText variant="caption" color={colors.negative} weight="700">
-                  You owe {formatCurrencyExact(Math.abs(netBalance))}
-                </SproutText>
-              ) : (
-                <SproutText variant="caption" color={colors.muted} weight="600">
-                  Settled up
-                </SproutText>
+            <View style={styles.friendTopRight}>
+              {onRemove && (
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={handleConfirmRemove}
+                  style={styles.removeBtn}
+                  accessibilityLabel="Remove friend"
+                >
+                  <UserMinus size={15} color="#8D9E92" strokeWidth={1.8} />
+                </TouchableOpacity>
+              )}
+              {onPress && (
+                <ChevronRight size={17} color="#8D9E92" strokeWidth={2} style={styles.chevron} />
               )}
             </View>
           )}
         </View>
       </View>
 
-      {/* Action Buttons based on mode */}
-      <View style={styles.actionsRight}>
-        {mode === 'request' && (
-          <View style={styles.requestActions}>
-            {isActionLoading ? (
-              <ActivityIndicator size="small" color={colors.accent} />
-            ) : (
-              <>
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={onAccept}
-                  style={styles.acceptBtn}
-                  accessibilityLabel="Accept friend request"
-                >
-                  <Check size={16} color={colors.accent} strokeWidth={2.5} />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={onReject}
-                  style={styles.rejectBtn}
-                  accessibilityLabel="Reject friend request"
-                >
-                  <X size={16} color={colors.negative} strokeWidth={2.5} />
-                </TouchableOpacity>
-              </>
-            )}
-          </View>
-        )}
+      {/* Hairline Divider */}
+      <View style={styles.divider} />
 
-        {mode === 'sent' && (
-          <View style={styles.sentBadge}>
-            <Clock size={12} color={colors.muted} style={{ marginRight: 4 }} />
-            <SproutText variant="caption" color={colors.muted} weight="600">
-              Pending
+      {/* Bottom Row: Note on Left & Status / Settle on Right */}
+      <View style={styles.bottomRow}>
+        <View style={styles.bottomLeft}>
+          {isShadow ? (
+            <View style={styles.contactBadge}>
+              <Ghost size={11} color="#6B7A70" style={{ marginRight: 4 }} />
+              <SproutText style={styles.contactBadgeText}>
+                Contact
+              </SproutText>
+            </View>
+          ) : (
+            <SproutText style={styles.descriptionText} numberOfLines={1}>
+              {mode === 'friend'
+                ? isSettled
+                  ? 'All settled up'
+                  : isOwed
+                  ? 'Awaiting balance receipt'
+                  : 'Pending your payment'
+                : '1-on-1 sharing'}
             </SproutText>
-          </View>
-        )}
+          )}
+        </View>
 
         {mode === 'friend' && (
-          <View style={styles.friendActions}>
+          <View style={styles.bottomRight}>
             {netBalance < 0 && onSettleUp && (
               <TouchableOpacity
                 activeOpacity={0.8}
                 onPress={onSettleUp}
                 style={styles.settleBtn}
               >
-                <SproutText variant="caption" color={colors.onAccent} weight="700">
+                <SproutText style={styles.settleBtnText}>
                   Settle Up
                 </SproutText>
               </TouchableOpacity>
             )}
-            {onRemove && (
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={handleConfirmRemove}
-                style={styles.removeBtn}
-                accessibilityLabel="Remove friend"
+
+            <View
+              style={[
+                styles.badgePill,
+                isSettled
+                  ? styles.badgeSettled
+                  : isOwed
+                  ? styles.badgeOwed
+                  : styles.badgeOwes,
+              ]}
+            >
+              <SproutText
+                style={[
+                  styles.badgeText,
+                  isSettled
+                    ? styles.badgeTextSettled
+                    : isOwed
+                    ? styles.badgeTextOwed
+                    : styles.badgeTextOwes,
+                ]}
               >
-                <UserMinus size={16} color={colors.muted} strokeWidth={2} />
-              </TouchableOpacity>
-            )}
+                {isSettled
+                  ? 'Settled'
+                  : isOwed
+                  ? `+${formatCurrencyExact(netBalance)}`
+                  : `-${formatCurrencyExact(Math.abs(netBalance))}`}
+              </SproutText>
+            </View>
           </View>
         )}
       </View>
@@ -174,96 +210,173 @@ export const FriendCard: React.FC<FriendCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    minHeight: 68,
-    paddingVertical: spacing.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderBottomWidth: 1,
-    borderBottomColor: colors.line,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E2EAE0',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 10,
+    shadowColor: '#183228',
+    shadowOffset: { width: 0, height: 1.5 },
+    shadowOpacity: 0.035,
+    shadowRadius: 4,
+    elevation: 1,
   },
-  leftRow: {
+  topRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
-    paddingRight: spacing.sm,
   },
   infoCol: {
-    marginLeft: spacing.md,
     flex: 1,
-  },
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 6,
+    marginLeft: 10,
+    paddingRight: spacing.xs,
   },
   name: {
-    fontWeight: '700',
+    fontFamily: fontFamilies.bold,
+    fontSize: 15,
+    color: '#183228',
+    marginBottom: 2,
+    letterSpacing: -0.2,
   },
-  contactBadge: {
+  subtitle: {
+    fontFamily: fontFamilies.medium,
+    fontSize: 12,
+    color: '#6B7A70',
+  },
+  topRightActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.background,
-    paddingVertical: 2,
-    paddingHorizontal: 6,
-    borderRadius: radii.full,
-    borderWidth: 1,
-    borderColor: colors.line,
   },
-  balanceRow: {
-    marginTop: 3,
-  },
-  actionsRight: {
+  friendTopRight: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 6,
+  },
+  removeBtn: {
+    padding: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  chevron: {
+    marginLeft: 2,
   },
   requestActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
   },
   acceptBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: radii.full,
-    backgroundColor: colors.soft,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#D8E8CB',
     alignItems: 'center',
     justifyContent: 'center',
   },
   rejectBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: radii.full,
-    backgroundColor: colors.clay,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F6DDD4',
     alignItems: 'center',
     justifyContent: 'center',
   },
   sentBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.background,
-    paddingVertical: 4,
+    backgroundColor: '#EFF5ED',
+    paddingVertical: 3,
     paddingHorizontal: 8,
-    borderRadius: radii.full,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: '#E2EAE0',
   },
-  friendActions: {
+  sentBadgeText: {
+    fontFamily: fontFamilies.medium,
+    fontSize: 11,
+    color: '#6B7A70',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#EEF3EC',
+    marginVertical: 9,
+  },
+  bottomRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'space-between',
+  },
+  bottomLeft: {
+    flex: 1,
+    paddingRight: 8,
+  },
+  descriptionText: {
+    fontFamily: fontFamilies.medium,
+    fontSize: 12,
+    color: '#55685C',
+  },
+  contactBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: '#EFF5ED',
+    paddingVertical: 2,
+    paddingHorizontal: 7,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E2EAE0',
+  },
+  contactBadgeText: {
+    fontFamily: fontFamilies.medium,
+    fontSize: 11,
+    color: '#6B7A70',
+  },
+  bottomRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   settleBtn: {
-    backgroundColor: colors.accent,
-    minHeight: 40,
-    paddingHorizontal: spacing.sm + 4,
-    borderRadius: radii.full,
+    backgroundColor: '#355E47',
+    paddingHorizontal: 9,
+    paddingVertical: 3.5,
+    borderRadius: 9,
   },
-  removeBtn: {
-    minWidth: 44,
-    minHeight: 44,
+  settleBtnText: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 11,
+    color: '#FFFFFF',
+  },
+  badgePill: {
+    paddingHorizontal: 9,
+    paddingVertical: 3.5,
+    borderRadius: 9,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  badgeSettled: {
+    backgroundColor: '#E1EDE0',
+  },
+  badgeOwed: {
+    backgroundColor: '#D8E8CB',
+  },
+  badgeOwes: {
+    backgroundColor: '#F6DDD4',
+  },
+  badgeText: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 11,
+  },
+  badgeTextSettled: {
+    color: '#2D523C',
+  },
+  badgeTextOwed: {
+    color: '#235634',
+  },
+  badgeTextOwes: {
+    color: '#AF4932',
+  },
 });
+
+

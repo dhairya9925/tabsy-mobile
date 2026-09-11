@@ -7,7 +7,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SharedStackParamList, RootStackParamList } from '../../navigation/types';
-import { colors, radii, spacing } from '../../theme';
+import { colors, fontFamilies, radii, spacing } from '../../theme';
 import {
   SproutText,
   ScreenShell,
@@ -23,7 +23,8 @@ import { groupsApi } from '../../api/groups';
 import { friendsApi } from '../../api/friends';
 import { useAuthStore } from '../../store/useAuthStore';
 import { Group, FriendRecord, FriendBalance } from '../../types';
-import { Users, FolderPlus, UserPlus, KeyRound, UserCheck } from 'lucide-react-native';
+import { formatCurrency } from '../../utils/formatters';
+import { Users, UserPlus, KeyRound, UserCheck, Settings, Plus } from 'lucide-react-native';
 
 export const GroupsListScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<SharedStackParamList>>();
@@ -161,6 +162,54 @@ export const GroupsListScreen: React.FC = () => {
     if (b.netBalance < 0) friendsOwe += Math.abs(b.netBalance);
   });
 
+  // Calculate dynamic header subtitle matching the screenshot ("2 groups, all settled up")
+  let headerSubtitle = '';
+  if (mainTab === 'groups') {
+    if (groups.length === 0) {
+      headerSubtitle = 'Create or join your first group';
+    } else {
+      let totalGroupOwed = 0;
+      let totalGroupOwes = 0;
+      let nonSettledCount = 0;
+      Object.values(groupBalances).forEach((b) => {
+        if (b > 0.01) {
+          totalGroupOwed += b;
+          nonSettledCount++;
+        } else if (b < -0.01) {
+          totalGroupOwes += Math.abs(b);
+          nonSettledCount++;
+        }
+      });
+
+      const countStr = `${groups.length} ${groups.length === 1 ? 'group' : 'groups'}`;
+      if (nonSettledCount === 0) {
+        headerSubtitle = `${countStr}, all settled up`;
+      } else if (totalGroupOwed > 0 && totalGroupOwes === 0) {
+        headerSubtitle = `${countStr} · +${formatCurrency(totalGroupOwed)} owed to you`;
+      } else if (totalGroupOwes > 0 && totalGroupOwed === 0) {
+        headerSubtitle = `${countStr} · -${formatCurrency(totalGroupOwes)} you owe`;
+      } else {
+        headerSubtitle = `${countStr} · ${nonSettledCount} active`;
+      }
+    }
+  } else {
+    if (friends.length === 0) {
+      headerSubtitle = 'Manage friends and 1-on-1 expenses';
+    } else {
+      const nonSettledFriends = friendBalances.filter((b) => Math.abs(b.netBalance) > 0.01).length;
+      const countStr = `${friends.length} ${friends.length === 1 ? 'friend' : 'friends'}`;
+      if (nonSettledFriends === 0) {
+        headerSubtitle = `${countStr}, all settled up`;
+      } else if (friendsOwed > 0 && friendsOwe === 0) {
+        headerSubtitle = `${countStr} · +${formatCurrency(friendsOwed)} owed to you`;
+      } else if (friendsOwe > 0 && friendsOwed === 0) {
+        headerSubtitle = `${countStr} · -${formatCurrency(friendsOwe)} you owe`;
+      } else {
+        headerSubtitle = `${countStr} · ${nonSettledFriends} active balances`;
+      }
+    }
+  }
+
   const mainTabOptions = [
     { value: 'groups' as const, label: 'Groups' },
     { value: 'friends' as const, label: 'Friends' },
@@ -194,69 +243,75 @@ export const GroupsListScreen: React.FC = () => {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <SproutText variant="eyebrow" color={colors.accent}>
-            GROUPS & FRIENDS
-          </SproutText>
-          <SproutText variant="hero" style={styles.title}>
+          <SproutText style={styles.title}>
             {mainTab === 'groups' ? 'Groups' : 'Friends'}
           </SproutText>
-          <SproutText variant="bodyMuted">
-            {mainTab === 'groups'
-              ? 'Coordinate expenses with friends and shared groups.'
-              : 'Manage your friends and 1-on-1 expenses.'}
+          <SproutText style={styles.subtitle} numberOfLines={1}>
+            {headerSubtitle}
           </SproutText>
         </View>
 
-        <View style={styles.headerActions}>
-          {mainTab === 'groups' ? (
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => rootNavigation.navigate('CreateGroupModal')}
-              style={styles.primaryActionBtn}
-            >
-              <FolderPlus size={16} color={colors.onAccent} style={{ marginRight: 4 }} />
-              <SproutText variant="caption" color={colors.onAccent} weight="700">
-                New Group
-              </SproutText>
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => rootNavigation.navigate('AddFriendModal')}
-              style={styles.primaryActionBtn}
-            >
-              <UserPlus size={16} color={colors.onAccent} style={{ marginRight: 4 }} />
-              <SproutText variant="caption" color={colors.onAccent} weight="700">
-                Add Friend
-              </SproutText>
-            </TouchableOpacity>
-          )}
-        </View>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => rootNavigation.navigate('Settings')}
+          style={styles.settingsBtn}
+          accessibilityLabel="Open settings"
+        >
+          <Settings size={18} color="#274837" strokeWidth={1.8} />
+        </TouchableOpacity>
       </View>
 
       {/* Main Mode Segment Control: Groups | Friends */}
       <SegmentControl
+        size="lg"
         options={mainTabOptions}
         value={mainTab}
         onChange={(v) => setMainTab(v)}
+        style={styles.mainSegment}
       />
+
+      {/* Action Row */}
+      <View style={styles.actionRow}>
+        {mainTab === 'groups' ? (
+          <>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => rootNavigation.navigate('CreateGroupModal')}
+              style={styles.primaryActionBtn}
+            >
+              <Plus size={16} color="#FFFFFF" strokeWidth={2.4} style={{ marginRight: 5 }} />
+              <SproutText style={styles.primaryActionBtnText}>
+                New group
+              </SproutText>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => rootNavigation.navigate('JoinGroupModal')}
+              style={styles.keyBtn}
+              accessibilityLabel="Join group with code"
+            >
+              <KeyRound size={18} color="#335C44" strokeWidth={2} />
+            </TouchableOpacity>
+          </>
+        ) : (
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => rootNavigation.navigate('AddFriendModal')}
+            style={styles.primaryActionBtn}
+          >
+            <UserPlus size={16} color="#FFFFFF" strokeWidth={2.4} style={{ marginRight: 5 }} />
+            <SproutText style={styles.primaryActionBtnText}>
+              Add friend
+            </SproutText>
+          </TouchableOpacity>
+        )}
+      </View>
+
 
       {/* Groups Segment */}
       {mainTab === 'groups' && (
         <View style={styles.listSection}>
-          <View style={styles.actionsBar}>
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => rootNavigation.navigate('JoinGroupModal')}
-              style={styles.joinBtn}
-            >
-              <KeyRound size={14} color={colors.accent} style={{ marginRight: 4 }} />
-              <SproutText variant="caption" color={colors.accent} weight="700">
-                Join with Code
-              </SproutText>
-            </TouchableOpacity>
-          </View>
-
           {isLoading && groups.length === 0 ? (
             <GroupListSkeleton count={4} />
           ) : groups.length === 0 ? (
@@ -283,6 +338,7 @@ export const GroupsListScreen: React.FC = () => {
           )}
         </View>
       )}
+
 
       {/* Friends Segment */}
       {mainTab === 'friends' && (
@@ -413,46 +469,85 @@ const styles = StyleSheet.create({
     paddingBottom: 116,
   },
   header: {
-    marginTop: spacing.sm,
-    marginBottom: spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginTop: spacing.xs,
+    marginBottom: spacing.sm + 2,
   },
   headerLeft: {
-    width: '100%',
+    flex: 1,
+    paddingRight: spacing.sm,
   },
   title: {
-    marginVertical: 2,
+    fontFamily: fontFamilies.bold,
+    fontSize: 26,
+    lineHeight: 32,
+    color: '#183228',
+    letterSpacing: -0.6,
   },
-  headerActions: {
-    alignSelf: 'flex-start',
-    marginTop: spacing.md,
+  subtitle: {
+    fontFamily: fontFamilies.medium,
+    fontSize: 13,
+    color: '#617267',
+    marginTop: 2,
+  },
+  settingsBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#F7FAF5',
+    borderWidth: 1.2,
+    borderColor: '#CBD7CC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#183228',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  mainSegment: {
+    marginBottom: spacing.sm,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.sm + 2,
+    gap: 8,
   },
   primaryActionBtn: {
+    flex: 1,
+    height: 42,
+    borderRadius: 13,
+    backgroundColor: '#355E47',
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.accent,
-    minHeight: 44,
-    paddingVertical: 0,
+    justifyContent: 'center',
     paddingHorizontal: spacing.md,
-    borderRadius: radii.full,
+    shadowColor: '#183228',
+    shadowOffset: { width: 0, height: 1.5 },
+    shadowOpacity: 0.07,
+    shadowRadius: 3,
+    elevation: 1.5,
+  },
+  primaryActionBtnText: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 14,
+    color: '#FFFFFF',
+  },
+  keyBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 13,
+    backgroundColor: '#E2ECE0',
+    borderWidth: 1.5,
+    borderColor: '#355E47',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   listSection: {
-    marginTop: spacing.md,
-  },
-  actionsBar: {
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-    marginBottom: spacing.md,
-  },
-  joinBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    minHeight: 40,
-    paddingVertical: 0,
-    paddingHorizontal: spacing.md,
-    borderRadius: radii.full,
-    borderWidth: 1,
-    borderColor: colors.accent,
-    backgroundColor: colors.surface,
+    marginTop: 0,
   },
   list: {
     gap: 0,
