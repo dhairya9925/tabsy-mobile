@@ -16,6 +16,7 @@ import {
   ScreenShell,
   SegmentControl,
   GroupBalanceBanner,
+  GroupExpenseRow,
   GroupBalanceRow,
   GroupMemberRow,
   FieldRow,
@@ -33,6 +34,7 @@ import {
   PlusCircle,
   Share2,
   CheckCircle2,
+  CheckCheck,
   Receipt,
   UserPlus,
   Users,
@@ -199,10 +201,10 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         />
 
         <View style={styles.topBarCenter}>
-          <SproutText variant="eyebrow" color={colors.accent}>
-            {typeMeta.label.toUpperCase()}
+          <SproutText style={styles.topBarEyebrow}>
+            SHARED RHYTHM
           </SproutText>
-          <SproutText variant="subtitle" color={colors.text} weight="700" numberOfLines={1}>
+          <SproutText style={styles.topBarTitle} numberOfLines={1}>
             {group?.name || 'Group'}
           </SproutText>
         </View>
@@ -253,7 +255,7 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
       {subTab === 'expenses' && (
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <SproutText variant="title" color={colors.text}>
+            <SproutText style={styles.sectionTitle}>
               Group Activity
             </SproutText>
             <TouchableOpacity
@@ -261,8 +263,8 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
               onPress={() => rootNavigation.navigate('AddGroupExpenseModal', { groupId })}
               style={styles.addBtn}
             >
-              <PlusCircle size={16} color={colors.accent} style={{ marginRight: 4 }} />
-              <SproutText variant="caption" color={colors.accent} weight="700">
+              <PlusCircle size={15} color={colors.accent} style={{ marginRight: 4 }} />
+              <SproutText style={styles.addBtnText}>
                 + Add Expense
               </SproutText>
             </TouchableOpacity>
@@ -280,34 +282,21 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             </View>
           ) : (
             <View style={styles.expensesList}>
-              {expenses.map((expense) => {
-                const payer = expense.payer_name || (expense.paid_by === currUserId ? 'You' : 'Member');
-                const splitCount = expense.splits?.length || members.length;
+              {expenses.map((expense) => (
+                <GroupExpenseRow
+                  key={expense.id}
+                  expense={expense}
+                  currentUserId={currUserId}
+                  memberCount={members.length}
+                />
+              ))}
 
-                return (
-                  <View key={expense.id} style={styles.expenseItem}>
-                    <View style={styles.expenseIconCircle}>
-                      {getCategoryIcon(expense.category)}
-                    </View>
-
-                    <View style={styles.expenseInfo}>
-                      <SproutText variant="subtitle" color={colors.text} weight="700" numberOfLines={1}>
-                        {expense.note || expense.category}
-                      </SproutText>
-                      <SproutText variant="caption" color={colors.muted}>
-                        Paid by {payer} • {formatDate(expense.expense_date)}
-                      </SproutText>
-                      <SproutText variant="caption" color={colors.accentSoft} style={styles.splitNote}>
-                        Split between {splitCount} {splitCount === 1 ? 'member' : 'members'}
-                      </SproutText>
-                    </View>
-
-                    <SproutText variant="amountRow" color={colors.text} style={styles.expenseAmount}>
-                      {formatCurrencyExact(expense.amount)}
-                    </SproutText>
-                  </View>
-                );
-              })}
+              <View style={styles.confirmNote}>
+                <CheckCheck size={14} color={colors.muted} />
+                <SproutText style={styles.confirmText}>
+                  All group shares have been recorded.
+                </SproutText>
+              </View>
             </View>
           )}
         </View>
@@ -435,6 +424,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginHorizontal: spacing.sm,
   },
+  topBarEyebrow: {
+    fontFamily: fontFamilies.extraBold,
+    fontSize: 9,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    color: colors.muted,
+  },
+  topBarTitle: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 21,
+    letterSpacing: -0.8,
+    color: colors.text,
+    marginTop: 2,
+  },
   topBarActions: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -449,47 +452,38 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   sectionTitle: {
-    marginBottom: spacing.md,
+    fontFamily: fontFamilies.bold,
+    fontSize: 18,
+    letterSpacing: -0.4,
+    color: colors.text,
   },
   addBtn: {
     flexDirection: 'row',
     alignItems: 'center',
   },
+  addBtnText: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 12,
+    color: colors.accent,
+  },
   expensesList: {
     gap: 0,
   },
-  expenseItem: {
-    minHeight: 64,
+  confirmNote: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.line,
-  },
-  expenseIconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.surface,
-    alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.md,
+    gap: 6,
+    marginTop: spacing.md,
+    paddingVertical: spacing.xs,
   },
-  expenseInfo: {
-    flex: 1,
-  },
-  splitNote: {
+  confirmText: {
+    fontFamily: fontFamilies.medium,
+    fontSize: 9,
     color: colors.muted,
-    fontSize: 11,
-    marginTop: 2,
-  },
-  expenseAmount: {
-    marginLeft: spacing.sm,
-    fontFamily: fontFamilies.mono,
-    fontSize: 13,
   },
   emptyCard: {
     backgroundColor: colors.surface,

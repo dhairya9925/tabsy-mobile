@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { colors, radii, spacing } from '../theme';
+import { colors, fontFamilies, radii, spacing } from '../theme';
 import { SproutText } from './SproutText';
 import { AvatarCircle } from './AvatarCircle';
 import { formatCurrencyExact } from '../utils/formatters';
@@ -20,29 +20,29 @@ export const FriendBalanceBanner: React.FC<FriendBalanceBannerProps> = ({
   const isOwed = netBalance > 0;
 
   const bannerBg = isSettled
-    ? colors.surface
+    ? '#FBFDF7'
     : isOwed
-    ? colors.soft
-    : colors.clay;
+    ? '#D8E8CB'
+    : '#F4DACD';
 
   const statusColor = isSettled
-    ? colors.muted
+    ? '#536D5B'
     : isOwed
-    ? colors.accent
+    ? '#407A58'
     : colors.negative;
 
   return (
-    <View style={[styles.card, { backgroundColor: bannerBg }]}>
+    <View style={[styles.card, { backgroundColor: bannerBg }, isSettled && styles.cardSettled]}>
       {/* Top row */}
       <View style={styles.topRow}>
         <View style={styles.leftCol}>
-          <SproutText variant="eyebrow" color={colors.muted}>
+          <SproutText style={styles.eyebrow}>
             1-ON-1 BALANCE
           </SproutText>
-          <SproutText variant="amount" color={colors.text} style={styles.amountText}>
+          <SproutText style={styles.amountText}>
             {formatCurrencyExact(Math.abs(netBalance))}
           </SproutText>
-          <SproutText variant="caption" color={statusColor} weight="700">
+          <SproutText style={[styles.statusText, { color: statusColor }]}>
             {isSettled
               ? 'All settled up!'
               : isOwed
@@ -51,7 +51,7 @@ export const FriendBalanceBanner: React.FC<FriendBalanceBannerProps> = ({
           </SproutText>
         </View>
 
-        <AvatarCircle name={friendName} size={50} />
+        <AvatarCircle name={friendName} size={46} />
       </View>
 
       {/* Settle Up CTA Button */}
@@ -61,8 +61,8 @@ export const FriendBalanceBanner: React.FC<FriendBalanceBannerProps> = ({
           onPress={onSettleUp}
           style={styles.settleBtn}
         >
-          <SproutText variant="body" color={colors.onAccent} weight="700">
-            Settle Up
+          <SproutText style={styles.settleBtnText}>
+            Settle gently
           </SproutText>
         </TouchableOpacity>
       )}
@@ -72,9 +72,16 @@ export const FriendBalanceBanner: React.FC<FriendBalanceBannerProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 28,
-    padding: spacing.lg,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 10,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+    padding: 19,
     marginVertical: spacing.md,
+  },
+  cardSettled: {
+    borderWidth: 1,
+    borderColor: '#CBD7CC',
   },
   topRow: {
     flexDirection: 'row',
@@ -85,17 +92,35 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingRight: spacing.sm,
   },
+  eyebrow: {
+    fontFamily: fontFamilies.extraBold,
+    fontSize: 9,
+    letterSpacing: 1.2,
+    color: '#536D5B',
+  },
   amountText: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 35,
+    lineHeight: 40,
+    letterSpacing: -1.8,
+    color: '#183228',
     marginVertical: 4,
-    fontSize: 34,
+  },
+  statusText: {
+    fontFamily: fontFamilies.medium,
+    fontSize: 10,
   },
   settleBtn: {
     marginTop: spacing.md,
-    backgroundColor: colors.accent,
-    minHeight: 48,
-    paddingVertical: 0,
+    backgroundColor: '#407A58',
+    minHeight: 44,
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  settleBtnText: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 14,
+    color: '#FFFFFF',
   },
 });

@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { colors, radii, spacing } from '../theme';
+import { colors, fontFamilies, radii, spacing } from '../theme';
 import { SproutText } from './SproutText';
+import { StyleProp, ViewStyle } from 'react-native';
 
 export interface SegmentOption<T = string> {
   value: T;
@@ -12,15 +13,17 @@ export interface SegmentControlProps<T = string> {
   options: SegmentOption<T>[];
   value: T;
   onChange: (value: T) => void;
+  style?: StyleProp<ViewStyle>;
 }
 
 export function SegmentControl<T = string>({
   options,
   value,
   onChange,
+  style,
 }: SegmentControlProps<T>) {
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, style]}>
       {options.map((option) => {
         const isSelected = option.value === value;
         return (
@@ -34,10 +37,13 @@ export function SegmentControl<T = string>({
             ]}
           >
             <SproutText
-              variant="caption"
-              color={isSelected ? colors.accent : colors.muted}
-              weight={isSelected ? '700' : '600'}
-              style={styles.label}
+              style={[
+                styles.label,
+                {
+                  color: isSelected ? colors.accent : colors.muted,
+                  fontFamily: isSelected ? fontFamilies.bold : fontFamilies.medium,
+                },
+              ]}
             >
               {option.label}
             </SproutText>
@@ -54,11 +60,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#DFE9DC',
     borderRadius: radii.full,
     padding: 3,
-    marginBottom: spacing.lg,
   },
   segment: {
     flex: 1,
-    minHeight: 44,
+    minHeight: 40,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radii.full,

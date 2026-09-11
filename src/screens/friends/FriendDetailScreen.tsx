@@ -8,7 +8,7 @@ import {
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SharedStackParamList, RootStackParamList } from '../../navigation/types';
-import { colors, radii, spacing } from '../../theme';
+import { colors, fontFamilies, radii, spacing } from '../../theme';
 import {
   SproutText,
   ScreenShell,
@@ -28,9 +28,9 @@ export const FriendDetailScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<SharedStackParamList>>();
   const rootNavigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<FriendDetailRouteProp>();
-  const currentUser = useAuthStore((s) => s.user);
+  const { friendId, friendName = 'Friend' } = route.params;
 
-  const { friendId } = route.params;
+  const currentUser = useAuthStore((s) => s.user);
 
   const [profile, setProfile] = useState<FriendProfile | null>(null);
   const [netBalance, setNetBalance] = useState<number>(0);
@@ -56,7 +56,7 @@ export const FriendDetailScreen: React.FC = () => {
 
       setExpenses(expensesData);
     } catch (err: any) {
-      setErrorMessage(err.message || 'Error loading friend details');
+      setErrorMessage(err.message || 'Failed to load friend details');
     } finally {
       setIsLoading(false);
     }
@@ -69,8 +69,6 @@ export const FriendDetailScreen: React.FC = () => {
     return unsubscribe;
   }, [navigation, loadFriendData]);
 
-  const friendName = profile?.display_name || profile?.email || route.params.friendName || 'Friend';
-
   const handleDeleteExpense = async (expenseId: string) => {
     try {
       await friendsApi.deleteFriendExpense(friendId, expenseId);
@@ -81,10 +79,10 @@ export const FriendDetailScreen: React.FC = () => {
     }
   };
 
-  const handleRemoveFriend = async () => {
+  const handleRemoveFriend = () => {
     Alert.alert(
-      'Remove Friend?',
-      `Are you sure you want to remove ${friendName} from your friends?`,
+      'Remove Friend',
+      `Are you sure you want to remove ${friendName}? Their past shared expenses will remain intact.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -155,14 +153,12 @@ export const FriendDetailScreen: React.FC = () => {
         />
 
         <View style={styles.headerCenter}>
-          <SproutText variant="subtitle" color={colors.text} style={styles.headerTitle} numberOfLines={1}>
+          <SproutText style={styles.headerEyebrow}>
+            1-ON-1 RHYTHM
+          </SproutText>
+          <SproutText style={styles.headerTitle} numberOfLines={1}>
             {friendName}
           </SproutText>
-          {profile?.email ? (
-            <SproutText variant="caption" color={colors.muted} numberOfLines={1}>
-              {profile.email}
-            </SproutText>
-          ) : null}
         </View>
 
         <CircleButton
@@ -262,8 +258,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: spacing.sm,
   },
+  headerEyebrow: {
+    fontFamily: fontFamilies.extraBold,
+    fontSize: 9,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    color: colors.muted,
+  },
   headerTitle: {
-    fontWeight: '700',
+    fontFamily: fontFamilies.bold,
+    fontSize: 21,
+    letterSpacing: -0.8,
+    color: colors.text,
+    marginTop: 2,
   },
   actionsBar: {
     flexDirection: 'row',
@@ -277,7 +284,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.accent,
-    minHeight: 48,
+    minHeight: 44,
     borderRadius: 22,
   },
   secondaryActionBtn: {
@@ -286,7 +293,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.surface,
-    minHeight: 48,
+    minHeight: 44,
     borderRadius: 22,
     borderWidth: 1,
     borderColor: colors.accent,
@@ -295,6 +302,10 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   sectionLabel: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 18,
+    letterSpacing: -0.4,
+    color: colors.text,
     marginBottom: spacing.sm,
   },
   expensesList: {

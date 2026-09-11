@@ -88,4 +88,42 @@ export const typography: Record<string, TextStyle> = {
     fontSize: 16,
     color: colors.text,
   },
+  pageTitle: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 21,
+    lineHeight: 26,
+    letterSpacing: -0.8,
+    color: colors.text,
+  },
+  heroCardAmount: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 35,
+    lineHeight: 40,
+    letterSpacing: -1.8,
+    color: colors.text,
+  },
+  rowTitle: {
+    fontFamily: fontFamilies.medium,
+    fontSize: 13,
+    lineHeight: 18,
+    color: colors.text,
+  },
+  rowSub: {
+    fontFamily: fontFamilies.medium,
+    fontSize: 10,
+    lineHeight: 14,
+    color: colors.muted,
+  },
+  rowAmount: {
+    fontFamily: fontFamilies.medium,
+    fontSize: 13,
+    lineHeight: 18,
+    color: colors.text,
+  },
+  rowFoot: {
+    fontFamily: fontFamilies.medium,
+    fontSize: 9,
+    lineHeight: 13,
+    color: colors.muted,
+  },
 };

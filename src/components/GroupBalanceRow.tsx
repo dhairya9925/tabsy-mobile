@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { colors, radii, spacing } from '../theme';
+import { colors, fontFamilies, radii, spacing } from '../theme';
 import { SproutText } from './SproutText';
 import { formatCurrencyExact } from '../utils/formatters';
 import { GroupBalance } from '../types';
@@ -32,36 +32,38 @@ export const GroupBalanceRow: React.FC<GroupBalanceRowProps> = ({
       <View style={styles.topRow}>
         <View style={styles.partyCol}>
           <SproutText
-            variant="subtitle"
-            color={isYouOwe ? colors.negative : colors.text}
-            weight="700"
+            style={[
+              styles.partyName,
+              { color: isYouOwe ? colors.negative : colors.text },
+            ]}
             numberOfLines={1}
           >
             {isYouOwe ? 'You' : balance.from_name}
           </SproutText>
-          <SproutText variant="caption" color={colors.muted}>
+          <SproutText style={styles.partyRole}>
             owes
           </SproutText>
         </View>
 
-        <ArrowRight size={16} color={colors.muted} style={styles.arrow} />
+        <ArrowRight size={14} color={colors.muted} style={styles.arrow} />
 
         <View style={styles.partyCol}>
           <SproutText
-            variant="subtitle"
-            color={isOwedToYou ? colors.accent : colors.text}
-            weight="700"
+            style={[
+              styles.partyName,
+              { color: isOwedToYou ? colors.accent : colors.text },
+            ]}
             numberOfLines={1}
           >
             {isOwedToYou ? 'You' : balance.to_name}
           </SproutText>
-          <SproutText variant="caption" color={colors.muted}>
+          <SproutText style={styles.partyRole}>
             recipient
           </SproutText>
         </View>
 
         <View style={styles.amountCol}>
-          <SproutText variant="amountRow" color={colors.text}>
+          <SproutText style={styles.amountText}>
             {formatCurrencyExact(balance.amount)}
           </SproutText>
         </View>
@@ -112,12 +114,27 @@ const styles = StyleSheet.create({
   partyCol: {
     flex: 1,
   },
+  partyName: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 13,
+  },
+  partyRole: {
+    fontFamily: fontFamilies.medium,
+    fontSize: 10,
+    color: colors.muted,
+    marginTop: 2,
+  },
   arrow: {
     marginHorizontal: spacing.sm,
   },
   amountCol: {
     alignItems: 'flex-end',
     marginLeft: spacing.sm,
+  },
+  amountText: {
+    fontFamily: fontFamilies.mono,
+    fontSize: 13,
+    color: colors.text,
   },
   actionRow: {
     flexDirection: 'row',

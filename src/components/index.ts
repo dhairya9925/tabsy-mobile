@@ -13,6 +13,7 @@ export * from './SegmentControl';
 export * from './CategoryChip';
 export * from './GroupCard';
 export * from './GroupBalanceBanner';
+export * from './GroupExpenseRow';
 export * from './GroupMemberRow';
 export * from './GroupBalanceRow';
 export * from './FriendCard';

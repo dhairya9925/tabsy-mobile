@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { colors, radii, spacing } from '../theme';
+import { colors, fontFamilies, radii, spacing } from '../theme';
 import { SproutText } from './SproutText';
 import { AvatarCircle } from './AvatarCircle';
 import { GroupMember } from '../types';
@@ -30,25 +30,25 @@ export const GroupMemberRow: React.FC<GroupMemberRowProps> = ({
         name={profile?.display_name}
         email={profile?.email}
         avatarUrl={profile?.avatar_url}
-        size={40}
+        size={36}
       />
 
       <View style={styles.infoCol}>
         <View style={styles.nameRow}>
-          <SproutText variant="subtitle" color={colors.text} weight="700" numberOfLines={1}>
+          <SproutText style={styles.name} numberOfLines={1}>
             {name} {isCurrentUser ? '(You)' : ''}
           </SproutText>
           {isAdmin && (
             <View style={styles.adminBadge}>
-              <Crown size={12} color={colors.accent} style={{ marginRight: 3 }} />
-              <SproutText variant="caption" color={colors.accent} weight="700" style={styles.adminText}>
+              <Crown size={11} color={colors.accent} style={{ marginRight: 3 }} />
+              <SproutText style={styles.adminText}>
                 Admin
               </SproutText>
             </View>
           )}
         </View>
         {email ? (
-          <SproutText variant="caption" color={colors.muted} numberOfLines={1}>
+          <SproutText style={styles.email} numberOfLines={1}>
             {email}
           </SproutText>
         ) : null}
@@ -71,18 +71,29 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    minHeight: 56,
-    paddingVertical: spacing.sm,
+    minHeight: 55,
+    paddingVertical: 7,
     borderBottomWidth: 1,
-    borderBottomColor: colors.line,
+    borderBottomColor: '#CBD7CC',
   },
   infoCol: {
     flex: 1,
-    marginLeft: spacing.md,
+    marginLeft: spacing.sm,
   },
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  name: {
+    fontFamily: fontFamilies.medium,
+    fontSize: 13,
+    color: '#183228',
+  },
+  email: {
+    fontFamily: fontFamilies.medium,
+    fontSize: 10,
+    color: '#6D7C72',
+    marginTop: 2,
   },
   adminBadge: {
     flexDirection: 'row',
@@ -94,7 +105,9 @@ const styles = StyleSheet.create({
     marginLeft: spacing.sm,
   },
   adminText: {
-    fontSize: 10,
+    fontFamily: fontFamilies.bold,
+    fontSize: 9,
+    color: colors.accent,
   },
   removeBtn: {
     padding: 8,
