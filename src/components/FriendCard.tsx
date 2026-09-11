@@ -6,7 +6,7 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { colors, radii, spacing, shadows } from '../theme';
+import { colors, radii, spacing } from '../theme';
 import { SproutText } from './SproutText';
 import { AvatarCircle } from './AvatarCircle';
 import { FriendRecord } from '../types';
@@ -174,18 +174,13 @@ export const FriendCard: React.FC<FriendCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.surface,
-    borderRadius: radii.md,
-    borderTopRightRadius: radii.xs,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.line,
+    minHeight: 68,
+    paddingVertical: spacing.sm,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.xs,
-    ...shadows.card,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.line,
   },
   leftRow: {
     flexDirection: 'row',
@@ -229,16 +224,16 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   acceptBtn: {
-    width: 34,
-    height: 34,
+    width: 44,
+    height: 44,
     borderRadius: radii.full,
     backgroundColor: colors.soft,
     alignItems: 'center',
     justifyContent: 'center',
   },
   rejectBtn: {
-    width: 34,
-    height: 34,
+    width: 44,
+    height: 44,
     borderRadius: radii.full,
     backgroundColor: colors.clay,
     alignItems: 'center',
@@ -261,11 +256,14 @@ const styles = StyleSheet.create({
   },
   settleBtn: {
     backgroundColor: colors.accent,
-    paddingVertical: 6,
+    minHeight: 40,
     paddingHorizontal: spacing.sm + 4,
     borderRadius: radii.full,
   },
   removeBtn: {
-    padding: 6,
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

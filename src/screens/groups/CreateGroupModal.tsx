@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.xl,
     paddingTop: spacing.sm,
     paddingBottom: spacing.sm,
   },
@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   scrollContent: {
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.xl,
     paddingTop: spacing.md,
     paddingBottom: 24,
   },
@@ -214,10 +214,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.surface,
     borderRadius: radii.md,
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: colors.line,
     padding: spacing.md,
-    ...shadows.card,
   },
   typeCardSelected: {
     borderColor: colors.accent,
@@ -243,7 +242,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   bottomBar: {
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.xl,
     paddingBottom: spacing.lg,
     paddingTop: spacing.sm,
     backgroundColor: colors.background,

@@ -7,7 +7,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SharedStackParamList, RootStackParamList } from '../../navigation/types';
-import { colors, radii, spacing, shadows } from '../../theme';
+import { colors, radii, spacing } from '../../theme';
 import {
   SproutText,
   ScreenShell,
@@ -413,43 +413,41 @@ const styles = StyleSheet.create({
     paddingBottom: 116,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
     marginTop: spacing.sm,
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
   },
   headerLeft: {
-    flex: 1,
-    paddingRight: spacing.sm,
+    width: '100%',
   },
   title: {
     marginVertical: 2,
   },
   headerActions: {
-    marginTop: 4,
+    alignSelf: 'flex-start',
+    marginTop: spacing.md,
   },
   primaryActionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.accent,
-    paddingVertical: 8,
+    minHeight: 44,
+    paddingVertical: 0,
     paddingHorizontal: spacing.md,
     borderRadius: radii.full,
-    ...shadows.card,
   },
   listSection: {
     marginTop: spacing.md,
   },
   actionsBar: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginBottom: spacing.sm,
+    justifyContent: 'flex-start',
+    marginBottom: spacing.md,
   },
   joinBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 6,
+    minHeight: 40,
+    paddingVertical: 0,
     paddingHorizontal: spacing.md,
     borderRadius: radii.full,
     borderWidth: 1,

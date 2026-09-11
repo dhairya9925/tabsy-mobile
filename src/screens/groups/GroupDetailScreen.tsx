@@ -3,14 +3,13 @@ import {
   View,
   StyleSheet,
   TouchableOpacity,
-  ScrollView,
   Share,
   Alert,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
 import { SharedStackParamList, RootStackParamList } from '../../navigation/types';
-import { colors, radii, spacing, shadows } from '../../theme';
+import { colors, fontFamilies, radii, spacing } from '../../theme';
 import {
   SproutText,
   CircleButton,
@@ -110,7 +109,7 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         message: `Join my group "${group?.name}" on Tabsy! Use group code: ${groupId}`,
       });
     } catch {
-      // Ignored or dismissed
+      // The system share sheet was dismissed.
     }
   };
 
@@ -241,12 +240,12 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         }}
       />
 
-      {/* Subtabs: Expenses | Balances | Members */}
+      {/* Keep the original three-destination group navigation visible. */}
       <View style={styles.tabsContainer}>
         <SegmentControl
           options={tabOptions}
           value={subTab}
-          onChange={(val) => setSubTab(val)}
+          onChange={(value) => setSubTab(value)}
         />
       </View>
 
@@ -460,24 +459,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   expensesList: {
-    gap: 4,
+    gap: 0,
   },
   expenseItem: {
+    minHeight: 64,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: colors.line,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-    ...shadows.card,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.line,
   },
   expenseIconCircle: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.accentSoft,
+    backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,
@@ -492,6 +488,8 @@ const styles = StyleSheet.create({
   },
   expenseAmount: {
     marginLeft: spacing.sm,
+    fontFamily: fontFamilies.mono,
+    fontSize: 13,
   },
   emptyCard: {
     backgroundColor: colors.surface,
@@ -511,16 +509,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   balancesList: {
-    gap: 4,
+    gap: spacing.xs,
   },
   addMemberCard: {
     backgroundColor: colors.surface,
     borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: colors.line,
     padding: spacing.md,
     marginBottom: spacing.md,
-    ...shadows.card,
   },
   addMemberEyebrow: {
     marginBottom: spacing.xs,
@@ -530,13 +525,14 @@ const styles = StyleSheet.create({
   },
   addMemberSubmit: {
     backgroundColor: colors.accent,
-    borderRadius: radii.md,
+    minHeight: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 12,
   },
   membersList: {
-    gap: 4,
+    gap: 0,
   },
   settlementBanner: {
     flexDirection: 'row',
@@ -545,10 +541,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     padding: spacing.md,
     borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: colors.line,
     marginBottom: spacing.md,
-    ...shadows.card,
   },
   settlementBannerLeft: {
     flexDirection: 'row',

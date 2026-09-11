@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.xl,
     paddingTop: spacing.sm,
     paddingBottom: spacing.sm,
   },
@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   scrollContent: {
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.xl,
     paddingTop: spacing.md,
     paddingBottom: 24,
   },
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   bottomBar: {
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.xl,
     paddingBottom: spacing.lg,
     paddingTop: spacing.sm,
     backgroundColor: colors.background,

@@ -202,12 +202,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.xl,
     paddingTop: spacing.sm,
     paddingBottom: spacing.sm,
   },
   content: {
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.xl,
     paddingTop: spacing.md,
     paddingBottom: spacing.xxl,
   },
@@ -221,7 +221,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-around',
     marginBottom: spacing.lg,
-    ...shadows.card,
   },
   flowEntity: {
     alignItems: 'center',
@@ -246,7 +245,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.line,
     marginBottom: spacing.lg,
-    ...shadows.card,
   },
   amountEyebrow: {
     marginBottom: spacing.xs,
@@ -283,7 +281,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   bottomBar: {
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.xl,
     paddingBottom: spacing.lg,
     paddingTop: spacing.sm,
     backgroundColor: colors.background,

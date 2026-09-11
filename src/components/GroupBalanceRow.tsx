@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { colors, radii, spacing, shadows } from '../theme';
+import { colors, radii, spacing } from '../theme';
 import { SproutText } from './SproutText';
 import { formatCurrencyExact } from '../utils/formatters';
 import { GroupBalance } from '../types';
@@ -92,8 +92,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.line,
     padding: spacing.md,
-    marginBottom: spacing.sm,
-    ...shadows.card,
+    marginBottom: spacing.xs,
   },
   borderOwe: {
     borderColor: '#E7C5B5',

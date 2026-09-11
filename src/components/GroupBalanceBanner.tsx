@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { colors, radii, spacing, shadows } from '../theme';
+import { View, StyleSheet } from 'react-native';
+import { colors, radii, spacing } from '../theme';
 import { SproutText } from './SproutText';
 import { SproutButton } from './SproutButton';
 import { formatCurrencyExact } from '../utils/formatters';
@@ -27,12 +27,6 @@ export const GroupBalanceBanner: React.FC<GroupBalanceBannerProps> = ({
     ? styles.bannerOwed
     : styles.bannerOwes;
 
-  const amountColor = isSettled
-    ? colors.text
-    : isOwed
-    ? colors.accent
-    : colors.negative;
-
   const otherMembersCount = Math.max(0, members.length - 1);
 
   return (
@@ -53,10 +47,10 @@ export const GroupBalanceBanner: React.FC<GroupBalanceBannerProps> = ({
           ) : (
             <SproutText
               variant="amount"
-              color={amountColor}
+              color={colors.text}
               style={styles.heroAmount}
             >
-              {isOwed ? '+' : '-'}{formatCurrencyExact(Math.abs(netBalance))}
+              {formatCurrencyExact(Math.abs(netBalance))}
             </SproutText>
           )}
         </View>
@@ -109,25 +103,19 @@ export const GroupBalanceBanner: React.FC<GroupBalanceBannerProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 9,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-    padding: spacing.xl,
+    borderRadius: 28,
+    padding: spacing.lg,
     marginBottom: spacing.lg,
-    borderWidth: 1,
-    ...shadows.card,
   },
   bannerOwed: {
-    backgroundColor: colors.soft, // Tender leaf green #D8E8CB
-    borderColor: '#C3D9B5',
+    backgroundColor: colors.soft,
   },
   bannerOwes: {
-    backgroundColor: colors.clay, // Soft peach #F4DACD
-    borderColor: '#E7C5B5',
+    backgroundColor: colors.clay,
   },
   bannerSettled: {
     backgroundColor: colors.surface,
+    borderWidth: 1,
     borderColor: colors.line,
   },
   topSection: {
@@ -145,8 +133,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   heroAmount: {
-    fontSize: 34,
-    lineHeight: 40,
+    fontSize: 38,
+    lineHeight: 44,
+    letterSpacing: -1.5,
   },
   subtitle: {
     marginTop: 2,
@@ -154,7 +143,8 @@ const styles = StyleSheet.create({
   membersRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: spacing.sm,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xs,
     borderTopWidth: 1,
     borderTopColor: '#00000010',
     marginBottom: spacing.xs,
@@ -181,6 +171,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   settleBtn: {
-    marginTop: spacing.sm,
+    marginTop: spacing.md,
   },
 });

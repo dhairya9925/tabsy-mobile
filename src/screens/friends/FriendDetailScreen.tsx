@@ -8,7 +8,7 @@ import {
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SharedStackParamList, RootStackParamList } from '../../navigation/types';
-import { colors, radii, spacing, shadows } from '../../theme';
+import { colors, radii, spacing } from '../../theme';
 import {
   SproutText,
   ScreenShell,
@@ -178,7 +178,7 @@ export const FriendDetailScreen: React.FC = () => {
         onSettleUp={netBalance !== 0 ? handleOpenSettleUp : undefined}
       />
 
-      {/* Quick Action Buttons */}
+      {/* Keep direct shared actions visible, as in the original detail layout. */}
       <View style={styles.actionsBar}>
         <TouchableOpacity
           activeOpacity={0.8}
@@ -190,7 +190,6 @@ export const FriendDetailScreen: React.FC = () => {
             Add Expense
           </SproutText>
         </TouchableOpacity>
-
         {netBalance !== 0 && (
           <TouchableOpacity
             activeOpacity={0.8}
@@ -278,9 +277,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.accent,
-    paddingVertical: 12,
-    borderRadius: radii.full,
-    ...shadows.card,
+    minHeight: 48,
+    borderRadius: 22,
   },
   secondaryActionBtn: {
     flex: 1,
@@ -288,8 +286,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.surface,
-    paddingVertical: 12,
-    borderRadius: radii.full,
+    minHeight: 48,
+    borderRadius: 22,
     borderWidth: 1,
     borderColor: colors.accent,
   },
@@ -300,7 +298,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   expensesList: {
-    gap: spacing.xs,
+    gap: 0,
   },
   emptyCard: {
     backgroundColor: colors.surface,

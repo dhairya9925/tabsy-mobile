@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { colors, radii, spacing, shadows } from '../theme';
+import { colors, radii, spacing } from '../theme';
 import { SproutText } from './SproutText';
 import { Group } from '../types';
 import { getGroupTypeMeta } from '../utils/groupTypes';
@@ -98,13 +98,10 @@ export const GroupCard: React.FC<GroupCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.surface,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: colors.line,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-    ...shadows.card,
+    minHeight: 68,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.line,
   },
   topRow: {
     flexDirection: 'row',
@@ -126,10 +123,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: spacing.sm,
-    paddingTop: spacing.xs,
-    borderTopWidth: 1,
-    borderTopColor: '#F0F4EE',
+    marginTop: 2,
   },
   balancePill: {
     paddingVertical: 4,
@@ -137,7 +131,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.full,
   },
   balanceText: {
-    fontSize: 11,
+    fontSize: 10,
   },
   description: {
     flex: 1,

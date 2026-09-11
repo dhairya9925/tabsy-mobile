@@ -180,7 +180,7 @@ export const MonthlySettlementDetailScreen: React.FC<Props> = ({ route, navigati
       </View>
 
       {/* Month Navigator Strip */}
-      <View style={[styles.monthStrip, shadows.card]}>
+      <View style={styles.monthStrip}>
         <TouchableOpacity
           style={styles.monthNavButton}
           onPress={handlePrevMonth}
@@ -206,7 +206,7 @@ export const MonthlySettlementDetailScreen: React.FC<Props> = ({ route, navigati
       </View>
 
       {/* Settlement Status & Progress Card */}
-      <View style={[styles.card, shadows.card]}>
+      <View style={styles.card}>
         <View style={styles.statusRow}>
           <View>
             <SproutText variant="eyebrow" color={colors.muted}>
@@ -271,7 +271,7 @@ export const MonthlySettlementDetailScreen: React.FC<Props> = ({ route, navigati
       </View>
 
       {/* Member Status List */}
-      <View style={[styles.card, shadows.card]}>
+      <View style={styles.card}>
         <View style={styles.cardHeader}>
           <Users size={18} color={colors.accent} />
           <SproutText variant="subtitle" color={colors.text} weight="700">
@@ -320,7 +320,7 @@ export const MonthlySettlementDetailScreen: React.FC<Props> = ({ route, navigati
       </View>
 
       {/* Period Expenses Breakdown */}
-      <View style={[styles.card, shadows.card]}>
+      <View style={styles.card}>
         <View style={styles.cardHeaderWithAmount}>
           <View style={styles.cardHeaderLeft}>
             <Receipt size={18} color={colors.accent} />
@@ -363,7 +363,7 @@ export const MonthlySettlementDetailScreen: React.FC<Props> = ({ route, navigati
 
 const styles = StyleSheet.create({
   container: {
-    paddingBottom: 60,
+    paddingBottom: 116,
   },
   topBar: {
     flexDirection: 'row',

@@ -522,7 +522,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.xl,
     paddingTop: spacing.xs,
     paddingBottom: spacing.sm,
   },
@@ -553,7 +553,7 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilies.bold,
   },
   scrollContent: {
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.xl,
     paddingTop: spacing.xs,
     paddingBottom: spacing.xl,
   },
@@ -564,11 +564,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.line,
     marginTop: spacing.xs,
     marginBottom: 12,
-    ...shadows.card,
   },
   howMuchLabel: {
     fontSize: 12,
@@ -605,8 +602,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: 16,
     padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.line,
     marginBottom: 12,
   },
   subSectionTitle: {
@@ -776,7 +771,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   bottomBar: {
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.xl,
     paddingBottom: spacing.md,
     paddingTop: spacing.xs,
   },

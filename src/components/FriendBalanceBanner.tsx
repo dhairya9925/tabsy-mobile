@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { colors, radii, spacing, shadows } from '../theme';
+import { colors, radii, spacing } from '../theme';
 import { SproutText } from './SproutText';
 import { AvatarCircle } from './AvatarCircle';
 import { formatCurrencyExact } from '../utils/formatters';
@@ -73,12 +73,8 @@ export const FriendBalanceBanner: React.FC<FriendBalanceBannerProps> = ({
 const styles = StyleSheet.create({
   card: {
     borderRadius: 28,
-    borderTopRightRadius: 9,
     padding: spacing.lg,
     marginVertical: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.line,
-    ...shadows.card,
   },
   topRow: {
     flexDirection: 'row',
@@ -96,10 +92,10 @@ const styles = StyleSheet.create({
   settleBtn: {
     marginTop: spacing.md,
     backgroundColor: colors.accent,
-    paddingVertical: 12,
-    borderRadius: radii.full,
+    minHeight: 48,
+    paddingVertical: 0,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    ...shadows.card,
   },
 });

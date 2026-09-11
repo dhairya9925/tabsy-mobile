@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.xl,
     paddingTop: spacing.sm,
     paddingBottom: spacing.sm,
   },
@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   scrollContent: {
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.xl,
     paddingTop: spacing.lg,
     paddingBottom: 24,
   },
@@ -176,7 +176,6 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
     alignItems: 'center',
     marginBottom: spacing.lg,
-    ...shadows.card,
   },
   iconBadge: {
     width: 60,
@@ -234,7 +233,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   bottomBar: {
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.xl,
     paddingBottom: spacing.lg,
     paddingTop: spacing.sm,
     backgroundColor: colors.background,

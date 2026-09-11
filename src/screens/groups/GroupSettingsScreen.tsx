@@ -234,7 +234,7 @@ export const GroupSettingsScreen: React.FC<Props> = ({ route, navigation }) => {
 
 const styles = StyleSheet.create({
   container: {
-    paddingBottom: 40,
+    paddingBottom: 116,
   },
   topBar: {
     flexDirection: 'row',
@@ -248,10 +248,7 @@ const styles = StyleSheet.create({
   infoCard: {
     backgroundColor: colors.surface,
     borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: colors.line,
     padding: spacing.md,
-    ...shadows.card,
   },
   cardEyebrow: {
     marginBottom: 4,
@@ -265,10 +262,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     backgroundColor: colors.surface,
     borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: colors.line,
     padding: spacing.md,
-    ...shadows.card,
   },
   shareLeft: {
     flex: 1,
