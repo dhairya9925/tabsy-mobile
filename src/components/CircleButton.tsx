@@ -9,6 +9,7 @@ export interface CircleButtonProps {
   backgroundColor?: string;
   style?: ViewStyle;
   disabled?: boolean;
+  accessibilityLabel?: string;
 }
 
 export const CircleButton: React.FC<CircleButtonProps> = ({
@@ -18,12 +19,15 @@ export const CircleButton: React.FC<CircleButtonProps> = ({
   backgroundColor = colors.surface,
   style,
   disabled,
+  accessibilityLabel,
 }) => {
   return (
     <TouchableOpacity
       activeOpacity={0.8}
       onPress={onPress}
       disabled={disabled}
+      accessibilityLabel={accessibilityLabel}
+      accessibilityRole="button"
       style={[
         styles.circle,
         {

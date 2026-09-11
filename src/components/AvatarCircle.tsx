@@ -23,46 +23,57 @@ export const AvatarCircle: React.FC<AvatarCircleProps> = ({
 }) => {
   const initials = getInitials(name, email);
 
-  const content = avatarUrl ? (
-    <Image
-      source={{ uri: avatarUrl }}
-      style={[
-        styles.image,
-        { width: size, height: size, borderRadius: size / 2 },
-      ]}
-    />
-  ) : (
-    <View
-      style={[
-        styles.circle,
-        {
-          width: size,
-          height: size,
-          borderRadius: size / 2,
-        },
-        style,
-      ]}
-    >
-      <SproutText
-        variant="subtitle"
-        color={colors.text}
-        weight="800"
-        style={{ fontSize: size * 0.38 }}
+  const renderCircle = () => {
+    if (avatarUrl) {
+      return (
+        <Image
+          source={{ uri: avatarUrl }}
+          style={[
+            styles.image,
+            { width: size, height: size, borderRadius: size / 2 },
+          ]}
+        />
+      );
+    }
+
+    return (
+      <View
+        style={[
+          styles.circle,
+          {
+            width: size,
+            height: size,
+            borderRadius: size / 2,
+          },
+        ]}
       >
-        {initials}
-      </SproutText>
-    </View>
-  );
+        <SproutText
+          variant="subtitle"
+          color={colors.text}
+          weight="800"
+          style={{ fontSize: size * 0.38 }}
+        >
+          {initials}
+        </SproutText>
+      </View>
+    );
+  };
 
   if (onPress) {
     return (
-      <TouchableOpacity activeOpacity={0.8} onPress={onPress}>
-        {content}
+      <TouchableOpacity
+        activeOpacity={0.8}
+        onPress={onPress}
+        style={style}
+        accessibilityRole="button"
+        accessibilityLabel="View profile"
+      >
+        {renderCircle()}
       </TouchableOpacity>
     );
   }
 
-  return content;
+  return style ? <View style={style}>{renderCircle()}</View> : renderCircle();
 };
 
 const styles = StyleSheet.create({

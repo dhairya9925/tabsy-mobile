@@ -10,11 +10,13 @@ import {
   ExpenseRow,
   FieldRow,
   CircleButton,
+  AvatarCircle,
   Toast,
   ExpenseListSkeleton,
   EmptyState,
 } from '../../components';
 import { expensesApi } from '../../api/expenses';
+import { useAuthStore } from '../../store/useAuthStore';
 import { PersonalExpense, Category } from '../../types';
 import { toLocalDateString } from '../../utils/formatters';
 import { Search, SlidersHorizontal, Tag, Wallet, PlusCircle, X } from 'lucide-react-native';
@@ -24,6 +26,7 @@ type Props = NativeStackScreenProps<JournalStackParamList, 'JournalList'>;
 
 export const JournalScreen: React.FC<Props> = ({ navigation }) => {
   const rootNavigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const currentUser = useAuthStore((s) => s.user);
 
   const [expenses, setExpenses] = useState<PersonalExpense[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -143,11 +146,20 @@ export const JournalScreen: React.FC<Props> = ({ navigation }) => {
             icon={<Tag size={18} color={colors.accent} />}
             onPress={() => navigation.navigate('CategoryManager')}
             style={styles.actionCircle}
+            accessibilityLabel="Manage categories"
           />
           <CircleButton
             icon={<SlidersHorizontal size={18} color={showFilterBar ? colors.accent : colors.text} />}
             onPress={() => setShowFilterBar((v) => !v)}
             style={styles.actionCircle}
+            accessibilityLabel="Filter expenses"
+          />
+          <AvatarCircle
+            name={currentUser?.display_name}
+            email={currentUser?.email}
+            avatarUrl={currentUser?.avatar_url}
+            size={40}
+            onPress={() => rootNavigation.navigate('Profile')}
           />
         </View>
       </View>
@@ -292,6 +304,7 @@ const styles = StyleSheet.create({
   },
   headerActions: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.sm,
   },
   actionCircle: {

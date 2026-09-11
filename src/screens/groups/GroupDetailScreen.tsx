@@ -13,6 +13,7 @@ import { colors, fontFamilies, radii, spacing } from '../../theme';
 import {
   SproutText,
   CircleButton,
+  AvatarCircle,
   ScreenShell,
   SegmentControl,
   GroupBalanceBanner,
@@ -197,6 +198,7 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
       <View style={styles.topBar}>
         <CircleButton
           icon={<ArrowLeft size={20} color={colors.text} />}
+          size={40}
           onPress={() => navigation.goBack()}
         />
 
@@ -211,13 +213,18 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
         <View style={styles.topBarActions}>
           <CircleButton
-            icon={<Share2 size={18} color={colors.accent} />}
-            onPress={handleShareInvite}
-            style={{ marginRight: spacing.xs }}
-          />
-          <CircleButton
             icon={<Settings size={18} color={colors.text} />}
+            size={40}
             onPress={() => navigation.navigate('GroupSettings', { groupId })}
+            style={{ marginRight: spacing.xs }}
+            accessibilityLabel="Group settings"
+          />
+          <AvatarCircle
+            name={currentUser?.display_name}
+            email={currentUser?.email}
+            avatarUrl={currentUser?.avatar_url}
+            size={40}
+            onPress={() => rootNavigation.navigate('Profile')}
           />
         </View>
       </View>
@@ -226,6 +233,10 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
       <GroupBalanceBanner
         netBalance={netBalance}
         members={members}
+        groupName={group?.name}
+        groupDescription={group?.description}
+        groupType={group?.type}
+        onSharePress={handleShareInvite}
         onSettlePress={() => {
           if (balances.length > 0) {
             const myDebt = balances.find(

@@ -14,7 +14,12 @@ import {
   DonutPieChart,
   SixMonthTrendChart,
   WeeklyRhythmChart,
+  AvatarCircle,
 } from '../../components';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../navigation/types';
+import { useAuthStore } from '../../store/useAuthStore';
 import { getCategoryIcon } from '../../components/ExpenseRow';
 import { dashboardApi } from '../../api/dashboard';
 import { DashboardData } from '../../types';
@@ -36,6 +41,8 @@ import {
 } from 'lucide-react-native';
 
 export const InsightScreen: React.FC = () => {
+  const rootNavigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const currentUser = useAuthStore((s) => s.user);
   const [data, setData] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -148,15 +155,25 @@ export const InsightScreen: React.FC = () => {
     >
       {/* 1. Header */}
       <View style={styles.header}>
-        <SproutText variant="eyebrow" color={colors.accent}>
-          ANALYTICS
-        </SproutText>
-        <SproutText variant="hero" style={styles.title}>
-          Where it went.
-        </SproutText>
-        <SproutText variant="bodyMuted">
-          See where your money goes with charts and trends.
-        </SproutText>
+        <View style={styles.headerLeft}>
+          <SproutText variant="eyebrow" color={colors.accent}>
+            ANALYTICS
+          </SproutText>
+          <SproutText variant="hero" style={styles.title}>
+            Where it went.
+          </SproutText>
+          <SproutText variant="bodyMuted">
+            See where your money goes with charts and trends.
+          </SproutText>
+        </View>
+
+        <AvatarCircle
+          name={currentUser?.display_name}
+          email={currentUser?.email}
+          avatarUrl={currentUser?.avatar_url}
+          size={44}
+          onPress={() => rootNavigation.navigate('Profile')}
+        />
       </View>
 
       {/* 2. Hero Total Spend Card */}
@@ -436,8 +453,15 @@ const styles = StyleSheet.create({
     borderRadius: radii.full,
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
     marginTop: spacing.sm,
     marginBottom: spacing.md,
+  },
+  headerLeft: {
+    flex: 1,
+    paddingRight: spacing.sm,
   },
   title: {
     marginVertical: 4,

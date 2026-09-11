@@ -10,6 +10,7 @@ import { SharedStackParamList, RootStackParamList } from '../../navigation/types
 import { colors, fontFamilies, radii, spacing } from '../../theme';
 import {
   SproutText,
+  AvatarCircle,
   ScreenShell,
   SegmentControl,
   GroupCard,
@@ -251,14 +252,23 @@ export const GroupsListScreen: React.FC = () => {
           </SproutText>
         </View>
 
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={() => rootNavigation.navigate('Settings')}
-          style={styles.settingsBtn}
-          accessibilityLabel="Open settings"
-        >
-          <Settings size={18} color="#274837" strokeWidth={1.8} />
-        </TouchableOpacity>
+        <View style={styles.headerRightActions}>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => rootNavigation.navigate('Settings')}
+            style={[styles.settingsBtn, { marginRight: 8 }]}
+            accessibilityLabel="Open settings"
+          >
+            <Settings size={18} color="#274837" strokeWidth={1.8} />
+          </TouchableOpacity>
+          <AvatarCircle
+            name={currentUser?.display_name}
+            email={currentUser?.email}
+            avatarUrl={currentUser?.avatar_url}
+            size={38}
+            onPress={() => rootNavigation.navigate('Profile')}
+          />
+        </View>
       </View>
 
       {/* Main Mode Segment Control: Groups | Friends */}
@@ -491,6 +501,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#617267',
     marginTop: 2,
+  },
+  headerRightActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   settingsBtn: {
     width: 38,
