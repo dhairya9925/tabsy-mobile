@@ -156,7 +156,7 @@ export const InsightScreen: React.FC = () => {
       {/* 1. Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <SproutText variant="eyebrow" color={colors.accent}>
+          <SproutText variant="eyebrow" color={colors.muted} style={styles.eyebrow}>
             ANALYTICS
           </SproutText>
           <SproutText variant="hero" style={styles.title}>
@@ -463,8 +463,20 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingRight: spacing.sm,
   },
+  eyebrow: {
+    fontSize: 8,
+    letterSpacing: 1.2,
+    color: '#6D7C72',
+    textTransform: 'uppercase',
+  },
   title: {
-    marginVertical: 4,
+    fontFamily: fontFamilies.extraBold,
+    fontSize: 28,
+    lineHeight: 30,
+    letterSpacing: -1.4,
+    color: colors.text,
+    marginTop: 4,
+    marginBottom: 4,
   },
   heroCard: {
     backgroundColor: colors.surface,

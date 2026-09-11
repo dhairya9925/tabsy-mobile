@@ -244,7 +244,10 @@ export const GroupsListScreen: React.FC = () => {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <SproutText style={styles.title}>
+          <SproutText variant="eyebrow" color={colors.muted} style={styles.eyebrow}>
+            {mainTab === 'groups' ? 'SHARED RHYTHM' : '1-ON-1 RHYTHM'}
+          </SproutText>
+          <SproutText variant="hero" style={styles.title}>
             {mainTab === 'groups' ? 'Groups' : 'Friends'}
           </SproutText>
           <SproutText style={styles.subtitle} numberOfLines={1}>
@@ -265,7 +268,7 @@ export const GroupsListScreen: React.FC = () => {
             name={currentUser?.display_name}
             email={currentUser?.email}
             avatarUrl={currentUser?.avatar_url}
-            size={38}
+            size={44}
             onPress={() => rootNavigation.navigate('Profile')}
           />
         </View>
@@ -482,19 +485,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    marginTop: spacing.xs,
-    marginBottom: spacing.sm + 2,
+    marginTop: spacing.sm,
+    marginBottom: spacing.md,
   },
   headerLeft: {
     flex: 1,
     paddingRight: spacing.sm,
   },
+  eyebrow: {
+    fontSize: 8,
+    letterSpacing: 1.2,
+    color: '#6D7C72',
+    textTransform: 'uppercase',
+  },
   title: {
-    fontFamily: fontFamilies.bold,
-    fontSize: 26,
-    lineHeight: 32,
-    color: '#183228',
-    letterSpacing: -0.6,
+    fontFamily: fontFamilies.extraBold,
+    fontSize: 28,
+    lineHeight: 30,
+    letterSpacing: -1.4,
+    color: colors.text,
+    marginTop: 4,
   },
   subtitle: {
     fontFamily: fontFamilies.medium,
@@ -507,9 +517,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   settingsBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: '#F7FAF5',
     borderWidth: 1.2,
     borderColor: '#CBD7CC',

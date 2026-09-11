@@ -3,7 +3,7 @@ import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
 import { JournalStackParamList, RootStackParamList } from '../../navigation/types';
-import { colors, radii, spacing, shadows } from '../../theme';
+import { colors, radii, spacing, shadows, fontFamilies } from '../../theme';
 import {
   SproutText,
   ScreenShell,
@@ -133,7 +133,7 @@ export const JournalScreen: React.FC<Props> = ({ navigation }) => {
       {/* Header Bar */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <SproutText variant="eyebrow" color={colors.accent}>
+          <SproutText variant="eyebrow" color={colors.muted} style={styles.eyebrow}>
             PERSONAL
           </SproutText>
           <SproutText variant="hero" style={styles.title}>
@@ -158,7 +158,7 @@ export const JournalScreen: React.FC<Props> = ({ navigation }) => {
             name={currentUser?.display_name}
             email={currentUser?.email}
             avatarUrl={currentUser?.avatar_url}
-            size={40}
+            size={44}
             onPress={() => rootNavigation.navigate('Profile')}
           />
         </View>
@@ -292,15 +292,27 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginTop: spacing.sm,
     marginBottom: spacing.md,
   },
   headerLeft: {
     flex: 1,
+    paddingRight: spacing.sm,
+  },
+  eyebrow: {
+    fontSize: 8,
+    letterSpacing: 1.2,
+    color: '#6D7C72',
+    textTransform: 'uppercase',
   },
   title: {
-    marginVertical: 2,
+    fontFamily: fontFamilies.extraBold,
+    fontSize: 28,
+    lineHeight: 30,
+    letterSpacing: -1.4,
+    color: colors.text,
+    marginTop: 4,
   },
   headerActions: {
     flexDirection: 'row',
@@ -308,8 +320,9 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   actionCircle: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
   },
   filterCard: {
     backgroundColor: colors.surface,

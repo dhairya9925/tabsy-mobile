@@ -198,7 +198,7 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
       <View style={styles.topBar}>
         <CircleButton
           icon={<ArrowLeft size={20} color={colors.text} />}
-          size={40}
+          size={44}
           onPress={() => navigation.goBack()}
         />
 
@@ -214,16 +214,16 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         <View style={styles.topBarActions}>
           <CircleButton
             icon={<Settings size={18} color={colors.text} />}
-            size={40}
+            size={44}
             onPress={() => navigation.navigate('GroupSettings', { groupId })}
-            style={{ marginRight: spacing.xs }}
+            style={{ marginRight: spacing.sm }}
             accessibilityLabel="Group settings"
           />
           <AvatarCircle
             name={currentUser?.display_name}
             email={currentUser?.email}
             avatarUrl={currentUser?.avatar_url}
-            size={40}
+            size={44}
             onPress={() => rootNavigation.navigate('Profile')}
           />
         </View>
