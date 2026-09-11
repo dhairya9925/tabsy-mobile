@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import Svg, { Rect, Line, Text as SvgText, G, Path } from 'react-native-svg';
 import { MonthlyTrendPoint } from '../../types';
 import { colors, chartColors, radii, spacing, fontFamilies } from '../../theme';
@@ -10,6 +10,10 @@ interface SixMonthTrendChartProps {
   data: MonthlyTrendPoint[];
   width?: number;
   height?: number;
+}
+
+function easeOutCubic(t: number): number {
+  return 1 - Math.pow(1 - t, 3);
 }
 
 function getRoundedBarPath(
@@ -53,6 +57,57 @@ export const SixMonthTrendChart: React.FC<SixMonthTrendChartProps> = ({
   const [containerWidth, setContainerWidth] = useState<number>(0);
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
 
+  const [renderedData, setRenderedData] = useState<MonthlyTrendPoint[]>(data);
+  const prevDataRef = useRef<MonthlyTrendPoint[]>(data);
+  const animFrameRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const prevData = prevDataRef.current;
+    if (animFrameRef.current !== null) {
+      cancelAnimationFrame(animFrameRef.current);
+      animFrameRef.current = null;
+    }
+
+    const duration = 320;
+    const startTime = performance.now();
+
+    const animate = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(1, elapsed / duration);
+      const t = easeOutCubic(progress);
+
+      const current = data.map((point, i) => {
+        const prev = prevData[i] || { personal: 0, groupShare: 0, total: 0 };
+        const personal = prev.personal + (point.personal - prev.personal) * t;
+        const groupShare = prev.groupShare + (point.groupShare - prev.groupShare) * t;
+        const total = prev.total + (point.total - prev.total) * t;
+        return {
+          ...point,
+          personal: Math.max(0, personal),
+          groupShare: Math.max(0, groupShare),
+          total: Math.max(0, total),
+        };
+      });
+
+      setRenderedData(current);
+
+      if (progress < 1) {
+        animFrameRef.current = requestAnimationFrame(animate);
+      } else {
+        prevDataRef.current = data;
+        animFrameRef.current = null;
+      }
+    };
+
+    animFrameRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (animFrameRef.current !== null) {
+        cancelAnimationFrame(animFrameRef.current);
+      }
+    };
+  }, [data]);
+
   const effectiveWidth = propWidth || containerWidth || 320;
 
   const paddingTop = 20;
@@ -65,11 +120,11 @@ export const SixMonthTrendChart: React.FC<SixMonthTrendChartProps> = ({
   const chartBottom = height - paddingBottom;
 
   const maxTotal = Math.max(
-    ...data.map((d) => d.total),
+    ...renderedData.map((d) => d.total),
     100 // fallback minimum scale
   );
 
-  const colWidth = chartWidth / (data.length || 1);
+  const colWidth = chartWidth / (renderedData.length || 1);
   const barWidth = Math.min(26, Math.max(14, colWidth * 0.56));
 
   const activePoint = selectedIdx !== null && selectedIdx >= 0 && selectedIdx < data.length
@@ -132,7 +187,7 @@ export const SixMonthTrendChart: React.FC<SixMonthTrendChartProps> = ({
             })}
 
             {/* Bars and Month Labels */}
-            {data.map((point, index) => {
+            {renderedData.map((point, index) => {
               const cx = paddingLeft + index * colWidth + colWidth / 2;
               const x = cx - barWidth / 2;
 
@@ -258,23 +313,25 @@ const styles = StyleSheet.create({
   },
   inspectionStrip: {
     height: 52,
-    borderRadius: radii.md,
-    paddingHorizontal: spacing.md,
-    justifyContent: 'center',
+    borderRadius: radii.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
     marginBottom: spacing.xs,
-    borderWidth: 1,
+    justifyContent: 'center',
   },
   inspectionStripDefault: {
     backgroundColor: 'transparent',
-    borderColor: 'transparent',
     alignItems: 'center',
   },
   inspectionStripActive: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.background,
+    borderWidth: 1,
     borderColor: colors.line,
   },
   hintText: {
+    fontFamily: fontFamilies.medium,
     textAlign: 'center',
+    fontSize: 12,
   },
   tooltipRow: {
     flexDirection: 'row',
@@ -294,7 +351,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.lg,
-    marginTop: spacing.xs,
+    marginTop: spacing.sm,
   },
   legendItem: {
     flexDirection: 'row',
@@ -302,9 +359,8 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   legendDot: {
-    width: 9,
-    height: 9,
-    borderRadius: 2.5,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
 });
-

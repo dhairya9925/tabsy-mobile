@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, StyleSheet } from 'react-native';
 import Svg, { Path, Circle, G } from 'react-native-svg';
 import { CategorySlice } from '../../types';
@@ -12,6 +12,18 @@ interface DonutPieChartProps {
   size?: number;
   strokeWidth?: number;
   centerSubtitle?: string;
+}
+
+interface AnimatedSlice {
+  categoryId: string;
+  name: string;
+  color: string;
+  startValue: number;
+  targetValue: number;
+}
+
+function easeOutCubic(t: number): number {
+  return 1 - Math.pow(1 - t, 3);
 }
 
 export const DonutPieChart: React.FC<DonutPieChartProps> = ({
@@ -28,10 +40,97 @@ export const DonutPieChart: React.FC<DonutPieChartProps> = ({
   const cx = radius;
   const cy = radius;
 
-  const validSlices = slices.filter((s) => s.value > 0);
+  const [renderedSlices, setRenderedSlices] = useState<CategorySlice[]>(slices);
+  const [renderedTotal, setRenderedTotal] = useState<number>(total);
+
+  const prevSlicesRef = useRef<CategorySlice[]>(slices);
+  const prevTotalRef = useRef<number>(total);
+  const animFrameRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const prevSlices = prevSlicesRef.current;
+    const prevTotal = prevTotalRef.current;
+
+    if (animFrameRef.current !== null) {
+      cancelAnimationFrame(animFrameRef.current);
+      animFrameRef.current = null;
+    }
+
+    // Build union of all categories between previous and next
+    const allCatIds = new Set<string>();
+    prevSlices.forEach((s) => allCatIds.add(s.categoryId));
+    slices.forEach((s) => allCatIds.add(s.categoryId));
+
+    const sliceMap = new Map<string, CategorySlice>();
+    slices.forEach((s) => sliceMap.set(s.categoryId, s));
+    const prevSliceMap = new Map<string, CategorySlice>();
+    prevSlices.forEach((s) => prevSliceMap.set(s.categoryId, s));
+
+    const animSlices: AnimatedSlice[] = Array.from(allCatIds).map((catId) => {
+      const prev = prevSliceMap.get(catId);
+      const next = sliceMap.get(catId);
+      const name = next?.name || prev?.name || '';
+      const color = next?.color || prev?.color || colors.muted;
+      const startValue = prev?.value || 0;
+      const targetValue = next?.value || 0;
+      return {
+        categoryId: catId,
+        name,
+        color,
+        startValue,
+        targetValue,
+      };
+    });
+
+    const startTotal = prevTotal;
+    const targetTotal = total;
+    const duration = 320;
+    const startTime = performance.now();
+
+    const animate = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(1, elapsed / duration);
+      const t = easeOutCubic(progress);
+
+      const currentTotal = startTotal + (targetTotal - startTotal) * t;
+      const currentSlices: CategorySlice[] = animSlices
+        .map((as) => {
+          const val = as.startValue + (as.targetValue - as.startValue) * t;
+          return {
+            categoryId: as.categoryId,
+            name: as.name,
+            color: as.color,
+            value: Math.max(0, val),
+            percentage: currentTotal > 0 ? (Math.max(0, val) / currentTotal) * 100 : 0,
+          };
+        })
+        .filter((s) => (progress < 1 ? s.value > 0.001 : s.value > 0));
+
+      setRenderedSlices(currentSlices);
+      setRenderedTotal(currentTotal);
+
+      if (progress < 1) {
+        animFrameRef.current = requestAnimationFrame(animate);
+      } else {
+        prevSlicesRef.current = slices;
+        prevTotalRef.current = total;
+        animFrameRef.current = null;
+      }
+    };
+
+    animFrameRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (animFrameRef.current !== null) {
+        cancelAnimationFrame(animFrameRef.current);
+      }
+    };
+  }, [slices, total]);
+
+  const validSlices = renderedSlices.filter((s) => s.value > 0.001);
 
   // If no data, render subtle placeholder track ring
-  if (total <= 0 || validSlices.length === 0) {
+  if (renderedTotal <= 0.001 || validSlices.length === 0) {
     return (
       <View style={[styles.container, { width: size, height: size }]}>
         <Svg width={size} height={size}>
@@ -73,7 +172,7 @@ export const DonutPieChart: React.FC<DonutPieChartProps> = ({
         </Svg>
         <View style={styles.centerOverlay}>
           <SproutText style={styles.centerAmount}>
-            {formatCurrencyExact(total)}
+            {formatCurrencyExact(renderedTotal)}
           </SproutText>
           <SproutText variant="eyebrow" color={colors.muted} style={styles.subtext}>
             {centerSubtitle.toUpperCase()}
@@ -87,7 +186,7 @@ export const DonutPieChart: React.FC<DonutPieChartProps> = ({
   let currentAngle = -Math.PI / 2;
 
   const paths = validSlices.map((slice) => {
-    const sliceAngle = (slice.value / total) * (2 * Math.PI);
+    const sliceAngle = (slice.value / renderedTotal) * (2 * Math.PI);
     // Clamp slice gap relative to slice angle to prevent inversions on very small slices
     const maxPad = sliceAngle * 0.35;
     const actualPad = Math.min(0.03, maxPad);
@@ -149,7 +248,7 @@ export const DonutPieChart: React.FC<DonutPieChartProps> = ({
 
       <View style={styles.centerOverlay}>
         <SproutText style={styles.centerAmount}>
-          {formatCurrencyExact(total)}
+          {formatCurrencyExact(renderedTotal)}
         </SproutText>
         <SproutText variant="eyebrow" color={colors.muted} style={styles.subtext}>
           {centerSubtitle.toUpperCase()}
@@ -182,7 +281,8 @@ const styles = StyleSheet.create({
   },
   subtext: {
     marginTop: 4,
-    letterSpacing: 0.8,
+    textAlign: 'center',
+    letterSpacing: 1.2,
+    fontSize: 9,
   },
 });
-

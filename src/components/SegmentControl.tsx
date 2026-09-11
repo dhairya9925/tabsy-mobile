@@ -1,8 +1,16 @@
-import React from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { colors, fontFamilies, radii, spacing } from '../theme';
+import React, { useRef, useState, useEffect } from 'react';
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  Animated,
+  Easing,
+  LayoutChangeEvent,
+  StyleProp,
+  ViewStyle,
+} from 'react-native';
+import { colors, fontFamilies, radii } from '../theme';
 import { SproutText } from './SproutText';
-import { StyleProp, ViewStyle } from 'react-native';
 
 export interface SegmentOption<T = string> {
   value: T;
@@ -25,32 +33,98 @@ export function SegmentControl<T = string>({
   size = 'md',
 }: SegmentControlProps<T>) {
   const isLg = size === 'lg';
+  const isSm = size === 'sm';
+
+  const [segmentLayouts, setSegmentLayouts] = useState<Record<number, { x: number; width: number }>>({});
+  const selectedIndex = Math.max(0, options.findIndex((opt) => opt.value === value));
+
+  const animTranslateX = useRef(new Animated.Value(0)).current;
+  const animWidth = useRef(new Animated.Value(0)).current;
+  const hasInitialized = useRef(false);
+
+  const handleSegmentLayout = (index: number, e: LayoutChangeEvent) => {
+    const { x, width } = e.nativeEvent.layout;
+    setSegmentLayouts((prev) => {
+      if (prev[index] && Math.abs(prev[index].x - x) < 0.5 && Math.abs(prev[index].width - width) < 0.5) {
+        return prev;
+      }
+      return { ...prev, [index]: { x, width } };
+    });
+  };
+
+  useEffect(() => {
+    const targetLayout = segmentLayouts[selectedIndex];
+    if (!targetLayout || targetLayout.width <= 0) return;
+
+    if (!hasInitialized.current) {
+      animTranslateX.setValue(targetLayout.x);
+      animWidth.setValue(targetLayout.width);
+      hasInitialized.current = true;
+      return;
+    }
+
+    Animated.parallel([
+      Animated.timing(animTranslateX, {
+        toValue: targetLayout.x,
+        duration: 220,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }),
+      Animated.timing(animWidth, {
+        toValue: targetLayout.width,
+        duration: 220,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }),
+    ]).start();
+  }, [selectedIndex, segmentLayouts]);
 
   return (
     <View
       style={[
         styles.container,
         isLg && styles.containerLg,
+        isSm && styles.containerSm,
         style,
       ]}
     >
-      {options.map((option) => {
+      {/* Animated Sliding Pill Indicator */}
+      {hasInitialized.current && (
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.indicatorPill,
+            isLg ? styles.indicatorPillLg : styles.indicatorPillMd,
+            {
+              width: animWidth,
+              transform: [{ translateX: animTranslateX }],
+            },
+          ]}
+        />
+      )}
+
+      {/* Segment Option Buttons */}
+      {options.map((option, index) => {
         const isSelected = option.value === value;
         return (
           <TouchableOpacity
             key={String(option.value)}
             activeOpacity={0.8}
             onPress={() => onChange(option.value)}
+            onLayout={(e) => handleSegmentLayout(index, e)}
             style={[
               styles.segment,
               isLg && styles.segmentLg,
-              isSelected && (isLg ? styles.segmentSelectedLg : styles.segmentSelected),
+              isSm && styles.segmentSm,
+              // Fallback for initial render before layout measurement
+              !hasInitialized.current && isSelected && (isLg ? styles.fallbackSelectedLg : styles.fallbackSelected),
             ]}
           >
             <SproutText
               style={[
                 styles.label,
                 isLg && styles.labelLg,
+                isSm && styles.labelSm,
                 {
                   color: isSelected
                     ? (isLg ? '#183228' : colors.accent)
@@ -70,6 +144,7 @@ export function SegmentControl<T = string>({
 
 const styles = StyleSheet.create({
   container: {
+    position: 'relative',
     flexDirection: 'row',
     backgroundColor: '#DFE9DC',
     borderRadius: radii.full,
@@ -81,18 +156,52 @@ const styles = StyleSheet.create({
     padding: 3,
     minHeight: 42,
   },
+  containerSm: {
+    backgroundColor: '#DFE9DC',
+    borderRadius: radii.full,
+    padding: 2.5,
+  },
+  indicatorPill: {
+    position: 'absolute',
+    top: 3,
+    bottom: 3,
+    zIndex: 1,
+  },
+  indicatorPillLg: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 11,
+    shadowColor: '#183228',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  indicatorPillMd: {
+    backgroundColor: colors.surface,
+    borderRadius: radii.full,
+    shadowColor: colors.text,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 1,
+  },
   segment: {
     flex: 1,
     minHeight: 36,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radii.full,
+    zIndex: 2,
   },
   segmentLg: {
     minHeight: 36,
     borderRadius: 11,
   },
-  segmentSelected: {
+  segmentSm: {
+    minHeight: 30,
+    borderRadius: radii.full,
+  },
+  fallbackSelected: {
     backgroundColor: colors.surface,
     shadowColor: colors.text,
     shadowOffset: { width: 0, height: 1 },
@@ -100,7 +209,7 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 1,
   },
-  segmentSelectedLg: {
+  fallbackSelectedLg: {
     backgroundColor: '#FFFFFF',
     shadowColor: '#183228',
     shadowOffset: { width: 0, height: 1 },
@@ -114,5 +223,7 @@ const styles = StyleSheet.create({
   labelLg: {
     fontSize: 13,
   },
+  labelSm: {
+    fontSize: 11,
+  },
 });
-

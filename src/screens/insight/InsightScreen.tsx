@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -15,6 +15,7 @@ import {
   SixMonthTrendChart,
   WeeklyRhythmChart,
   AvatarCircle,
+  SegmentControl,
 } from '../../components';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -39,6 +40,60 @@ import {
   ArrowUpRight,
   RefreshCw,
 } from 'lucide-react-native';
+
+const AnimatedCurrencyText: React.FC<{
+  amount: number;
+  style?: any;
+}> = ({ amount, style }) => {
+  const [displayed, setDisplayed] = useState(amount);
+  const prevAmountRef = useRef(amount);
+  const animFrameRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const startVal = prevAmountRef.current;
+    const targetVal = amount;
+    if (Math.abs(startVal - targetVal) < 0.01) {
+      setDisplayed(targetVal);
+      return;
+    }
+
+    if (animFrameRef.current !== null) {
+      cancelAnimationFrame(animFrameRef.current);
+    }
+
+    const duration = 320;
+    const startTime = performance.now();
+
+    const animate = (time: number) => {
+      const elapsed = time - startTime;
+      const progress = Math.min(1, elapsed / duration);
+      const t = 1 - Math.pow(1 - progress, 3);
+
+      setDisplayed(startVal + (targetVal - startVal) * t);
+
+      if (progress < 1) {
+        animFrameRef.current = requestAnimationFrame(animate);
+      } else {
+        prevAmountRef.current = targetVal;
+        animFrameRef.current = null;
+      }
+    };
+
+    animFrameRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (animFrameRef.current !== null) {
+        cancelAnimationFrame(animFrameRef.current);
+      }
+    };
+  }, [amount]);
+
+  return (
+    <SproutText style={style}>
+      {formatCurrencyExact(displayed)}
+    </SproutText>
+  );
+};
 
 export const InsightScreen: React.FC = () => {
   const rootNavigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -184,9 +239,10 @@ export const InsightScreen: React.FC = () => {
           </SproutText>
         </View>
 
-        <SproutText style={styles.heroAmount}>
-          {formatCurrencyExact(displayTotal)}
-        </SproutText>
+        <AnimatedCurrencyText
+          amount={displayTotal}
+          style={styles.heroAmount}
+        />
 
         <View style={styles.heroFooterRow}>
           <SproutText variant="caption" color={colors.muted} style={styles.heroSubtext}>
@@ -230,42 +286,17 @@ export const InsightScreen: React.FC = () => {
             </SproutText>
           </View>
 
-          {/* Mode Selector - Second row with stretch and equal flex width, minHeight 48 */}
-          <View style={styles.categoryToggleBar}>
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => setCategoryViewMode('all')}
-              style={[
-                styles.categoryToggleButton,
-                categoryViewMode === 'all' && styles.categoryToggleButtonActive,
-              ]}
-            >
-              <SproutText
-                variant="caption"
-                color={categoryViewMode === 'all' ? colors.text : colors.muted}
-                style={categoryViewMode === 'all' ? styles.categoryToggleTextActive : styles.categoryToggleTextInactive}
-              >
-                All Spending
-              </SproutText>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => setCategoryViewMode('personal')}
-              style={[
-                styles.categoryToggleButton,
-                categoryViewMode === 'personal' && styles.categoryToggleButtonActive,
-              ]}
-            >
-              <SproutText
-                variant="caption"
-                color={categoryViewMode === 'personal' ? colors.text : colors.muted}
-                style={categoryViewMode === 'personal' ? styles.categoryToggleTextActive : styles.categoryToggleTextInactive}
-              >
-                Personal
-              </SproutText>
-            </TouchableOpacity>
-          </View>
+          {/* Mode Selector - Sliding SegmentControl */}
+          <SegmentControl<'all' | 'personal'>
+            options={[
+              { value: 'all', label: 'All Spending' },
+              { value: 'personal', label: 'Personal' },
+            ]}
+            value={categoryViewMode}
+            onChange={setCategoryViewMode}
+            size="lg"
+            style={styles.categoryToggleBar}
+          />
         </View>
 
         {/* Allocation Bar */}
@@ -544,39 +575,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   categoryToggleBar: {
-    flexDirection: 'row',
     alignSelf: 'stretch',
-    backgroundColor: colors.background,
-    borderRadius: radii.sm,
-    padding: 3,
-    borderWidth: 1,
-    borderColor: colors.line,
     marginTop: spacing.md,
-  },
-  categoryToggleButton: {
-    flex: 1,
-    minHeight: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: radii.xs,
-  },
-  categoryToggleButtonActive: {
-    backgroundColor: colors.surface,
-    elevation: 1,
-    shadowColor: '#183228',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 2,
-  },
-  categoryToggleTextActive: {
-    fontFamily: fontFamilies.bold,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  categoryToggleTextInactive: {
-    fontFamily: fontFamilies.medium,
-    fontWeight: '500',
-    color: colors.muted,
   },
   allocationBarContainer: {
     marginBottom: spacing.md,

@@ -1,9 +1,8 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useRef, useEffect } from 'react';
+import { View, StyleSheet, Animated, Easing } from 'react-native';
 import { WeeklyRhythmDay } from '../../types';
 import { colors, radii, spacing } from '../../theme';
 import { SproutText } from '../SproutText';
-import { formatCurrency } from '../../utils/formatters';
 import { Check } from 'lucide-react-native';
 
 interface WeeklyRhythmChartProps {
@@ -11,6 +10,36 @@ interface WeeklyRhythmChartProps {
   daysLogged: number;
   maxDayAmount: number;
 }
+
+const DayBarPill: React.FC<{
+  targetHeight: number;
+  backgroundColor: string;
+  delayIndex: number;
+}> = ({ targetHeight, backgroundColor, delayIndex }) => {
+  const heightAnim = useRef(new Animated.Value(targetHeight)).current;
+
+  useEffect(() => {
+    Animated.timing(heightAnim, {
+      toValue: targetHeight,
+      duration: 320,
+      delay: delayIndex * 25,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+  }, [targetHeight, delayIndex]);
+
+  return (
+    <Animated.View
+      style={[
+        styles.barPill,
+        {
+          height: heightAnim,
+          backgroundColor,
+        },
+      ]}
+    />
+  );
+};
 
 export const WeeklyRhythmChart: React.FC<WeeklyRhythmChartProps> = ({
   days,
@@ -37,28 +66,26 @@ export const WeeklyRhythmChart: React.FC<WeeklyRhythmChartProps> = ({
 
       {/* 7-Day Capsule Columns */}
       <View style={styles.daysRow}>
-        {days.map((day) => {
+        {days.map((day, index) => {
           const ratio = effectiveMax > 0 ? day.amount / effectiveMax : 0;
           const barHeight = day.hasActivity
             ? Math.max(minBarHeight, Math.round(ratio * maxBarHeight))
             : minBarHeight;
 
+          const pillBg = day.hasActivity
+            ? day.isToday
+              ? colors.accent
+              : colors.soft
+            : colors.line;
+
           return (
             <View key={day.dayKey} style={styles.dayCol}>
               {/* Bar track container */}
               <View style={styles.barTrack}>
-                <View
-                  style={[
-                    styles.barPill,
-                    {
-                      height: barHeight,
-                      backgroundColor: day.hasActivity
-                        ? day.isToday
-                          ? colors.accent
-                          : colors.soft
-                        : colors.line,
-                    },
-                  ]}
+                <DayBarPill
+                  targetHeight={barHeight}
+                  backgroundColor={pillBg}
+                  delayIndex={index}
                 />
               </View>
 
