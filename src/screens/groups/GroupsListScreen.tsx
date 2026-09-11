@@ -455,7 +455,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   list: {
-    gap: spacing.xs,
+    gap: 0,
   },
   emptyCard: {
     backgroundColor: colors.surface,

@@ -1,11 +1,11 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { colors, radii, spacing } from '../theme';
+import { colors, fontFamilies, spacing } from '../theme';
 import { SproutText } from './SproutText';
 import { Group } from '../types';
 import { getGroupTypeMeta } from '../utils/groupTypes';
-import { formatCurrencyExact } from '../utils/formatters';
-import { Home, Plane, Coffee, PartyPopper, Receipt, Users, ChevronRight } from 'lucide-react-native';
+import { formatCurrency } from '../utils/formatters';
+import { Home, Plane, Coffee, PartyPopper, Receipt, ChevronRight } from 'lucide-react-native';
 
 export interface GroupCardProps {
   group: Group;
@@ -14,19 +14,19 @@ export interface GroupCardProps {
   onPress?: () => void;
 }
 
-export function getGroupIcon(type?: string | null, size = 20, color: string = colors.accent) {
+export function getGroupIcon(type?: string | null, size = 18, color: string = colors.accent) {
   switch (type) {
     case 'shared_living':
-      return <Home size={size} color={color} />;
+      return <Home size={size} color={color} strokeWidth={1.7} />;
     case 'trip':
-      return <Plane size={size} color={color} />;
+      return <Plane size={size} color={color} strokeWidth={1.7} />;
     case 'event':
-      return <PartyPopper size={size} color={color} />;
+      return <PartyPopper size={size} color={color} strokeWidth={1.7} />;
     case 'reimbursable':
-      return <Receipt size={size} color={color} />;
+      return <Receipt size={size} color={color} strokeWidth={1.7} />;
     case 'day_to_day':
     default:
-      return <Coffee size={size} color={color} />;
+      return <Coffee size={size} color={color} strokeWidth={1.7} />;
   }
 }
 
@@ -37,60 +37,61 @@ export const GroupCard: React.FC<GroupCardProps> = ({
   onPress,
 }) => {
   const typeMeta = getGroupTypeMeta(group.type);
+  const isSettled = Math.abs(netBalance) <= 0.01;
+  const isOwed = netBalance > 0.01;
 
-  let balanceBadgeText: string = 'All settled ✓';
-  let balanceBadgeColor: string = colors.muted;
-  let balanceBadgeBg: string = '#EAEFE9';
-
-  if (netBalance > 0.01) {
-    balanceBadgeText = `You're owed ${formatCurrencyExact(netBalance)}`;
-    balanceBadgeColor = colors.accent;
-    balanceBadgeBg = colors.soft;
-  } else if (netBalance < -0.01) {
-    balanceBadgeText = `You owe ${formatCurrencyExact(Math.abs(netBalance))}`;
-    balanceBadgeColor = colors.negative;
-    balanceBadgeBg = colors.clay;
-  }
+  const memberLabel = `${memberCount} ${memberCount === 1 ? 'member' : 'members'}`;
+  const subText = group.description
+    ? `${typeMeta.label} · ${memberLabel} · ${group.description}`
+    : `${typeMeta.label} · ${memberLabel}`;
 
   return (
     <TouchableOpacity
-      activeOpacity={0.85}
+      activeOpacity={0.7}
       onPress={onPress}
+      disabled={!onPress}
       style={styles.card}
     >
-      <View style={styles.topRow}>
-        <View style={styles.iconCircle}>
-          {getGroupIcon(group.type)}
-        </View>
-
-        <View style={styles.infoCol}>
-          <SproutText variant="subtitle" color={colors.text} weight="700" numberOfLines={1}>
-            {group.name}
-          </SproutText>
-          <SproutText variant="caption" color={colors.muted}>
-            {typeMeta.label} • {memberCount} {memberCount === 1 ? 'member' : 'members'}
-          </SproutText>
-        </View>
-
-        <ChevronRight size={18} color={colors.muted} />
+      <View style={styles.iconCircle}>
+        {getGroupIcon(group.type, 18, colors.accent)}
       </View>
 
-      <View style={styles.bottomRow}>
-        <View style={[styles.balancePill, { backgroundColor: balanceBadgeBg }]}>
-          <SproutText
-            variant="caption"
-            color={balanceBadgeColor}
-            weight="700"
-            style={styles.balanceText}
-          >
-            {balanceBadgeText}
-          </SproutText>
+      <View style={styles.infoCol}>
+        <SproutText style={styles.title} numberOfLines={1}>
+          {group.name}
+        </SproutText>
+        <SproutText style={styles.subtitle} numberOfLines={1}>
+          {subText}
+        </SproutText>
+      </View>
+
+      <View style={styles.rightCol}>
+        <View style={styles.balanceCol}>
+          {isSettled ? (
+            <SproutText style={styles.settledText}>
+              All settled ✓
+            </SproutText>
+          ) : isOwed ? (
+            <>
+              <SproutText style={styles.amountOwed}>
+                +{formatCurrency(netBalance)}
+              </SproutText>
+              <SproutText style={styles.foot}>
+                you're owed
+              </SproutText>
+            </>
+          ) : (
+            <>
+              <SproutText style={styles.amountOwes}>
+                -{formatCurrency(Math.abs(netBalance))}
+              </SproutText>
+              <SproutText style={styles.foot}>
+                you owe
+              </SproutText>
+            </>
+          )}
         </View>
-        {group.description ? (
-          <SproutText variant="caption" color={colors.muted} numberOfLines={1} style={styles.description}>
-            {group.description}
-          </SproutText>
-        ) : null}
+        <ChevronRight size={16} color={colors.muted} strokeWidth={1.7} style={styles.chevron} />
       </View>
     </TouchableOpacity>
   );
@@ -98,44 +99,67 @@ export const GroupCard: React.FC<GroupCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    minHeight: 68,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.line,
-  },
-  topRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    minHeight: 55,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#CBD7CC',
   },
   iconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.accentSoft,
+    width: 37,
+    height: 37,
+    borderRadius: 18.5,
+    backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.md,
+    marginRight: 12,
   },
   infoCol: {
     flex: 1,
+    paddingRight: spacing.xs,
   },
-  bottomRow: {
+  title: {
+    fontFamily: fontFamilies.medium,
+    fontSize: 13,
+    color: '#183228',
+    marginBottom: 2,
+  },
+  subtitle: {
+    fontFamily: fontFamilies.medium,
+    fontSize: 10,
+    color: '#6D7C72',
+  },
+  rightCol: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    marginLeft: spacing.sm,
+  },
+  balanceCol: {
+    alignItems: 'flex-end',
+  },
+  settledText: {
+    fontFamily: fontFamilies.medium,
+    fontSize: 11,
+    color: '#6D7C72',
+  },
+  amountOwed: {
+    fontFamily: fontFamilies.medium,
+    fontSize: 13,
+    color: colors.accent,
+  },
+  amountOwes: {
+    fontFamily: fontFamilies.medium,
+    fontSize: 13,
+    color: colors.negative,
+  },
+  foot: {
+    fontFamily: fontFamilies.medium,
+    fontSize: 9,
+    color: colors.muted,
     marginTop: 2,
   },
-  balancePill: {
-    paddingVertical: 4,
-    paddingHorizontal: spacing.sm,
-    borderRadius: radii.full,
-  },
-  balanceText: {
-    fontSize: 10,
-  },
-  description: {
-    flex: 1,
-    textAlign: 'right',
-    marginLeft: spacing.sm,
+  chevron: {
+    marginLeft: 6,
   },
 });

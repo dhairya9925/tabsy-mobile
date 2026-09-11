@@ -94,14 +94,14 @@ export const GroupListSkeleton: React.FC<{ count?: number }> = ({ count = 3 }) =
   return (
     <View style={styles.listSkeleton}>
       {Array.from({ length: count }).map((_, idx) => (
-        <View key={`grp-skel-${idx}`} style={[styles.groupCardSkeleton, shadows.card]}>
+        <View key={`grp-skel-${idx}`} style={styles.groupCardSkeleton}>
           <View style={styles.groupCardTop}>
-            <Skeleton width={38} height={38} variant="circle" />
-            <View style={{ flex: 1, marginLeft: spacing.sm }}>
-              <Skeleton width="50%" height={15} variant="text" style={{ marginBottom: 6 }} />
-              <Skeleton width="30%" height={11} variant="text" />
+            <Skeleton width={37} height={37} variant="circle" />
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Skeleton width="50%" height={13} variant="text" style={{ marginBottom: 4 }} />
+              <Skeleton width="35%" height={10} variant="text" />
             </View>
-            <Skeleton width={70} height={22} borderRadius={radii.full} />
+            <Skeleton width={65} height={14} borderRadius={radii.sm} />
           </View>
         </View>
       ))}
@@ -139,12 +139,10 @@ const styles = StyleSheet.create({
     marginLeft: spacing.md,
   },
   groupCardSkeleton: {
-    backgroundColor: colors.surface,
-    borderRadius: radii.lg,
-    borderTopRightRadius: radii.xs,
-    borderWidth: 1,
-    borderColor: colors.line,
-    padding: spacing.lg,
+    minHeight: 55,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#CBD7CC',
   },
   groupCardTop: {
     flexDirection: 'row',

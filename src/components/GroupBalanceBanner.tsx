@@ -1,9 +1,8 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { colors, fontFamilies, radii, spacing } from '../theme';
+import { colors, fontFamilies, spacing } from '../theme';
 import { SproutText } from './SproutText';
-import { SproutButton } from './SproutButton';
-import { formatCurrencyExact } from '../utils/formatters';
+import { formatCurrency } from '../utils/formatters';
 import { GroupMember } from '../types';
 import { CheckCircle2 } from 'lucide-react-native';
 
@@ -16,7 +15,6 @@ export interface GroupBalanceBannerProps {
 export const GroupBalanceBanner: React.FC<GroupBalanceBannerProps> = ({
   netBalance,
   members,
-  onSettlePress,
 }) => {
   const isSettled = Math.abs(netBalance) <= 0.01;
   const isOwed = netBalance > 0.01;
@@ -32,21 +30,21 @@ export const GroupBalanceBanner: React.FC<GroupBalanceBannerProps> = ({
   return (
     <View style={[styles.container, bgStyle]}>
       <View style={styles.topSection}>
-        <SproutText variant="eyebrow" color="#536D5B" style={styles.eyebrow}>
-          CLEAR BETWEEN FRIENDS
+        <SproutText style={styles.eyebrow}>
+          Clear between friends
         </SproutText>
 
         <View style={styles.amountRow}>
           {isSettled ? (
             <View style={styles.settledRow}>
-              <CheckCircle2 size={20} color={colors.accent} style={{ marginRight: 6 }} />
+              <CheckCircle2 size={24} color="#183228" style={{ marginRight: 8 }} />
               <SproutText style={styles.settledText}>
                 All Settled
               </SproutText>
             </View>
           ) : (
             <SproutText style={styles.heroAmount}>
-              {formatCurrencyExact(Math.abs(netBalance))}
+              {formatCurrency(Math.abs(netBalance))}
             </SproutText>
           )}
         </View>
@@ -70,7 +68,7 @@ export const GroupBalanceBanner: React.FC<GroupBalanceBannerProps> = ({
                 key={m.id || idx}
                 style={[
                   styles.miniAvatar,
-                  { marginLeft: idx === 0 ? 0 : -8, zIndex: 10 - idx },
+                  { marginLeft: idx === 0 ? 0 : -6, zIndex: 10 - idx },
                 ]}
               >
                 <SproutText style={styles.miniInitial}>
@@ -84,23 +82,15 @@ export const GroupBalanceBanner: React.FC<GroupBalanceBannerProps> = ({
           {members.length > 0 ? `You + ${otherMembersCount} friend${otherMembersCount !== 1 ? 's' : ''}` : 'Group members'}
         </SproutText>
       </View>
-
-      {/* Settle Up Action */}
-      {!isSettled && onSettlePress && (
-        <SproutButton
-          label="Settle gently"
-          onPress={onSettlePress}
-          style={styles.settleBtn}
-        />
-      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    backgroundColor: '#D8E8CB',
     borderTopLeftRadius: 28,
-    borderTopRightRadius: 10,
+    borderTopRightRadius: 9,
     borderBottomLeftRadius: 28,
     borderBottomRightRadius: 28,
     padding: 19,
@@ -113,20 +103,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#F4DACD',
   },
   bannerSettled: {
-    backgroundColor: '#FBFDF7',
-    borderWidth: 1,
-    borderColor: '#CBD7CC',
+    backgroundColor: '#D8E8CB',
   },
   topSection: {
-    marginBottom: 10,
+    marginBottom: 0,
   },
   eyebrow: {
-    fontSize: 9,
-    letterSpacing: 1.2,
+    fontFamily: fontFamilies.regular,
+    fontSize: 12,
     color: '#536D5B',
   },
   amountRow: {
-    marginVertical: 4,
+    marginTop: 6,
+    marginBottom: 2,
   },
   settledRow: {
     flexDirection: 'row',
@@ -134,30 +123,28 @@ const styles = StyleSheet.create({
   },
   settledText: {
     fontFamily: fontFamilies.bold,
-    fontSize: 24,
-    letterSpacing: -0.6,
+    fontSize: 28,
+    lineHeight: 34,
+    letterSpacing: -1,
     color: '#183228',
   },
   heroAmount: {
     fontFamily: fontFamilies.bold,
     fontSize: 35,
-    lineHeight: 40,
+    lineHeight: 42,
     letterSpacing: -1.8,
     color: '#183228',
   },
   subtitle: {
-    fontFamily: fontFamilies.medium,
-    fontSize: 10,
+    fontFamily: fontFamilies.regular,
+    fontSize: 12,
     color: '#536D5B',
     marginTop: 2,
   },
   membersRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#18322810',
-    marginBottom: 4,
+    marginTop: 14,
   },
   avatarsCluster: {
     flexDirection: 'row',
@@ -180,14 +167,8 @@ const styles = StyleSheet.create({
   },
   membersText: {
     fontFamily: fontFamilies.medium,
-    fontSize: 11,
+    fontSize: 12,
     color: '#536D5B',
     marginLeft: 8,
-  },
-  settleBtn: {
-    marginTop: 12,
-    minHeight: 44,
-    borderRadius: 22,
-    backgroundColor: '#407A58',
   },
 });
