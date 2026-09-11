@@ -8,12 +8,16 @@ export interface SproutTextProps extends TextProps {
   weight?: '400' | '500' | '600' | '700' | '800';
 }
 
-const weightMap: Record<string, string> = {
-  '400': fontFamilies.regular,
-  '500': fontFamilies.medium,
-  '600': fontFamilies.semiBold,
-  '700': fontFamilies.bold,
-  '800': fontFamilies.extraBold,
+const getWeightFamily = (weight?: '400' | '500' | '600' | '700' | '800') => {
+  if (!weight) return undefined;
+  switch (weight) {
+    case '400': return fontFamilies.regular;
+    case '500': return fontFamilies.medium;
+    case '600': return fontFamilies.semiBold;
+    case '700': return fontFamilies.bold;
+    case '800': return fontFamilies.extraBold;
+    default: return undefined;
+  }
 };
 
 export const SproutText: React.FC<SproutTextProps> = ({
@@ -25,7 +29,8 @@ export const SproutText: React.FC<SproutTextProps> = ({
   ...rest
 }) => {
   const variantStyle = typography[variant] || typography.body;
-  const familyOverride = weight && weightMap[weight] ? { fontFamily: weightMap[weight] } : null;
+  const family = getWeightFamily(weight);
+  const familyOverride = family ? { fontFamily: family } : null;
 
   return (
     <RNText

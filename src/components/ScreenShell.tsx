@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { colors, spacing } from '../theme';
+import { useThemeStore } from '../store/useThemeStore';
 
 export interface ScreenShellProps {
   children: React.ReactNode;
@@ -29,6 +30,8 @@ export const ScreenShell: React.FC<ScreenShellProps> = ({
   style,
   contentContainerStyle,
 }) => {
+  const isDark = useThemeStore((s) => s.isDark);
+
   const content = scrollable ? (
     <ScrollView
       showsVerticalScrollIndicator={false}
@@ -52,8 +55,11 @@ export const ScreenShell: React.FC<ScreenShellProps> = ({
   );
 
   return (
-    <SafeAreaView style={[styles.safeArea, style]} edges={['top', 'left', 'right']}>
-      <StatusBar style="dark" />
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: colors.background }, style]}
+      edges={['top', 'left', 'right']}
+    >
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.keyboardContainer}
