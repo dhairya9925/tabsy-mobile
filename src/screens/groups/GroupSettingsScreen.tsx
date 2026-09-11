@@ -185,14 +185,13 @@ export const GroupSettingsScreen: React.FC<Props> = ({ route, navigation }) => {
             </SproutText>
           </View>
           <TouchableOpacity
-            activeOpacity={0.8}
+            activeOpacity={0.7}
             onPress={handleShareCode}
-            style={styles.copyBtn}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            accessibilityRole="button"
+            accessibilityLabel="Share invite code"
           >
-            <Share2 size={16} color={colors.accent} style={{ marginRight: 4 }} />
-            <SproutText variant="caption" color={colors.accent} weight="700">
-              Share
-            </SproutText>
+            <Share2 size={20} color={colors.text} strokeWidth={2} />
           </TouchableOpacity>
         </View>
 
@@ -267,16 +266,6 @@ const styles = StyleSheet.create({
   shareLeft: {
     flex: 1,
     marginRight: spacing.sm,
-  },
-  copyBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: spacing.md,
-    borderRadius: radii.full,
-    borderWidth: 1,
-    borderColor: colors.accent,
-    backgroundColor: colors.accentSoft,
   },
   saveBtn: {
     marginTop: spacing.sm,

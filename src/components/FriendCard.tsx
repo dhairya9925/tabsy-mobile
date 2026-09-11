@@ -6,7 +6,7 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { fontFamilies, spacing } from '../theme';
+import { fontFamilies, radii, spacing } from '../theme';
 import { SproutText } from './SproutText';
 import { AvatarCircle } from './AvatarCircle';
 import { FriendRecord } from '../types';
@@ -107,7 +107,7 @@ export const FriendCard: React.FC<FriendCardProps> = ({
 
           {mode === 'sent' && (
             <View style={styles.sentBadge}>
-              <Clock size={11} color="#6B7A70" style={{ marginRight: 4 }} />
+              <Clock size={10} color="#D8E8CB" style={{ marginRight: 4 }} />
               <SproutText style={styles.sentBadgeText}>
                 Pending
               </SproutText>
@@ -142,7 +142,7 @@ export const FriendCard: React.FC<FriendCardProps> = ({
         <View style={styles.bottomLeft}>
           {isShadow ? (
             <View style={styles.contactBadge}>
-              <Ghost size={11} color="#6B7A70" style={{ marginRight: 4 }} />
+              <Ghost size={10} color="#D8E8CB" style={{ marginRight: 4 }} />
               <SproutText style={styles.contactBadgeText}>
                 Contact
               </SproutText>
@@ -285,17 +285,16 @@ const styles = StyleSheet.create({
   sentBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#EFF5ED',
-    paddingVertical: 3,
+    backgroundColor: '#183228',
+    paddingVertical: 2.5,
     paddingHorizontal: 8,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#E2EAE0',
+    borderRadius: radii.full,
   },
   sentBadgeText: {
-    fontFamily: fontFamilies.medium,
-    fontSize: 11,
-    color: '#6B7A70',
+    fontFamily: fontFamilies.bold,
+    fontSize: 10,
+    letterSpacing: 0.2,
+    color: '#D8E8CB',
   },
   divider: {
     height: 1,
@@ -320,17 +319,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    backgroundColor: '#EFF5ED',
-    paddingVertical: 2,
-    paddingHorizontal: 7,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E2EAE0',
+    backgroundColor: '#183228',
+    paddingVertical: 2.5,
+    paddingHorizontal: 8,
+    borderRadius: radii.full,
   },
   contactBadgeText: {
-    fontFamily: fontFamilies.medium,
-    fontSize: 11,
-    color: '#6B7A70',
+    fontFamily: fontFamilies.bold,
+    fontSize: 10,
+    letterSpacing: 0.2,
+    color: '#D8E8CB',
   },
   bottomRight: {
     flexDirection: 'row',

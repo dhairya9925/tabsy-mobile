@@ -40,7 +40,7 @@ export const GroupMemberRow: React.FC<GroupMemberRowProps> = ({
           </SproutText>
           {isAdmin && (
             <View style={styles.adminBadge}>
-              <Crown size={11} color={colors.accent} style={{ marginRight: 3 }} />
+              <Crown size={10} color="#D8E8CB" style={{ marginRight: 3.5 }} />
               <SproutText style={styles.adminText}>
                 Admin
               </SproutText>
@@ -98,16 +98,17 @@ const styles = StyleSheet.create({
   adminBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.accentSoft,
+    backgroundColor: '#183228',
     borderRadius: radii.full,
-    paddingVertical: 2,
-    paddingHorizontal: 6,
+    paddingVertical: 2.5,
+    paddingHorizontal: 7,
     marginLeft: spacing.sm,
   },
   adminText: {
     fontFamily: fontFamilies.bold,
     fontSize: 9,
-    color: colors.accent,
+    letterSpacing: 0.3,
+    color: '#D8E8CB',
   },
   removeBtn: {
     padding: 8,

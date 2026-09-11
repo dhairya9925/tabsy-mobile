@@ -38,8 +38,8 @@ export interface ThemePaletteConfig {
 export const THEME_PALETTES = {
   sprout: {
     id: 'sprout',
-    name: 'Direction 09 (Sprout)',
-    tagline: 'Encouraging / Calm / Consistent',
+    name: 'Sprout',
+    tagline: 'Botanical green · Warm gold · Mist',
     isDark: false,
     dots: ['#407A58', '#F0BF67', '#D8E8CB'],
     colors: {
@@ -74,8 +74,8 @@ export const THEME_PALETTES = {
   },
   sproutNight: {
     id: 'sproutNight',
-    name: 'Direction 11 (Sprout Night)',
-    tagline: 'Forest / Gold / Reassuring',
+    name: 'Sprout Night',
+    tagline: 'Forest obsidian · Mint · Warm gold',
     isDark: true,
     dots: ['#86C49A', '#F0BF67', '#1D3B2E'],
     colors: {
@@ -110,8 +110,8 @@ export const THEME_PALETTES = {
   },
   sproutMoon: {
     id: 'sproutMoon',
-    name: 'Direction 12 (Sprout Moon)',
-    tagline: 'Blue-Green / Silver / Reflective',
+    name: 'Sprout Moon',
+    tagline: 'Deep navy · Slate blue · Cyan',
     isDark: true,
     dots: ['#A5D2C8', '#E8AE8C', '#223A41'],
     colors: {
@@ -146,8 +146,8 @@ export const THEME_PALETTES = {
   },
   sproutEmber: {
     id: 'sproutEmber',
-    name: 'Direction 13 (Sprout Ember)',
-    tagline: 'Charcoal / Clay / Direct',
+    name: 'Sprout Ember',
+    tagline: 'Charcoal canvas · Roasted clay · Lime',
     isDark: true,
     dots: ['#C6D980', '#ED9A73', '#36302A'],
     colors: {

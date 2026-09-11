@@ -29,13 +29,11 @@ import {
   RotateCcw,
   ChevronDown,
   ChevronUp,
-  Sparkles,
   Plus,
   X,
-  Edit3,
 } from 'lucide-react-native';
 
-const GENERIC_BUDGET_OPTIONS = [15000, 25000, 30000, 40000, 50000, 75000, 100000];
+const GENERIC_BUDGET_OPTIONS = [10000, 15000, 20000, 30000];
 
 export const SettingsScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -47,9 +45,14 @@ export const SettingsScreen: React.FC = () => {
   const paletteId = useThemeStore((s) => s.paletteId);
   const typographyId = useThemeStore((s) => s.typographyId);
   const isDefault = useThemeStore((s) => s.isDefault);
+  const isDark = useThemeStore((s) => s.isDark);
   const setPalette = useThemeStore((s) => s.setPalette);
   const setTypography = useThemeStore((s) => s.setTypography);
   const resetToDefault = useThemeStore((s) => s.resetToDefault);
+
+  // Contextual capsule badge colors (dark forest on light background; elevated surface on dark background)
+  const capsuleBg = isDark ? colors.surfaceElevated : colors.text;
+  const capsuleText = isDark ? colors.accent : colors.soft;
 
   const [toastMessage, setToastMessage] = useState('');
   const [isPalettePickerOpen, setIsPalettePickerOpen] = useState(false);
@@ -71,8 +74,8 @@ export const SettingsScreen: React.FC = () => {
   const handleSelectBudget = (amount: number) => {
     setMonthlyBudget(amount);
     setJustSavedTarget(true);
-    setTimeout(() => setJustSavedTarget(false), 3000);
-    setToastMessage(`Monthly budget pace target set to ${formatCurrency(amount)}`);
+    setTimeout(() => setJustSavedTarget(false), 2500);
+    setToastMessage(`Monthly rhythm set to ${formatCurrency(amount)}`);
   };
 
   const handleOpenCustomInput = () => {
@@ -84,11 +87,11 @@ export const SettingsScreen: React.FC = () => {
   const handleSaveCustomBudget = () => {
     const parsed = parseInt(customInputText, 10);
     if (isNaN(parsed) || parsed < 1000) {
-      setCustomInputError('Please enter an amount of at least ₹1,000');
+      setCustomInputError('Please enter a target of at least ₹1,000');
       return;
     }
     if (parsed > 10000000) {
-      setCustomInputError('Target amount exceeds maximum limit of ₹1,00,00,000');
+      setCustomInputError('Target exceeds limit of ₹1,00,00,000');
       return;
     }
 
@@ -97,8 +100,8 @@ export const SettingsScreen: React.FC = () => {
     setCustomInputText('');
     setCustomInputError('');
     setJustSavedTarget(true);
-    setTimeout(() => setJustSavedTarget(false), 3500);
-    setToastMessage(`Monthly budget pace target saved to ${formatCurrency(parsed)}`);
+    setTimeout(() => setJustSavedTarget(false), 3000);
+    setToastMessage(`Monthly rhythm saved to ${formatCurrency(parsed)}`);
   };
 
   const handleAdjustCustomDraft = (delta: number) => {
@@ -110,7 +113,7 @@ export const SettingsScreen: React.FC = () => {
 
   const handleSelectPalette = (key: PaletteKey) => {
     setPalette(key);
-    setToastMessage(`Theme palette set to ${THEME_PALETTES[key].name}`);
+    setToastMessage(`Palette set to ${THEME_PALETTES[key].name}`);
   };
 
   const handleSelectTypography = (key: TypographyKey) => {
@@ -120,7 +123,7 @@ export const SettingsScreen: React.FC = () => {
 
   const handleResetToDefault = () => {
     resetToDefault();
-    setToastMessage('Theme reset to Sprout Direction 09 & Manrope default');
+    setToastMessage('Appearance reset to Sprout default');
   };
 
   const currentPalette = THEME_PALETTES[paletteId] || THEME_PALETTES.sprout;
@@ -142,51 +145,37 @@ export const SettingsScreen: React.FC = () => {
           onPress={() => navigation.goBack()}
         />
         <View style={styles.topBarCenter}>
-          <SproutText variant="eyebrow" color={colors.accent}>
+          <SproutText variant="eyebrow" color={colors.muted}>
             PREFERENCES
           </SproutText>
-          <SproutText variant="title" color={colors.text}>
+          <SproutText variant="title" color={colors.text} weight="800">
             Settings
           </SproutText>
         </View>
         <View style={{ width: 44 }} />
       </View>
 
-      {/* Monthly Budget Pace */}
+      {/* 1. Monthly Rhythm */}
       <View style={[styles.sectionCard, shadows.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
         <View style={styles.sectionHeaderBetween}>
           <View style={styles.sectionHeader}>
-            <Target size={18} color={colors.accent} />
+            <View style={[styles.headerIconCircle, { backgroundColor: colors.background }]}>
+              <Target size={16} color={colors.accent} />
+            </View>
             <SproutText variant="subtitle" color={colors.text} weight="700">
-              Monthly Budget Pace Target
+              Monthly Rhythm
             </SproutText>
           </View>
-          <View
-            style={[
-              styles.badgePill,
-              {
-                backgroundColor: justSavedTarget ? colors.soft : colors.accentSoft,
-                borderColor: justSavedTarget ? colors.accent : 'transparent',
-              },
-            ]}
-          >
-            {justSavedTarget ? (
-              <View style={styles.badgeRow}>
-                <Check size={12} color={colors.accent} style={{ marginRight: 4 }} />
-                <SproutText variant="caption" color={colors.accent} style={{ fontWeight: '700', fontSize: 11 }}>
-                  Saved ✓
-                </SproutText>
-              </View>
-            ) : (
-              <SproutText variant="caption" color={colors.accent} style={{ fontWeight: '700', fontSize: 11 }}>
-                Set & Active
-              </SproutText>
-            )}
+          <View style={[styles.capsuleBadge, { backgroundColor: capsuleBg }]}>
+            <Check size={11} color={capsuleText} strokeWidth={2.4} style={{ marginRight: 4 }} />
+            <SproutText style={[styles.capsuleBadgeText, { color: capsuleText }]}>
+              {justSavedTarget ? 'Saved' : 'Active'}
+            </SproutText>
           </View>
         </View>
 
         <SproutText variant="caption" color={colors.muted} style={styles.sectionDesc}>
-          Sets the monthly target used by the Rhythm progress ring on your Home screen to pace everyday spending.
+          Paces your daily spending against your monthly target on the Home ring.
         </SproutText>
 
         {/* Current Active Target Banner */}
@@ -200,40 +189,29 @@ export const SettingsScreen: React.FC = () => {
           ]}
         >
           <View style={styles.activeBudgetBannerLeft}>
-            <View style={[styles.targetIconCircle, { backgroundColor: colors.surface }]}>
-              <Target size={20} color={colors.accent} />
+            <View style={[styles.targetIconCircle, { backgroundColor: colors.surfaceElevated, borderColor: colors.line }]}>
+              <Target size={18} color={colors.accent} />
             </View>
             <View style={{ flex: 1 }}>
               <SproutText variant="eyebrow" color={colors.muted}>
-                CURRENT ACTIVE TARGET
+                MONTHLY TARGET
               </SproutText>
-              <SproutText variant="amount" color={colors.text} style={{ fontSize: 22, marginTop: 2 }}>
-                {formatCurrency(monthlyBudget)}
-                <SproutText variant="caption" color={colors.muted}>
-                  {' '}/ month
+              <View style={styles.amountBaselineRow}>
+                <SproutText variant="amount" color={colors.text} weight="800" style={{ fontSize: 22 }}>
+                  {formatCurrency(monthlyBudget)}
                 </SproutText>
-              </SproutText>
-              <SproutText variant="caption" color={colors.muted} style={{ fontSize: 11, marginTop: 2 }}>
-                Recommended pace: ~{formatCurrency(Math.round(monthlyBudget / 30))}/day
+                <SproutText variant="caption" color={colors.muted} style={{ marginLeft: 4 }}>
+                  / month
+                </SproutText>
+              </View>
+              <SproutText variant="caption" color={colors.muted} style={{ fontSize: 11, marginTop: 1 }}>
+                Paced at ~{formatCurrency(Math.round(monthlyBudget / 30))} / day
               </SproutText>
             </View>
           </View>
-          <TouchableOpacity
-            style={[styles.customEditTrigger, { borderColor: colors.line, backgroundColor: colors.surface }]}
-            activeOpacity={0.7}
-            onPress={handleOpenCustomInput}
-          >
-            <Edit3 size={14} color={colors.accent} />
-            <SproutText variant="caption" color={colors.accent} style={{ fontWeight: '700', marginLeft: 4 }}>
-              Custom
-            </SproutText>
-          </TouchableOpacity>
         </View>
 
-        {/* Generic & Custom Budget Chips */}
-        <SproutText variant="caption" color={colors.muted} style={{ marginBottom: 8, fontWeight: '600' }}>
-          Select standard tier or custom pace:
-        </SproutText>
+        {/* Preset & Custom Budget Chips */}
         <View style={styles.budgetChipsRow}>
           {allBudgetOptions.map((amount) => {
             const isSelected = monthlyBudget === amount;
@@ -251,7 +229,7 @@ export const SettingsScreen: React.FC = () => {
               >
                 <View style={styles.chipContentRow}>
                   {isSelected && (
-                    <Check size={12} color={colors.onAccent} style={{ marginRight: 4 }} />
+                    <Check size={11} color={colors.onAccent} style={{ marginRight: 4 }} />
                   )}
                   <SproutText
                     variant="caption"
@@ -264,12 +242,16 @@ export const SettingsScreen: React.FC = () => {
                     <View
                       style={[
                         styles.chipCustomTag,
-                        { backgroundColor: isSelected ? 'rgba(255,255,255,0.25)' : colors.surface },
+                        {
+                          backgroundColor: isSelected
+                            ? 'rgba(255,255,255,0.25)'
+                            : capsuleBg,
+                        },
                       ]}
                     >
                       <SproutText
                         variant="caption"
-                        color={isSelected ? colors.onAccent : colors.muted}
+                        color={isSelected ? colors.onAccent : capsuleText}
                         style={{ fontSize: 9, fontWeight: '700' }}
                       >
                         CUSTOM
@@ -292,11 +274,17 @@ export const SettingsScreen: React.FC = () => {
               },
             ]}
             activeOpacity={0.8}
-            onPress={() => setIsCustomInputOpen(!isCustomInputOpen)}
+            onPress={() => {
+              if (isCustomInputOpen) {
+                setIsCustomInputOpen(false);
+              } else {
+                handleOpenCustomInput();
+              }
+            }}
           >
-            <Plus size={13} color={colors.accent} style={{ marginRight: 4 }} />
+            <Plus size={12} color={colors.accent} style={{ marginRight: 4 }} />
             <SproutText variant="caption" color={colors.accent} style={{ fontWeight: '700' }}>
-              Custom target
+              Custom
             </SproutText>
           </TouchableOpacity>
         </View>
@@ -307,10 +295,10 @@ export const SettingsScreen: React.FC = () => {
             <View style={styles.customFormHeader}>
               <View>
                 <SproutText variant="body" color={colors.text} weight="700">
-                  Set Custom Monthly Target
+                  Custom Rhythm Target
                 </SproutText>
                 <SproutText variant="caption" color={colors.muted}>
-                  Enter exact monthly budget pace in INR (₹)
+                  Set any monthly spending pace in INR (₹)
                 </SproutText>
               </View>
               <TouchableOpacity
@@ -325,7 +313,7 @@ export const SettingsScreen: React.FC = () => {
             </View>
 
             {/* Numeric Input */}
-            <View style={[styles.customInputRow, { backgroundColor: colors.surface, borderColor: customInputError ? colors.negative : colors.line }]}>
+            <View style={[styles.customInputRow, { backgroundColor: colors.surfaceElevated, borderColor: customInputError ? colors.negative : colors.line }]}>
               <SproutText variant="title" color={colors.accent} style={{ fontWeight: '800', marginRight: 6 }}>
                 ₹
               </SproutText>
@@ -348,20 +336,20 @@ export const SettingsScreen: React.FC = () => {
               )}
             </View>
 
-            {/* Live Indication: Unsaved Draft Preview */}
+            {/* Live Indication: Draft Preview */}
             {!!customInputText && parseInt(customInputText, 10) > 0 && (
-              <View style={[styles.draftIndicationBox, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+              <View style={[styles.draftIndicationBox, { backgroundColor: colors.surfaceElevated, borderColor: colors.line }]}>
                 <View style={styles.draftBadgeRow}>
                   <View style={[styles.draftIndicatorDot, { backgroundColor: colors.sun }]} />
                   <SproutText variant="caption" color={colors.muted} style={{ fontSize: 11, fontWeight: '700' }}>
-                    UNSAVED TARGET DRAFT
+                    TARGET PREVIEW
                   </SproutText>
                 </View>
                 <SproutText variant="body" color={colors.text} weight="700" style={{ marginTop: 2 }}>
                   {formatCurrency(parseInt(customInputText, 10))} / month
                 </SproutText>
                 <SproutText variant="caption" color={colors.muted} style={{ fontSize: 11 }}>
-                  Daily pace: ~{formatCurrency(Math.round(parseInt(customInputText, 10) / 30))}/day
+                  Daily pace: ~{formatCurrency(Math.round(parseInt(customInputText, 10) / 30))} / day
                   {monthlyBudget !== parseInt(customInputText, 10) && (
                     ` (${parseInt(customInputText, 10) > monthlyBudget ? '+' : ''}${formatCurrency(parseInt(customInputText, 10) - monthlyBudget)} vs current)`
                   )}
@@ -379,12 +367,12 @@ export const SettingsScreen: React.FC = () => {
             {/* Quick Increment/Decrement Adjustments */}
             <View style={styles.quickAdjustRow}>
               <SproutText variant="caption" color={colors.muted} style={{ marginRight: 6 }}>
-                Adjust:
+                Quick:
               </SproutText>
               {[-5000, 5000, 10000, 25000].map((delta) => (
                 <TouchableOpacity
                   key={delta}
-                  style={[styles.quickAdjustChip, { backgroundColor: colors.surface, borderColor: colors.line }]}
+                  style={[styles.quickAdjustChip, { backgroundColor: colors.surfaceElevated, borderColor: colors.line }]}
                   activeOpacity={0.7}
                   onPress={() => handleAdjustCustomDraft(delta)}
                 >
@@ -415,7 +403,7 @@ export const SettingsScreen: React.FC = () => {
                 activeOpacity={0.8}
                 onPress={handleSaveCustomBudget}
               >
-                <Check size={16} color={colors.onAccent} style={{ marginRight: 6 }} />
+                <Check size={15} color={colors.onAccent} style={{ marginRight: 5 }} />
                 <SproutText variant="caption" color={colors.onAccent} style={{ fontWeight: '700' }}>
                   Save Target
                 </SproutText>
@@ -425,26 +413,28 @@ export const SettingsScreen: React.FC = () => {
         )}
       </View>
 
-      {/* Currency & Splitting */}
+      {/* 2. Splitting & Units */}
       <View style={[styles.sectionCard, shadows.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
         <View style={styles.sectionHeader}>
-          <Coins size={18} color={colors.accent} />
+          <View style={[styles.headerIconCircle, { backgroundColor: colors.background }]}>
+            <Coins size={16} color={colors.accent} />
+          </View>
           <SproutText variant="subtitle" color={colors.text} weight="700">
-            Currency & Calculation
+            Splitting & Units
           </SproutText>
         </View>
 
         <View style={styles.infoRow}>
           <View style={styles.infoRowLeft}>
             <SproutText variant="body" color={colors.text} weight="600">
-              Active Currency
+              Currency
             </SproutText>
             <SproutText variant="caption" color={colors.muted}>
-              Primary denomination
+              Indian Rupee
             </SproutText>
           </View>
-          <View style={[styles.badgePill, { backgroundColor: colors.background, borderColor: colors.line }]}>
-            <SproutText variant="monoSm" color={colors.accent}>
+          <View style={[styles.capsuleBadge, { backgroundColor: capsuleBg }]}>
+            <SproutText style={[styles.capsuleBadgeText, { color: capsuleText }]}>
               INR (₹)
             </SproutText>
           </View>
@@ -455,42 +445,40 @@ export const SettingsScreen: React.FC = () => {
         <View style={styles.infoRow}>
           <View style={styles.infoRowLeft}>
             <SproutText variant="body" color={colors.text} weight="600">
-              Default Split Method
+              Default Split
             </SproutText>
             <SproutText variant="caption" color={colors.muted}>
-              Standard allocation
+              Equally shared (1/n)
             </SproutText>
           </View>
-          <View style={[styles.badgePill, { backgroundColor: colors.background, borderColor: colors.line }]}>
-            <SproutText variant="caption" color={colors.accent} style={{ fontWeight: '600' }}>
-              Split Equally
+          <View style={[styles.capsuleBadge, { backgroundColor: capsuleBg }]}>
+            <SproutText style={[styles.capsuleBadgeText, { color: capsuleText }]}>
+              Equal share
             </SproutText>
           </View>
         </View>
       </View>
 
-      {/* Design System & Aesthetics */}
+      {/* 3. Appearance */}
       <View style={[styles.sectionCard, shadows.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
         <View style={styles.sectionHeaderBetween}>
           <View style={styles.sectionHeader}>
-            <Palette size={18} color={colors.accent} />
+            <View style={[styles.headerIconCircle, { backgroundColor: colors.background }]}>
+              <Palette size={16} color={colors.accent} />
+            </View>
             <SproutText variant="subtitle" color={colors.text} weight="700">
-              Design & Aesthetics
+              Appearance
             </SproutText>
           </View>
-          <View style={[styles.badgePill, { backgroundColor: isDefault ? colors.soft : colors.accentSoft, borderColor: 'transparent' }]}>
-            <SproutText
-              variant="caption"
-              color={isDefault ? colors.accent : colors.text}
-              style={{ fontWeight: '700', fontSize: 11 }}
-            >
-              {isDefault ? 'Default (Sprout)' : 'Customized'}
+          <View style={[styles.capsuleBadge, { backgroundColor: capsuleBg }]}>
+            <SproutText style={[styles.capsuleBadgeText, { color: capsuleText }]}>
+              {isDefault ? 'Sprout' : 'Custom'}
             </SproutText>
           </View>
         </View>
 
         <SproutText variant="caption" color={colors.muted} style={styles.sectionDesc}>
-          Personalize your visual palette and typography. Direction 09 (Sprout) is your default baseline.
+          Curated visual palettes and typographic voice.
         </SproutText>
 
         {/* Theme Palette Picker Header */}
@@ -501,7 +489,7 @@ export const SettingsScreen: React.FC = () => {
         >
           <View style={styles.infoRowLeft}>
             <SproutText variant="body" color={colors.text} weight="600">
-              Theme Palette
+              Palette
             </SproutText>
             <SproutText variant="caption" color={colors.muted}>
               {currentPalette.name}
@@ -551,8 +539,8 @@ export const SettingsScreen: React.FC = () => {
                         {pal.name}
                       </SproutText>
                       {key === 'sprout' && (
-                        <View style={[styles.defaultBadge, { backgroundColor: colors.soft }]}>
-                          <SproutText variant="caption" color={colors.accent} style={{ fontSize: 9, fontWeight: '700' }}>
+                        <View style={[styles.defaultBadge, { backgroundColor: capsuleBg }]}>
+                          <SproutText style={[styles.defaultBadgeText, { color: capsuleText }]}>
                             DEFAULT
                           </SproutText>
                         </View>
@@ -586,9 +574,9 @@ export const SettingsScreen: React.FC = () => {
             </SproutText>
           </View>
           <View style={styles.pickerHeaderRight}>
-            <View style={[styles.badgePill, { backgroundColor: colors.background, borderColor: colors.line }]}>
-              <SproutText variant="monoSm" color={colors.accent}>
-                {typographyId === 'mono' ? '123 Mono' : typographyId === 'system' ? 'System' : 'Manrope'}
+            <View style={[styles.capsuleBadge, { backgroundColor: capsuleBg }]}>
+              <SproutText style={[styles.capsuleBadgeText, { color: capsuleText }]}>
+                {currentTypography.name}
               </SproutText>
             </View>
             {isTypographyPickerOpen ? (
@@ -624,8 +612,8 @@ export const SettingsScreen: React.FC = () => {
                         {typo.name}
                       </SproutText>
                       {key === 'manrope' && (
-                        <View style={[styles.defaultBadge, { backgroundColor: colors.soft }]}>
-                          <SproutText variant="caption" color={colors.accent} style={{ fontSize: 9, fontWeight: '700' }}>
+                        <View style={[styles.defaultBadge, { backgroundColor: capsuleBg }]}>
+                          <SproutText style={[styles.defaultBadgeText, { color: capsuleText }]}>
                             DEFAULT
                           </SproutText>
                         </View>
@@ -634,7 +622,7 @@ export const SettingsScreen: React.FC = () => {
                     <SproutText variant="caption" color={colors.muted}>
                       {typo.description}
                     </SproutText>
-                    <View style={[styles.sampleBox, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+                    <View style={[styles.sampleBox, { backgroundColor: colors.surfaceElevated, borderColor: colors.line }]}>
                       <SproutText
                         variant="caption"
                         color={colors.text}
@@ -654,81 +642,104 @@ export const SettingsScreen: React.FC = () => {
           </View>
         )}
 
-        <View style={[styles.divider, { backgroundColor: colors.line }]} />
-
-        {/* Reset to Default Action */}
-        <TouchableOpacity
-          style={[
-            styles.resetButton,
-            {
-              backgroundColor: isDefault ? colors.background : colors.accentSoft,
-              borderColor: isDefault ? colors.line : colors.accent,
-            },
-          ]}
-          disabled={isDefault}
-          activeOpacity={0.8}
-          onPress={handleResetToDefault}
-        >
-          <View style={styles.resetButtonContent}>
-            <RotateCcw
-              size={18}
-              color={isDefault ? colors.muted : colors.accent}
-              style={{ marginRight: 10 }}
-            />
-            <View style={{ flex: 1 }}>
-              <SproutText
-                variant="body"
-                color={isDefault ? colors.muted : colors.accent}
-                weight="700"
-              >
-                Reset to Default
-              </SproutText>
-              <SproutText variant="caption" color={colors.muted} style={{ fontSize: 11, marginTop: 2 }}>
-                {isDefault
-                  ? 'Currently active: Direction 09 (Sprout) & Manrope standard.'
-                  : 'Restores default Direction 09 (Sprout) palette and Manrope typography.'}
-              </SproutText>
-            </View>
+        {/* Reset Action */}
+        {!isDefault ? (
+          <>
+            <View style={[styles.divider, { backgroundColor: colors.line }]} />
+            <TouchableOpacity
+              style={[
+                styles.resetButton,
+                {
+                  backgroundColor: colors.accentSoft,
+                  borderColor: colors.accent,
+                },
+              ]}
+              activeOpacity={0.8}
+              onPress={handleResetToDefault}
+            >
+              <View style={styles.resetButtonContent}>
+                <RotateCcw
+                  size={16}
+                  color={colors.accent}
+                  style={{ marginRight: 10 }}
+                />
+                <View style={{ flex: 1 }}>
+                  <SproutText
+                    variant="body"
+                    color={colors.accent}
+                    weight="700"
+                  >
+                    Restore Sprout default
+                  </SproutText>
+                  <SproutText variant="caption" color={colors.muted} style={{ fontSize: 11, marginTop: 1 }}>
+                    Revert to Sprout botanical palette and Manrope typography
+                  </SproutText>
+                </View>
+              </View>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <View style={styles.defaultActiveNoteRow}>
+            <Check size={13} color={colors.muted} style={{ marginRight: 6 }} />
+            <SproutText variant="caption" color={colors.muted} style={{ fontSize: 11 }}>
+              Default Sprout palette & Manrope active
+            </SproutText>
           </View>
-          {isDefault && <Check size={16} color={colors.muted} />}
-        </TouchableOpacity>
+        )}
       </View>
 
-      {/* About Section */}
+      {/* 4. About Tabsy */}
       <View style={[styles.sectionCard, shadows.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
         <View style={styles.sectionHeader}>
-          <Info size={18} color={colors.accent} />
+          <View style={[styles.headerIconCircle, { backgroundColor: colors.background }]}>
+            <Info size={16} color={colors.accent} />
+          </View>
           <SproutText variant="subtitle" color={colors.text} weight="700">
             About Tabsy
           </SproutText>
         </View>
 
         <View style={styles.infoRow}>
-          <SproutText variant="body" color={colors.text}>
-            App Version
-          </SproutText>
-          <SproutText variant="monoSm" color={colors.muted}>
-            1.0.0 (Native Android)
-          </SproutText>
+          <View style={styles.infoRowLeft}>
+            <SproutText variant="body" color={colors.text} weight="600">
+              Version
+            </SproutText>
+            <SproutText variant="caption" color={colors.muted}>
+              Tabsy Mobile
+            </SproutText>
+          </View>
+          <View style={[styles.capsuleBadge, { backgroundColor: capsuleBg }]}>
+            <SproutText style={[styles.capsuleBadgeText, { color: capsuleText }]}>
+              1.0.0
+            </SproutText>
+          </View>
         </View>
 
         <View style={[styles.divider, { backgroundColor: colors.line }]} />
 
         <View style={styles.infoRow}>
-          <SproutText variant="body" color={colors.text}>
-            Backend Architecture
-          </SproutText>
-          <SproutText variant="caption" color={colors.muted}>
-            FastAPI v1 (Self-Hosted Auth)
-          </SproutText>
+          <View style={styles.infoRowLeft}>
+            <SproutText variant="body" color={colors.text} weight="600">
+              Sync Engine
+            </SproutText>
+            <SproutText variant="caption" color={colors.muted}>
+              Tabsy Cloud API
+            </SproutText>
+          </View>
+          <View style={[styles.capsuleBadge, { backgroundColor: capsuleBg }]}>
+            <Check size={11} color={capsuleText} strokeWidth={2.4} style={{ marginRight: 4 }} />
+            <SproutText style={[styles.capsuleBadgeText, { color: capsuleText }]}>
+              Connected
+            </SproutText>
+          </View>
         </View>
 
         <View style={[styles.divider, { backgroundColor: colors.line }]} />
 
         <View style={[styles.securityRow, { backgroundColor: colors.background }]}>
           <ShieldCheck size={16} color={colors.accent} />
-          <SproutText variant="caption" color={colors.muted}>
-            Credentials are protected with bcrypt and encrypted SecureStore tokens.
+          <SproutText variant="caption" color={colors.muted} style={{ flex: 1, lineHeight: 17 }}>
+            End-to-end device token encryption with secure vault storage.
           </SproutText>
         </View>
       </View>
@@ -738,7 +749,7 @@ export const SettingsScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: {
-    paddingBottom: 60,
+    paddingBottom: 80,
   },
   topBar: {
     flexDirection: 'row',
@@ -767,6 +778,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 4,
   },
+  headerIconCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   sectionDesc: {
     marginTop: 4,
     marginBottom: spacing.md,
@@ -778,7 +796,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: spacing.md,
     borderRadius: radii.md,
-    borderWidth: 1.5,
+    borderWidth: 1.2,
     marginBottom: spacing.md,
   },
   activeBudgetBannerLeft: {
@@ -788,19 +806,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   targetIconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  customEditTrigger: {
+  amountBaselineRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: radii.full,
-    borderWidth: 1,
+    alignItems: 'baseline',
+    marginTop: 1,
   },
   budgetChipsRow: {
     flexDirection: 'row',
@@ -810,7 +826,7 @@ const styles = StyleSheet.create({
   budgetChip: {
     borderWidth: 1,
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 7,
     borderRadius: radii.full,
   },
   budgetChipActive: {},
@@ -820,9 +836,9 @@ const styles = StyleSheet.create({
   },
   chipCustomTag: {
     marginLeft: 6,
-    paddingHorizontal: 5,
-    paddingVertical: 1,
-    borderRadius: radii.xs,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: radii.full,
   },
   addCustomChip: {
     flexDirection: 'row',
@@ -836,7 +852,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     padding: spacing.md,
     borderRadius: radii.md,
-    borderWidth: 1.5,
+    borderWidth: 1.2,
   },
   customFormHeader: {
     flexDirection: 'row',
@@ -848,7 +864,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.md,
-    height: 48,
+    height: 46,
     borderRadius: radii.sm,
     borderWidth: 1,
   },
@@ -907,9 +923,27 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: radii.sm,
   },
-  badgeRow: {
+  capsuleBadge: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 4.5,
+    borderRadius: radii.full,
+  },
+  capsuleBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+  defaultBadge: {
+    paddingHorizontal: 7,
+    paddingVertical: 2.5,
+    borderRadius: radii.full,
+  },
+  defaultBadgeText: {
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.4,
   },
   infoRow: {
     flexDirection: 'row',
@@ -930,12 +964,7 @@ const styles = StyleSheet.create({
   },
   infoRowLeft: {
     flex: 1,
-  },
-  badgePill: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: radii.full,
-    borderWidth: 1,
+    paddingRight: 8,
   },
   colorDotsRow: {
     flexDirection: 'row',
@@ -974,11 +1003,6 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 2,
   },
-  defaultBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: radii.xs,
-  },
   sampleBox: {
     marginTop: 6,
     paddingHorizontal: 8,
@@ -999,6 +1023,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
+  },
+  defaultActiveNoteRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingTop: spacing.sm,
   },
   divider: {
     height: 1,

@@ -22,8 +22,8 @@ export interface TypographyPresetConfig {
 export const TYPOGRAPHY_PRESETS = {
   manrope: {
     id: 'manrope',
-    name: 'Manrope (Sprout standard)',
-    description: 'Humanist geometric sans-serif for everyday balance',
+    name: 'Manrope',
+    description: 'Humanist geometric · Clean daily balance',
     sample: '₹18,640.00 · Daily Rhythm',
     fontFamilies: {
       regular: 'Manrope_400Regular',
@@ -39,8 +39,8 @@ export const TYPOGRAPHY_PRESETS = {
   },
   mono: {
     id: 'mono',
-    name: 'JetBrains Mono (Numeric focus)',
-    description: 'Editorial monospaced numerals for financial clarity',
+    name: 'JetBrains Mono',
+    description: 'Editorial monospace · Financial precision',
     sample: '₹18,640.00 · Precision Ledger',
     fontFamilies: {
       regular: 'JetBrainsMono_400Regular',
@@ -56,8 +56,8 @@ export const TYPOGRAPHY_PRESETS = {
   },
   system: {
     id: 'system',
-    name: 'System Default (Native Clean)',
-    description: 'Platform standard system typography',
+    name: 'System Native',
+    description: 'Platform standard · High legibility',
     sample: '₹18,640.00 · Native Standard',
     fontFamilies: {
       regular: undefined,
