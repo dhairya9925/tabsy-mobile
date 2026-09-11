@@ -7,29 +7,79 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
-import { colors, radii, spacing, shadows } from '../../theme';
+import { colors, radii, spacing, shadows, fontFamilies } from '../../theme';
 import {
   SproutText,
-  SproutButton,
-  CircleButton,
-  CategoryChip,
-  FieldRow,
-  SegmentControl,
   Toast,
 } from '../../components';
 import { groupsApi } from '../../api/groups';
-import { expensesApi } from '../../api/expenses';
 import { useAuthStore } from '../../store/useAuthStore';
-import { Group, GroupMember, Category } from '../../types';
-import { toLocalDateString, formatCurrencyExact } from '../../utils/formatters';
-import { splitEqual, roundMoney } from '../../utils/money';
-import { X, Check, UserCheck, FileText, Calendar, DollarSign } from 'lucide-react-native';
+import { Group, GroupMember } from '../../types';
+import { toLocalDateString, formatCurrencyExact, getInitials } from '../../utils/formatters';
+import { splitEqual } from '../../utils/money';
+import {
+  ArrowLeft,
+  X,
+  FileText,
+  CalendarDays,
+  Utensils,
+  Car,
+  ShoppingBag,
+  ReceiptText,
+  MoreHorizontal,
+  Check,
+  CheckCheck,
+  Users,
+  UserCheck,
+} from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { getEntryEyebrow, formatFriendlyDate } from '../journal/AddExpenseModal';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AddGroupExpenseModal'>;
+
+interface SproutCategoryItem {
+  id: string;
+  name: string;
+  shortLabel: string;
+  icon: (color: string) => React.ReactNode;
+}
+
+const DEFAULT_SPROUT_CATEGORIES: SproutCategoryItem[] = [
+  {
+    id: 'food',
+    name: 'Food & Dining',
+    shortLabel: 'Food',
+    icon: (c) => <Utensils size={20} color={c} strokeWidth={1.8} />,
+  },
+  {
+    id: 'transport',
+    name: 'Transport',
+    shortLabel: 'Travel',
+    icon: (c) => <Car size={20} color={c} strokeWidth={1.8} />,
+  },
+  {
+    id: 'shopping',
+    name: 'Shopping',
+    shortLabel: 'Shop',
+    icon: (c) => <ShoppingBag size={20} color={c} strokeWidth={1.8} />,
+  },
+  {
+    id: 'bills',
+    name: 'Bills & Utilities',
+    shortLabel: 'Bills',
+    icon: (c) => <ReceiptText size={20} color={c} strokeWidth={1.8} />,
+  },
+  {
+    id: 'other',
+    name: 'Other',
+    shortLabel: 'Other',
+    icon: (c) => <MoreHorizontal size={20} color={c} strokeWidth={1.8} />,
+  },
+];
 
 export const AddGroupExpenseModal: React.FC<Props> = ({ route, navigation }) => {
   const initialGroupId = route.params?.groupId;
@@ -43,28 +93,18 @@ export const AddGroupExpenseModal: React.FC<Props> = ({ route, navigation }) => 
   const [amountStr, setAmountStr] = useState('');
   const [description, setDescription] = useState('');
   const [dateStr, setDateStr] = useState(toLocalDateString(new Date()));
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [selectedCategoryName, setSelectedCategoryName] = useState<string>('Food & Dining');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('food');
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const [splitMethod, setSplitMethod] = useState<'equal' | 'custom'>('equal');
   const [selectedMemberIds, setSelectedMemberIds] = useState<Set<string>>(new Set());
   const [customAmounts, setCustomAmounts] = useState<Record<string, string>>({});
 
-  const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
-  // Default fallback categories
-  const defaultCategories: Category[] = [
-    { id: 'food', name: 'Food & Dining' },
-    { id: 'transport', name: 'Transport' },
-    { id: 'shopping', name: 'Shopping' },
-    { id: 'bills', name: 'Bills & Utilities' },
-    { id: 'other', name: 'Other' },
-  ];
-
-  // Load groups & categories
+  // Load groups
   useEffect(() => {
     groupsApi.getGroups()
       .then((gList) => {
@@ -74,30 +114,17 @@ export const AddGroupExpenseModal: React.FC<Props> = ({ route, navigation }) => 
         }
       })
       .catch(() => {});
-
-    expensesApi.getCategories()
-      .then((cats) => {
-        if (cats.length > 0) {
-          setCategories(cats);
-          setSelectedCategoryName(cats[0].name);
-        } else {
-          setCategories(defaultCategories);
-        }
-      })
-      .catch(() => setCategories(defaultCategories));
   }, []);
 
   // When selectedGroupId changes, fetch members
   useEffect(() => {
     if (!selectedGroupId) return;
-    setIsLoading(true);
     groupsApi.getGroupMembers(selectedGroupId)
       .then((mList) => {
         setMembers(mList);
         const allIds = new Set(mList.map((m) => m.user_id));
         setSelectedMemberIds(allIds);
 
-        // Default paidBy to current user if present in group
         const currId = currentUser?.id || currentUser?.user_id || '';
         const isMember = mList.some((m) => m.user_id === currId);
         if (isMember) {
@@ -108,8 +135,7 @@ export const AddGroupExpenseModal: React.FC<Props> = ({ route, navigation }) => 
       })
       .catch((err) => {
         setErrorMessage(err.message || 'Failed to load group members');
-      })
-      .finally(() => setIsLoading(false));
+      });
   }, [selectedGroupId, currentUser]);
 
   const toggleMemberSelection = (userId: string) => {
@@ -126,46 +152,64 @@ export const AddGroupExpenseModal: React.FC<Props> = ({ route, navigation }) => 
     });
   };
 
+  const handleCustomAmountChange = (userId: string, val: string) => {
+    const cleaned = val.replace(/[^0-9.]/g, '');
+    setCustomAmounts((prev) => ({ ...prev, [userId]: cleaned }));
+  };
+
+  const handleAmountChange = (text: string) => {
+    const cleaned = text.replace(/[^0-9.]/g, '');
+    const parts = cleaned.split('.');
+    if (parts.length > 2) return;
+    if (parts[1] && parts[1].length > 2) return;
+    setAmountStr(cleaned);
+  };
+
+  const numericAmount = parseFloat(amountStr) || 0;
+  const hasDecimal = amountStr.includes('.');
+
+  const equalShares = numericAmount > 0 && selectedMemberIds.size > 0
+    ? splitEqual(numericAmount, selectedMemberIds.size)
+    : [];
+
   const handleSave = async () => {
     setErrorMessage('');
-    const parsedAmount = parseFloat(amountStr);
-
-    if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      setErrorMessage('Please enter a valid expense amount');
+    if (numericAmount <= 0) {
+      setErrorMessage('Please enter an amount greater than 0');
       return;
     }
-
     if (!selectedGroupId) {
       setErrorMessage('Please select a group');
       return;
     }
+    if (selectedMemberIds.size === 0) {
+      setErrorMessage('At least one member must be selected to split');
+      return;
+    }
 
-    let splits: { user_id: string; amount: number }[] = [];
+    let finalSplits: { user_id: string; amount: number }[] = [];
 
     if (splitMethod === 'equal') {
-      const selected = Array.from(selectedMemberIds);
-      if (selected.length === 0) {
-        setErrorMessage('Select at least one member to split with');
-        return;
-      }
-      const shares = splitEqual(parsedAmount, selected.length);
-      splits = selected.map((uid, idx) => ({
-        user_id: uid,
-        amount: shares[idx],
+      const activeMembers = members.filter((m) => selectedMemberIds.has(m.user_id));
+      const shares = splitEqual(numericAmount, activeMembers.length);
+      finalSplits = activeMembers.map((m, idx) => ({
+        user_id: m.user_id,
+        amount: shares[idx] || 0,
       }));
     } else {
-      // Custom split
-      splits = members
-        .filter((m) => customAmounts[m.user_id] && parseFloat(customAmounts[m.user_id]) > 0)
-        .map((m) => ({
+      let customSum = 0;
+      finalSplits = members.map((m) => {
+        const val = parseFloat(customAmounts[m.user_id] || '0') || 0;
+        customSum += val;
+        return {
           user_id: m.user_id,
-          amount: parseFloat(customAmounts[m.user_id]),
-        }));
+          amount: val,
+        };
+      });
 
-      const splitSum = splits.reduce((sum, s) => sum + s.amount, 0);
-      if (Math.abs(roundMoney(splitSum - parsedAmount)) > 0.02) {
+      if (Math.abs(customSum - numericAmount) > 0.05) {
         setErrorMessage(
-          `Split amounts (₹${splitSum.toFixed(2)}) must equal total (₹${parsedAmount.toFixed(2)})`
+          `Custom split total (${formatCurrencyExact(customSum)}) must match expense amount (${formatCurrencyExact(numericAmount)})`
         );
         return;
       }
@@ -173,35 +217,26 @@ export const AddGroupExpenseModal: React.FC<Props> = ({ route, navigation }) => 
 
     setIsSubmitting(true);
     try {
+      const selectedCat = DEFAULT_SPROUT_CATEGORIES.find((c) => c.id === selectedCategoryId);
+      const catName = selectedCat?.name || 'Other';
+
       await groupsApi.createGroupExpense(selectedGroupId, {
-        amount: parsedAmount,
-        category: selectedCategoryName,
+        amount: numericAmount,
+        category: catName,
         note: description.trim() || undefined,
         expense_date: dateStr,
-        paid_by: paidByUserId || undefined,
-        splits,
+        paid_by: paidByUserId || (currentUser?.id || currentUser?.user_id),
+        splits: finalSplits,
       });
 
-      setSuccessMessage('Expense added successfully');
-      setTimeout(() => {
-        navigation.goBack();
-      }, 500);
+      setSuccessMessage('Group expense saved');
+      setTimeout(() => navigation.goBack(), 450);
     } catch (err: any) {
-      setErrorMessage(err.message || 'Error saving group expense');
+      setErrorMessage(err.message || 'Failed to save group expense');
     } finally {
       setIsSubmitting(false);
     }
   };
-
-  const splitOptions = [
-    { value: 'equal' as const, label: 'Split Equally' },
-    { value: 'custom' as const, label: 'Custom Split' },
-  ];
-
-  const totalAmount = parseFloat(amountStr) || 0;
-  const equalShares = totalAmount > 0 && selectedMemberIds.size > 0
-    ? splitEqual(totalAmount, selectedMemberIds.size)
-    : [];
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
@@ -222,16 +257,34 @@ export const AddGroupExpenseModal: React.FC<Props> = ({ route, navigation }) => 
           onDismiss={() => setSuccessMessage('')}
         />
 
-        {/* Top Header */}
+        {/* Header */}
         <View style={styles.header}>
-          <CircleButton
-            icon={<X size={20} color={colors.text} />}
+          <TouchableOpacity
+            activeOpacity={0.8}
             onPress={() => navigation.goBack()}
-          />
-          <SproutText variant="title" color={colors.text} style={styles.headerTitle}>
-            Add Group Expense
-          </SproutText>
-          <View style={{ width: 44 }} />
+            style={styles.headerCircleBtn}
+            accessibilityLabel="Back"
+          >
+            <ArrowLeft size={20} color={colors.text} strokeWidth={2} />
+          </TouchableOpacity>
+
+          <View style={styles.headerCenter}>
+            <SproutText variant="eyebrow" color={colors.muted} style={styles.headerEyebrow}>
+              {getEntryEyebrow(dateStr)}
+            </SproutText>
+            <SproutText variant="title" color={colors.text} style={styles.headerTitle}>
+              Add group expense
+            </SproutText>
+          </View>
+
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => navigation.goBack()}
+            style={styles.headerCircleBtn}
+            accessibilityLabel="Close"
+          >
+            <X size={20} color={colors.text} strokeWidth={2} />
+          </TouchableOpacity>
         </View>
 
         <ScrollView
@@ -239,35 +292,38 @@ export const AddGroupExpenseModal: React.FC<Props> = ({ route, navigation }) => 
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={styles.scrollContent}
         >
-          {/* Amount Display */}
-          <View style={styles.amountContainer}>
-            <SproutText variant="eyebrow" color={colors.muted} style={styles.amountEyebrow}>
-              AMOUNT
+          {/* Amount Card */}
+          <View style={styles.sproutAmountCard}>
+            <SproutText variant="caption" color={colors.muted} style={styles.howMuchLabel}>
+              How much?
             </SproutText>
-            <View style={styles.amountInputRow}>
-              <SproutText variant="amount" color={colors.accent} style={styles.currencyPrefix}>
+            <View style={styles.amountDisplayRow}>
+              <SproutText variant="amount" color={colors.text} style={styles.currencySymbol}>
                 ₹
               </SproutText>
               <TextInput
-                style={styles.amountInput}
-                placeholder="0"
-                placeholderTextColor={colors.line}
+                style={styles.amountNumberInput}
                 value={amountStr}
-                onChangeText={setAmountStr}
-                keyboardType="numeric"
+                onChangeText={handleAmountChange}
+                placeholder="480"
+                placeholderTextColor={colors.line}
+                keyboardType="decimal-pad"
+                maxLength={8}
                 autoFocus
-                maxLength={9}
               />
+              <SproutText variant="subtitle" color={colors.muted} style={styles.amountDecimal}>
+                {hasDecimal ? '' : '.00'}
+              </SproutText>
             </View>
           </View>
 
-          {/* Group Selector Pill Bar (if multiple groups) */}
+          {/* Group Selector (if multiple groups) */}
           {groups.length > 1 && (
-            <View style={styles.section}>
-              <SproutText variant="eyebrow" color={colors.muted} style={styles.sectionLabel}>
+            <View style={styles.subSectionCard}>
+              <SproutText variant="eyebrow" color={colors.muted} style={styles.subSectionTitle}>
                 SELECT GROUP
               </SproutText>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.groupScroll}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalChips}>
                 {groups.map((g) => {
                   const isSelected = selectedGroupId === g.id;
                   return (
@@ -275,15 +331,13 @@ export const AddGroupExpenseModal: React.FC<Props> = ({ route, navigation }) => 
                       key={g.id}
                       activeOpacity={0.8}
                       onPress={() => setSelectedGroupId(g.id)}
-                      style={[
-                        styles.groupPill,
-                        isSelected && styles.groupPillSelected,
-                      ]}
+                      style={[styles.groupChip, isSelected && styles.groupChipSelected]}
                     >
+                      <Users size={14} color={isSelected ? colors.onAccent : colors.accent} style={{ marginRight: 6 }} />
                       <SproutText
                         variant="caption"
                         color={isSelected ? colors.onAccent : colors.text}
-                        weight="700"
+                        weight={isSelected ? '700' : '600'}
                       >
                         {g.name}
                       </SproutText>
@@ -295,154 +349,268 @@ export const AddGroupExpenseModal: React.FC<Props> = ({ route, navigation }) => 
           )}
 
           {/* Paid By Selector */}
-          <View style={styles.section}>
-            <SproutText variant="eyebrow" color={colors.muted} style={styles.sectionLabel}>
+          <View style={styles.subSectionCard}>
+            <SproutText variant="eyebrow" color={colors.muted} style={styles.subSectionTitle}>
               PAID BY
             </SproutText>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.memberChips}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalChips}>
               {members.map((m) => {
                 const isSelected = paidByUserId === m.user_id;
-                const name = m.profile?.display_name || m.profile?.email?.split('@')[0] || 'Member';
                 const isYou = m.user_id === (currentUser?.id || currentUser?.user_id);
+                const name = isYou ? 'You' : (m.profile?.display_name || m.profile?.email?.split('@')[0] || 'Member');
                 return (
                   <TouchableOpacity
                     key={m.user_id}
                     activeOpacity={0.8}
                     onPress={() => setPaidByUserId(m.user_id)}
-                    style={[
-                      styles.payerChip,
-                      isSelected && styles.payerChipSelected,
-                    ]}
+                    style={[styles.payerChip, isSelected && styles.payerChipSelected]}
                   >
-                    <UserCheck size={14} color={isSelected ? colors.onAccent : colors.accent} style={{ marginRight: 4 }} />
+                    <UserCheck size={13} color={isSelected ? colors.onAccent : colors.accent} style={{ marginRight: 4 }} />
                     <SproutText
                       variant="caption"
                       color={isSelected ? colors.onAccent : colors.text}
-                      weight="700"
+                      weight={isSelected ? '700' : '600'}
                     >
-                      {isYou ? 'You' : name}
+                      {name}
                     </SproutText>
                   </TouchableOpacity>
                 );
               })}
             </ScrollView>
-          </View>
 
-          {/* Split Mode Toggle */}
-          <View style={styles.section}>
-            <SproutText variant="eyebrow" color={colors.muted} style={styles.sectionLabel}>
-              SPLIT METHOD
-            </SproutText>
-            <SegmentControl
-              options={splitOptions}
-              value={splitMethod}
-              onChange={(val) => setSplitMethod(val)}
-            />
-          </View>
+            {/* Split Method Toggle */}
+            <View style={styles.pillToggleGroup}>
+              <SproutText variant="eyebrow" color={colors.muted} style={styles.pillGroupLabel}>
+                SPLIT METHOD
+              </SproutText>
+              <View style={styles.pillToggleRow}>
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  onPress={() => setSplitMethod('equal')}
+                  style={[styles.togglePill, splitMethod === 'equal' && styles.togglePillSelected]}
+                >
+                  <SproutText
+                    variant="caption"
+                    color={splitMethod === 'equal' ? colors.accent : colors.muted}
+                    weight={splitMethod === 'equal' ? '800' : '600'}
+                  >
+                    Split equally
+                  </SproutText>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  onPress={() => setSplitMethod('custom')}
+                  style={[styles.togglePill, splitMethod === 'custom' && styles.togglePillSelected]}
+                >
+                  <SproutText
+                    variant="caption"
+                    color={splitMethod === 'custom' ? colors.accent : colors.muted}
+                    weight={splitMethod === 'custom' ? '800' : '600'}
+                  >
+                    Exact amounts
+                  </SproutText>
+                </TouchableOpacity>
+              </View>
 
-          {/* Split Allocation Members List */}
-          <View style={styles.splitCard}>
-            <SproutText variant="caption" color={colors.muted} weight="700" style={styles.splitCardTitle}>
-              {splitMethod === 'equal'
-                ? `Split among ${selectedMemberIds.size} members (₹${equalShares[0] ? equalShares[0].toFixed(2) : '0.00'} each)`
-                : 'Enter exact amount per member:'}
-            </SproutText>
-
-            {members.map((m, idx) => {
-              const isSelected = selectedMemberIds.has(m.user_id);
-              const name = m.profile?.display_name || m.profile?.email?.split('@')[0] || 'Member';
-              const isYou = m.user_id === (currentUser?.id || currentUser?.user_id);
-
-              return (
-                <View key={m.user_id} style={styles.memberSplitRow}>
-                  {splitMethod === 'equal' ? (
-                    <TouchableOpacity
-                      activeOpacity={0.8}
-                      onPress={() => toggleMemberSelection(m.user_id)}
-                      style={styles.checkboxRow}
-                    >
-                      <View style={[styles.checkbox, isSelected && styles.checkboxChecked]}>
-                        {isSelected && <Check size={14} color={colors.onAccent} strokeWidth={3} />}
-                      </View>
-                      <SproutText variant="body" color={colors.text} weight="600" style={styles.splitName}>
-                        {isYou ? 'You' : name}
-                      </SproutText>
-                      {isSelected && (
-                        <SproutText variant="caption" color={colors.accent} weight="700">
-                          {equalShares[idx] ? `₹${equalShares[idx].toFixed(2)}` : '—'}
-                        </SproutText>
-                      )}
-                    </TouchableOpacity>
-                  ) : (
-                    <View style={styles.customSplitRow}>
-                      <SproutText variant="body" color={colors.text} weight="600" style={styles.splitName}>
-                        {isYou ? 'You' : name}
-                      </SproutText>
-                      <View style={styles.customInputWrap}>
-                        <SproutText variant="caption" color={colors.muted}>₹</SproutText>
-                        <TextInput
-                          style={styles.customAmountInput}
-                          placeholder="0.00"
-                          placeholderTextColor={colors.muted}
-                          keyboardType="numeric"
-                          value={customAmounts[m.user_id] || ''}
-                          onChangeText={(text) =>
-                            setCustomAmounts((prev) => ({ ...prev, [m.user_id]: text }))
-                          }
-                        />
-                      </View>
-                    </View>
-                  )}
+              {/* Live equal breakdown summary */}
+              {splitMethod === 'equal' && selectedMemberIds.size > 0 && (
+                <View style={[styles.breakdownPill, styles.breakdownPillPositive]}>
+                  <SproutText variant="caption" color="#25603A" weight="700">
+                    {numericAmount > 0
+                      ? `₹${(numericAmount / selectedMemberIds.size).toFixed(2)} each across ${selectedMemberIds.size} members`
+                      : `Split equally among ${selectedMemberIds.size} members`}
+                  </SproutText>
                 </View>
+              )}
+
+              {/* Members inclusion list */}
+              {splitMethod === 'equal' && (
+                <View style={styles.membersList}>
+                  {members.map((m) => {
+                    const isIncluded = selectedMemberIds.has(m.user_id);
+                    const isYou = m.user_id === (currentUser?.id || currentUser?.user_id);
+                    const name = isYou ? 'You' : (m.profile?.display_name || m.profile?.email?.split('@')[0] || 'Member');
+                    return (
+                      <TouchableOpacity
+                        key={m.user_id}
+                        activeOpacity={0.8}
+                        onPress={() => toggleMemberSelection(m.user_id)}
+                        style={[styles.memberRow, isIncluded && styles.memberRowIncluded]}
+                      >
+                        <View style={[styles.checkCircle, isIncluded && styles.checkCircleActive]}>
+                          {isIncluded && <Check size={12} color="#FFFFFF" strokeWidth={3} />}
+                        </View>
+                        <SproutText variant="body" color={colors.text} style={{ flex: 1 }}>
+                          {name}
+                        </SproutText>
+                        <SproutText variant="caption" color={colors.muted} weight="600">
+                          {isIncluded && numericAmount > 0
+                            ? `₹${(numericAmount / selectedMemberIds.size).toFixed(2)}`
+                            : 'Excluded'}
+                        </SproutText>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              )}
+
+              {/* Custom amounts input list */}
+              {splitMethod === 'custom' && (
+                <View style={styles.membersList}>
+                  {members.map((m) => {
+                    const isYou = m.user_id === (currentUser?.id || currentUser?.user_id);
+                    const name = isYou ? 'You' : (m.profile?.display_name || m.profile?.email?.split('@')[0] || 'Member');
+                    return (
+                      <View key={m.user_id} style={styles.customMemberRow}>
+                        <SproutText variant="body" color={colors.text} style={{ flex: 1 }}>
+                          {name}
+                        </SproutText>
+                        <View style={styles.customInputBox}>
+                          <SproutText variant="caption" color={colors.muted} style={{ marginRight: 2 }}>
+                            ₹
+                          </SproutText>
+                          <TextInput
+                            style={styles.customTextInput}
+                            keyboardType="decimal-pad"
+                            placeholder="0.00"
+                            placeholderTextColor={colors.line}
+                            value={customAmounts[m.user_id] || ''}
+                            onChangeText={(val) => handleCustomAmountChange(m.user_id, val)}
+                          />
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
+            </View>
+          </View>
+
+          {/* Category Grid */}
+          <View style={styles.categoryGrid}>
+            {DEFAULT_SPROUT_CATEGORIES.map((cat) => {
+              const isSelected = selectedCategoryId === cat.id;
+              return (
+                <TouchableOpacity
+                  key={cat.id}
+                  activeOpacity={0.8}
+                  onPress={() => setSelectedCategoryId(cat.id)}
+                  style={[
+                    styles.categoryBtn,
+                    isSelected && styles.categoryBtnSelected,
+                  ]}
+                >
+                  {cat.icon(isSelected ? colors.onAccent : colors.muted)}
+                  <SproutText
+                    variant="caption"
+                    color={isSelected ? colors.onAccent : colors.muted}
+                    weight={isSelected ? '700' : '600'}
+                    style={styles.categoryLabel}
+                  >
+                    {cat.shortLabel}
+                  </SproutText>
+                </TouchableOpacity>
               );
             })}
           </View>
 
-          {/* Categories Horizontal Carousel */}
-          <View style={styles.section}>
-            <SproutText variant="eyebrow" color={colors.muted} style={styles.sectionLabel}>
-              CATEGORY
-            </SproutText>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
-              {categories.map((cat) => (
-                <CategoryChip
-                  key={cat.id}
-                  id={cat.id}
-                  name={cat.name}
-                  isSelected={selectedCategoryName.toLowerCase() === cat.name.toLowerCase()}
-                  onSelect={() => setSelectedCategoryName(cat.name)}
-                />
-              ))}
-            </ScrollView>
+          {/* Details Fields */}
+          <View style={styles.fieldsContainer}>
+            {/* Note Field */}
+            <View style={styles.sproutFieldRow}>
+              <FileText size={18} color={colors.muted} strokeWidth={1.8} style={styles.fieldIcon} />
+              <TextInput
+                style={styles.fieldInput}
+                placeholder="Dinner at Social"
+                placeholderTextColor={colors.muted}
+                value={description}
+                onChangeText={setDescription}
+              />
+              <SproutText variant="caption" color={colors.muted} style={styles.fieldTag}>
+                Note
+              </SproutText>
+            </View>
+
+            {/* Date Field */}
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => setShowDatePicker(!showDatePicker)}
+              style={styles.sproutFieldRow}
+            >
+              <CalendarDays size={18} color={colors.muted} strokeWidth={1.8} style={styles.fieldIcon} />
+              <SproutText variant="body" color={colors.text} style={styles.fieldValue}>
+                {formatFriendlyDate(dateStr)}
+              </SproutText>
+              <SproutText variant="caption" color={colors.accent} weight="700" style={styles.fieldActionTag}>
+                Change
+              </SproutText>
+            </TouchableOpacity>
+
+            {showDatePicker && (
+              <View style={styles.datePickerChips}>
+                {[
+                  { label: 'Today', date: toLocalDateString(new Date()) },
+                  {
+                    label: 'Yesterday',
+                    date: (() => {
+                      const d = new Date();
+                      d.setDate(d.getDate() - 1);
+                      return toLocalDateString(d);
+                    })(),
+                  },
+                ].map((item) => {
+                  const isSelected = dateStr === item.date;
+                  return (
+                    <TouchableOpacity
+                      key={item.label}
+                      onPress={() => {
+                        setDateStr(item.date);
+                        setShowDatePicker(false);
+                      }}
+                      style={[styles.dateChip, isSelected && styles.dateChipSelected]}
+                    >
+                      <SproutText
+                        variant="caption"
+                        color={isSelected ? colors.onAccent : colors.text}
+                        weight="700"
+                      >
+                        {item.label}
+                      </SproutText>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            )}
           </View>
 
-          {/* Note & Date Fields */}
-          <View style={styles.section}>
-            <FieldRow
-              label="Note (Optional)"
-              placeholder="Dinner, cab..."
-              value={description}
-              onChangeText={setDescription}
-              icon={<FileText size={18} color={colors.muted} />}
-            />
-
-            <FieldRow
-              label="Date"
-              placeholder="YYYY-MM-DD"
-              value={dateStr}
-              onChangeText={setDateStr}
-              icon={<Calendar size={18} color={colors.muted} />}
-            />
+          {/* Affirmation Note */}
+          <View style={styles.affirmationRow}>
+            <CheckCheck size={16} color={colors.accent} strokeWidth={2.4} />
+            <SproutText variant="caption" color={colors.muted} style={styles.affirmationText}>
+              Shared rhythm · All shares added to group ledger.
+            </SproutText>
           </View>
         </ScrollView>
 
-        {/* Bottom CTA */}
+        {/* Bottom CTA Button */}
         <View style={styles.bottomBar}>
-          <SproutButton
-            label="Save Expense"
-            isLoading={isSubmitting}
+          <TouchableOpacity
+            activeOpacity={0.85}
             onPress={handleSave}
-          />
+            disabled={isSubmitting}
+            style={styles.saveCtaBtn}
+          >
+            {isSubmitting ? (
+              <ActivityIndicator size="small" color={colors.onAccent} />
+            ) : (
+              <>
+                <Check size={19} color={colors.onAccent} strokeWidth={2.4} />
+                <SproutText variant="subtitle" color={colors.onAccent} weight="700" style={styles.saveCtaText}>
+                  Save group expense
+                </SproutText>
+              </>
+            )}
+          </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -462,78 +630,122 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
+    paddingTop: spacing.xs,
     paddingBottom: spacing.sm,
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  scrollContent: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: 24,
-  },
-  amountContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginVertical: spacing.md,
-  },
-  amountEyebrow: {
-    marginBottom: spacing.xs,
-  },
-  amountInputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  currencyPrefix: {
-    fontSize: 44,
-    marginRight: 4,
-    color: colors.accent,
-  },
-  amountInput: {
-    fontSize: 44,
-    fontFamily: 'JetBrainsMono',
-    fontWeight: '700',
-    color: colors.text,
-    minWidth: 80,
-    textAlign: 'center',
-    padding: 0,
-  },
-  section: {
-    marginBottom: spacing.lg,
-  },
-  sectionLabel: {
-    marginBottom: spacing.sm,
-  },
-  groupScroll: {
-    gap: spacing.xs,
-    paddingVertical: 4,
-  },
-  groupPill: {
-    paddingVertical: 6,
-    paddingHorizontal: spacing.md,
-    borderRadius: radii.full,
+  headerCircleBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
     borderColor: colors.line,
   },
-  groupPillSelected: {
+  headerCenter: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerEyebrow: {
+    fontSize: 10,
+    letterSpacing: 0.8,
+    marginBottom: 2,
+    fontFamily: fontFamilies.bold,
+  },
+  headerTitle: {
+    fontSize: 21,
+    fontWeight: '800',
+    letterSpacing: -0.8,
+    fontFamily: fontFamilies.bold,
+  },
+  scrollContent: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xs,
+    paddingBottom: spacing.xl,
+  },
+  sproutAmountCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.line,
+    marginTop: spacing.xs,
+    marginBottom: 12,
+    ...shadows.card,
+  },
+  howMuchLabel: {
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  amountDisplayRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+  },
+  currencySymbol: {
+    fontSize: 28,
+    fontFamily: fontFamilies.bold,
+    marginTop: 8,
+    marginRight: 2,
+  },
+  amountNumberInput: {
+    fontSize: 52,
+    fontFamily: fontFamilies.bold,
+    letterSpacing: -2,
+    color: colors.text,
+    textAlign: 'center',
+    minWidth: 70,
+    padding: 0,
+    margin: 0,
+  },
+  amountDecimal: {
+    fontSize: 18,
+    fontFamily: fontFamilies.bold,
+    marginTop: 10,
+    marginLeft: 1,
+  },
+  subSectionCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.line,
+    marginBottom: 12,
+  },
+  subSectionTitle: {
+    fontSize: 10,
+    letterSpacing: 0.7,
+    marginBottom: spacing.xs,
+  },
+  horizontalChips: {
+    gap: spacing.sm,
+    paddingVertical: 4,
+  },
+  groupChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.background,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
+  groupChipSelected: {
     backgroundColor: colors.accent,
     borderColor: colors.accent,
-  },
-  memberChips: {
-    gap: spacing.xs,
-    paddingVertical: 4,
   },
   payerChip: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: colors.background,
     paddingVertical: 6,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: 10,
     borderRadius: radii.full,
-    backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.line,
   },
@@ -541,79 +753,211 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
     borderColor: colors.accent,
   },
-  splitCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: colors.line,
-    padding: spacing.md,
-    marginBottom: spacing.lg,
-    ...shadows.card,
+  pillToggleGroup: {
+    marginTop: spacing.md,
   },
-  splitCardTitle: {
-    marginBottom: spacing.sm,
+  pillGroupLabel: {
+    fontSize: 10,
+    letterSpacing: 0.7,
+    marginBottom: 6,
   },
-  memberSplitRow: {
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F4EE',
-  },
-  checkboxRow: {
+  pillToggleRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    backgroundColor: '#DFE9DC',
+    borderRadius: 999,
+    padding: 3,
+    gap: 4,
   },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
-    borderWidth: 2,
-    borderColor: colors.muted,
+  togglePill: {
+    flex: 1,
+    paddingVertical: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.sm,
+    borderRadius: 999,
   },
-  checkboxChecked: {
+  togglePillSelected: {
+    backgroundColor: colors.surface,
+    shadowColor: '#183228',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  breakdownPill: {
+    marginTop: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  breakdownPillPositive: {
+    backgroundColor: '#D8E8CB',
+  },
+  membersList: {
+    marginTop: 10,
+    gap: 6,
+  },
+  memberRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    backgroundColor: colors.background,
+  },
+  memberRowIncluded: {
+    backgroundColor: '#F3F8F1',
+  },
+  checkCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: colors.line,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+    backgroundColor: colors.surface,
+  },
+  checkCircleActive: {
     backgroundColor: colors.accent,
     borderColor: colors.accent,
   },
-  splitName: {
-    flex: 1,
-  },
-  customSplitRow: {
+  customMemberRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  customInputWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 10,
     backgroundColor: colors.background,
-    borderRadius: radii.sm,
+  },
+  customInputBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.line,
-    paddingHorizontal: spacing.sm,
-    width: 100,
-    height: 36,
-  },
-  customAmountInput: {
-    flex: 1,
-    fontSize: 14,
-    fontFamily: 'JetBrainsMono',
-    fontWeight: '700',
-    color: colors.text,
-    textAlign: 'right',
-    padding: 0,
-    marginLeft: 4,
-  },
-  categoryScroll: {
+    borderRadius: 8,
+    paddingHorizontal: 8,
     paddingVertical: 4,
+    width: 100,
+  },
+  customTextInput: {
+    flex: 1,
+    fontSize: 13,
+    color: colors.text,
+    fontFamily: fontFamilies.bold,
+    padding: 0,
+    textAlign: 'right',
+  },
+  categoryGrid: {
+    flexDirection: 'row',
+    gap: 7,
+    marginVertical: 4,
+  },
+  categoryBtn: {
+    flex: 1,
+    height: 64,
+    borderRadius: 16,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.line,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  categoryBtnSelected: {
+    backgroundColor: colors.accent,
+    borderColor: colors.accent,
+  },
+  categoryLabel: {
+    fontSize: 10,
+  },
+  fieldsContainer: {
+    marginTop: 8,
+  },
+  sproutFieldRow: {
+    height: 49,
+    backgroundColor: colors.surface,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.line,
+    paddingHorizontal: 13,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  fieldIcon: {
+    marginRight: 10,
+  },
+  fieldInput: {
+    flex: 1,
+    fontSize: 13,
+    fontFamily: fontFamilies.regular,
+    color: colors.text,
+    padding: 0,
+  },
+  fieldValue: {
+    flex: 1,
+    fontSize: 13,
+    fontFamily: fontFamilies.bold,
+  },
+  fieldTag: {
+    fontSize: 11,
+  },
+  fieldActionTag: {
+    fontSize: 11,
+  },
+  datePickerChips: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: 8,
+    paddingLeft: 4,
+  },
+  dateChip: {
+    backgroundColor: colors.surface,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
+  dateChipSelected: {
+    backgroundColor: colors.accent,
+    borderColor: colors.accent,
+  },
+  affirmationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 10,
+    marginBottom: 6,
+  },
+  affirmationText: {
+    fontSize: 11,
   },
   bottomBar: {
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.lg,
-    paddingTop: spacing.sm,
-    backgroundColor: colors.background,
-    borderTopWidth: 1,
-    borderTopColor: colors.line,
+    paddingBottom: spacing.md,
+    paddingTop: spacing.xs,
+  },
+  saveCtaBtn: {
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: colors.accent,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    shadowColor: '#183228',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.16,
+    shadowRadius: 5,
+    elevation: 4,
+  },
+  saveCtaText: {
+    fontSize: 15,
   },
 });
