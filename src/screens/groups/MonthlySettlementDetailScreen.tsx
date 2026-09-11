@@ -111,7 +111,7 @@ export const MonthlySettlementDetailScreen: React.FC<Props> = ({ route, navigati
     }
   };
 
-  const currentUserId = currentUser?.id || currentUser?.user_id;
+  const currentUserId = currentUser?.user_id || currentUser?.id;
   const isCurrentUserCompleted = memberStatuses.some((s) => s.user_id === currentUserId && s.is_completed);
 
   const progress = useMemo(() => {

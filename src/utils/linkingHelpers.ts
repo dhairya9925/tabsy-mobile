@@ -80,5 +80,13 @@ export function parseDeepLink(url: string): ParsedDeepLink | null {
     };
   }
 
+  // 8. categories
+  if (segment1 === 'categories') {
+    return {
+      route: 'CategoryManager',
+      params: {},
+    };
+  }
+
   return null;
 }

@@ -3,7 +3,6 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { JournalStackParamList } from './types';
 import { JournalScreen } from '../screens/journal/JournalScreen';
 import { ExpenseDetailScreen } from '../screens/journal/ExpenseDetailScreen';
-import { CategoryManagerScreen } from '../screens/journal/CategoryManagerScreen';
 
 const Stack = createNativeStackNavigator<JournalStackParamList>();
 
@@ -18,7 +17,6 @@ export const JournalNavigator: React.FC = () => {
     >
       <Stack.Screen name="JournalList" component={JournalScreen} />
       <Stack.Screen name="ExpenseDetail" component={ExpenseDetailScreen} />
-      <Stack.Screen name="CategoryManager" component={CategoryManagerScreen} />
     </Stack.Navigator>
   );
 };

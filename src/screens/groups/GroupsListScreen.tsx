@@ -390,7 +390,8 @@ export const GroupsListScreen: React.FC = () => {
               ) : (
                 <View style={styles.list}>
                   {friends.map((friend) => {
-                    const otherId = friend.user_id === currentUser?.id ? friend.friend_id : friend.user_id;
+                    const myUserId = currentUser?.user_id || currentUser?.id;
+                    const otherId = friend.profile?.user_id || (friend.user_id === myUserId ? friend.friend_id : friend.user_id);
                     const balanceRecord = friendBalances.find((b) => b.friendId === otherId);
                     const net = balanceRecord?.netBalance || 0;
                     const name = friend.profile?.display_name || friend.profile?.email || 'Friend';
@@ -399,7 +400,7 @@ export const GroupsListScreen: React.FC = () => {
                       <FriendCard
                         key={friend.id}
                         friend={friend}
-                        currentUserId={currentUser?.id || currentUser?.user_id}
+                        currentUserId={myUserId}
                         netBalance={net}
                         mode="friend"
                         onPress={() => navigation.navigate('FriendDetail', { friendId: otherId, friendName: name })}

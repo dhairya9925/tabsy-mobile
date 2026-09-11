@@ -88,7 +88,7 @@ export const AddGroupExpenseModal: React.FC<Props> = ({ route, navigation }) => 
   const [groups, setGroups] = useState<Group[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<string>(initialGroupId || '');
   const [members, setMembers] = useState<GroupMember[]>([]);
-  const [paidByUserId, setPaidByUserId] = useState<string>(currentUser?.id || currentUser?.user_id || '');
+  const [paidByUserId, setPaidByUserId] = useState<string>(currentUser?.user_id || currentUser?.id || '');
 
   const [amountStr, setAmountStr] = useState('');
   const [description, setDescription] = useState('');
@@ -125,7 +125,7 @@ export const AddGroupExpenseModal: React.FC<Props> = ({ route, navigation }) => 
         const allIds = new Set(mList.map((m) => m.user_id));
         setSelectedMemberIds(allIds);
 
-        const currId = currentUser?.id || currentUser?.user_id || '';
+        const currId = currentUser?.user_id || currentUser?.id || '';
         const isMember = mList.some((m) => m.user_id === currId);
         if (isMember) {
           setPaidByUserId(currId);
@@ -218,14 +218,14 @@ export const AddGroupExpenseModal: React.FC<Props> = ({ route, navigation }) => 
     setIsSubmitting(true);
     try {
       const selectedCat = DEFAULT_SPROUT_CATEGORIES.find((c) => c.id === selectedCategoryId);
-      const catName = selectedCat?.name || 'Other';
+      const catSlug = selectedCat?.id || 'other';
 
       await groupsApi.createGroupExpense(selectedGroupId, {
         amount: numericAmount,
-        category: catName,
+        category: catSlug,
         note: description.trim() || undefined,
         expense_date: dateStr,
-        paid_by: paidByUserId || (currentUser?.id || currentUser?.user_id),
+        paid_by: paidByUserId || (currentUser?.user_id || currentUser?.id),
         splits: finalSplits,
       });
 
@@ -356,7 +356,7 @@ export const AddGroupExpenseModal: React.FC<Props> = ({ route, navigation }) => 
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalChips}>
               {members.map((m) => {
                 const isSelected = paidByUserId === m.user_id;
-                const isYou = m.user_id === (currentUser?.id || currentUser?.user_id);
+                const isYou = m.user_id === (currentUser?.user_id || currentUser?.id);
                 const name = isYou ? 'You' : (m.profile?.display_name || m.profile?.email?.split('@')[0] || 'Member');
                 return (
                   <TouchableOpacity
@@ -428,7 +428,7 @@ export const AddGroupExpenseModal: React.FC<Props> = ({ route, navigation }) => 
                 <View style={styles.membersList}>
                   {members.map((m) => {
                     const isIncluded = selectedMemberIds.has(m.user_id);
-                    const isYou = m.user_id === (currentUser?.id || currentUser?.user_id);
+                    const isYou = m.user_id === (currentUser?.user_id || currentUser?.id);
                     const name = isYou ? 'You' : (m.profile?.display_name || m.profile?.email?.split('@')[0] || 'Member');
                     return (
                       <TouchableOpacity
@@ -458,7 +458,7 @@ export const AddGroupExpenseModal: React.FC<Props> = ({ route, navigation }) => 
               {splitMethod === 'custom' && (
                 <View style={styles.membersList}>
                   {members.map((m) => {
-                    const isYou = m.user_id === (currentUser?.id || currentUser?.user_id);
+                    const isYou = m.user_id === (currentUser?.user_id || currentUser?.id);
                     const name = isYou ? 'You' : (m.profile?.display_name || m.profile?.email?.split('@')[0] || 'Member');
                     return (
                       <View key={m.user_id} style={styles.customMemberRow}>

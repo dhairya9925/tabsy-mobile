@@ -126,6 +126,7 @@ export const RhythmScreen: React.FC = () => {
           <MonthlyPaceCard
             spent={totalSpent}
             budget={monthlyBudget}
+            onPress={() => (navigation as any).navigate('Main', { screen: 'Insight' })}
           />
 
           {/* Balance Summary Row (You're Owed / You Owe) */}
@@ -141,7 +142,12 @@ export const RhythmScreen: React.FC = () => {
             </SproutText>
             <TouchableOpacity
               activeOpacity={0.8}
-              onPress={() => (navigation as any).navigate('Main', { screen: 'Journal' })}
+              onPress={() =>
+                (navigation as any).navigate('Main', {
+                  screen: 'Journal',
+                  params: { screen: 'JournalList' },
+                })
+              }
             >
               <SproutText variant="caption" color={colors.accent} weight="700">
                 See month

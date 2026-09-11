@@ -15,6 +15,7 @@ import { AddFriendExpenseModal } from '../screens/friends/AddFriendExpenseModal'
 import { FriendSettleUpModal } from '../screens/friends/FriendSettleUpModal';
 import { ProfileScreen } from '../screens/profile/ProfileScreen';
 import { SettingsScreen } from '../screens/profile/SettingsScreen';
+import { CategoryManagerScreen } from '../screens/journal/CategoryManagerScreen';
 import { EditProfileModal } from '../screens/profile/EditProfileModal';
 import { SplashScreen } from '../screens/auth/SplashScreen';
 import { useAuthStore } from '../store/useAuthStore';
@@ -54,6 +55,13 @@ export const RootNavigator: React.FC = () => {
             <RootStack.Screen
               name="Settings"
               component={SettingsScreen}
+              options={{
+                animation: 'slide_from_right',
+              }}
+            />
+            <RootStack.Screen
+              name="CategoryManager"
+              component={CategoryManagerScreen}
               options={{
                 animation: 'slide_from_right',
               }}

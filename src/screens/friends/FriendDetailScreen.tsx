@@ -92,10 +92,11 @@ export const FriendDetailScreen: React.FC = () => {
             try {
               // Get friends list to find friendship ID
               const allFriends = await friendsApi.getFriends();
-              const currId = currentUser?.id || currentUser?.user_id;
+              const currId = currentUser?.user_id || currentUser?.id;
               const fRecord = allFriends.find(
                 (f) => (f.user_id === currId && f.friend_id === friendId) ||
-                       (f.friend_id === currId && f.user_id === friendId)
+                       (f.friend_id === currId && f.user_id === friendId) ||
+                       (f.profile?.user_id === friendId)
               );
 
               if (fRecord) {
@@ -231,7 +232,7 @@ export const FriendDetailScreen: React.FC = () => {
               <FriendExpenseRow
                 key={expense.id}
                 expense={expense}
-                currentUserId={currentUser?.id || currentUser?.user_id}
+                currentUserId={currentUser?.user_id || currentUser?.id}
                 friendName={friendName}
                 onDelete={() => handleDeleteExpense(expense.id)}
               />

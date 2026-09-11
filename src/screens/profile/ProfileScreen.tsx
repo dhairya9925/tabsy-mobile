@@ -154,13 +154,7 @@ export const ProfileScreen: React.FC = () => {
           style={styles.menuRow}
           activeOpacity={0.7}
           onPress={() => {
-            // Navigate into Journal stack's CategoryManager
-            navigation.navigate('Main', {
-              screen: 'Journal',
-              params: {
-                screen: 'CategoryManager',
-              },
-            } as any);
+            navigation.navigate('CategoryManager');
           }}
         >
           <View style={styles.menuRowLeft}>

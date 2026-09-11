@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { JournalStackParamList } from '../../navigation/types';
+import { RootStackParamList } from '../../navigation/types';
 import { colors, radii, spacing, shadows } from '../../theme';
 import {
   SproutText,
@@ -16,7 +16,7 @@ import { categoriesApi } from '../../api/categories';
 import { Category } from '../../types';
 import { ArrowLeft, Plus, Trash2, Tag, Layers } from 'lucide-react-native';
 
-type Props = NativeStackScreenProps<JournalStackParamList, 'CategoryManager'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'CategoryManager'>;
 
 export const CategoryManagerScreen: React.FC<Props> = ({ navigation }) => {
   const [categories, setCategories] = useState<Category[]>([]);

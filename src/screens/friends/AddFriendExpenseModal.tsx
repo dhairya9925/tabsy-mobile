@@ -108,7 +108,8 @@ export const AddFriendExpenseModal: React.FC = () => {
       setFriends(data);
       if (!selectedFriendId && data.length > 0) {
         const first = data[0];
-        const otherId = first.user_id === currentUser?.id ? first.friend_id : first.user_id;
+        const myUserId = currentUser?.user_id || currentUser?.id;
+        const otherId = first.profile?.user_id || (first.user_id === myUserId ? first.friend_id : first.user_id);
         setSelectedFriendId(otherId);
         setSelectedFriendName(first.profile?.display_name || first.profile?.email || 'Friend');
       }
@@ -116,7 +117,8 @@ export const AddFriendExpenseModal: React.FC = () => {
   }, [currentUser, selectedFriendId]);
 
   const handleSelectFriend = (friend: FriendRecord) => {
-    const otherId = friend.user_id === currentUser?.id ? friend.friend_id : friend.user_id;
+    const myUserId = currentUser?.user_id || currentUser?.id;
+    const otherId = friend.profile?.user_id || (friend.user_id === myUserId ? friend.friend_id : friend.user_id);
     const name = friend.profile?.display_name || friend.profile?.email || 'Friend';
     setSelectedFriendId(otherId);
     setSelectedFriendName(name);
@@ -146,13 +148,14 @@ export const AddFriendExpenseModal: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      const payerId = paidBy === 'me' ? (currentUser?.id || currentUser?.user_id || '') : selectedFriendId;
+      const myUserId = currentUser?.user_id || currentUser?.id || '';
+      const payerId = paidBy === 'me' ? myUserId : selectedFriendId;
       const selectedCat = DEFAULT_SPROUT_CATEGORIES.find((c) => c.id === selectedCategoryId);
-      const catName = selectedCat?.name || 'Other';
+      const catSlug = selectedCat?.id || 'other';
 
       await friendsApi.createFriendExpense(selectedFriendId, {
         amount: numericAmount,
-        category: catName,
+        category: catSlug,
         note: note.trim() || undefined,
         expense_date: dateStr,
         paid_by: payerId,
@@ -257,7 +260,8 @@ export const AddFriendExpenseModal: React.FC = () => {
               </SproutText>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalChips}>
                 {friends.map((f) => {
-                  const fid = f.user_id === currentUser?.id ? f.friend_id : f.user_id;
+                  const myUserId = currentUser?.user_id || currentUser?.id;
+                  const fid = f.profile?.user_id || (f.user_id === myUserId ? f.friend_id : f.user_id);
                   const isSelected = selectedFriendId === fid;
                   const name = f.profile?.display_name || f.profile?.email || 'Friend';
                   const initials = getInitials(name);

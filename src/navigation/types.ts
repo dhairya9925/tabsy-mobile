@@ -33,6 +33,7 @@ export type RootStackParamList = {
   Main: NavigatorScreenParams<MainTabsParamList>;
   Profile: undefined;
   Settings: undefined;
+  CategoryManager: undefined;
   EditProfileModal: undefined;
   AddExpenseModal: undefined;
   EditExpenseModal: { expense: PersonalExpense };

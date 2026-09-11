@@ -53,7 +53,7 @@ export const GroupSettingsScreen: React.FC<Props> = ({ route, navigation }) => {
       .finally(() => setIsLoading(false));
   }, [groupId]);
 
-  const isAdmin = group?.created_by === (currentUser?.id || currentUser?.user_id);
+  const isAdmin = group?.created_by === (currentUser?.user_id || currentUser?.id);
 
   const handleSave = async () => {
     if (!name.trim()) {

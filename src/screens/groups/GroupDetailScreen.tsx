@@ -94,7 +94,7 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   }, [navigation, loadData]);
 
   // Calculate current user's net balance in this group
-  const currUserId = currentUser?.id || currentUser?.user_id || '';
+  const currUserId = currentUser?.user_id || currentUser?.id || '';
   let netBalance = 0;
   balances.forEach((b) => {
     if (b.to_user_id === currUserId) {

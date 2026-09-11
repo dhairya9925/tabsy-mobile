@@ -47,6 +47,10 @@ test('parseDeepLink resolves standard shortcuts', () => {
   const sett = parseDeepLink('splittrack://settings');
   assert.ok(sett);
   assert.strictEqual(sett!.route, 'Settings');
+
+  const cats = parseDeepLink('splittrack://categories');
+  assert.ok(cats);
+  assert.strictEqual(cats!.route, 'CategoryManager');
 });
 
 test('parseDeepLink returns null for invalid or empty URLs', () => {

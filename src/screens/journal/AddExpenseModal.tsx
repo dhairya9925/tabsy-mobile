@@ -150,7 +150,8 @@ export const AddExpenseModal: React.FC = () => {
       setFriends(fList);
       if (fList.length > 0 && !selectedFriendId) {
         const first = fList[0];
-        const otherId = first.user_id === currentUser?.id ? first.friend_id : first.user_id;
+        const myUserId = currentUser?.user_id || currentUser?.id;
+        const otherId = first.profile?.user_id || (first.user_id === myUserId ? first.friend_id : first.user_id);
         setSelectedFriendId(otherId);
         setSelectedFriendName(first.profile?.display_name || first.profile?.email || 'Friend');
       }
@@ -170,7 +171,7 @@ export const AddExpenseModal: React.FC = () => {
     if (!selectedGroupId) return;
     groupsApi.getGroupMembers(selectedGroupId).then((mList) => {
       setGroupMembers(mList);
-      const currId = currentUser?.id || currentUser?.user_id || '';
+      const currId = currentUser?.user_id || currentUser?.id || '';
       const isMember = mList.some((m) => m.user_id === currId);
       if (isMember) {
         setGroupPaidByUserId(currId);
@@ -181,7 +182,8 @@ export const AddExpenseModal: React.FC = () => {
   }, [selectedGroupId, currentUser]);
 
   const handleSelectFriend = (f: FriendRecord) => {
-    const otherId = f.user_id === currentUser?.id ? f.friend_id : f.user_id;
+    const myUserId = currentUser?.user_id || currentUser?.id;
+    const otherId = f.profile?.user_id || (f.user_id === myUserId ? f.friend_id : f.user_id);
     const name = f.profile?.display_name || f.profile?.email || 'Friend';
     setSelectedFriendId(otherId);
     setSelectedFriendName(name);
@@ -209,12 +211,12 @@ export const AddExpenseModal: React.FC = () => {
     setIsSubmitting(true);
     try {
       const selectedCat = DEFAULT_SPROUT_CATEGORIES.find((c) => c.id === selectedCategoryId);
-      const catName = selectedCat?.name || 'Other';
+      const catSlug = selectedCat?.id || 'other';
 
       if (mode === 'personal') {
         await expensesApi.createPersonalExpense({
           amount: numericAmount,
-          category: catName,
+          category: catSlug,
           note: description.trim() || undefined,
           expense_date: dateStr,
         });
@@ -227,13 +229,14 @@ export const AddExpenseModal: React.FC = () => {
           return;
         }
 
+        const myUserId = currentUser?.user_id || currentUser?.id || '';
         const payerId = paidBy === 'me'
-          ? (currentUser?.id || currentUser?.user_id || '')
+          ? myUserId
           : selectedFriendId;
 
         await friendsApi.createFriendExpense(selectedFriendId, {
           amount: numericAmount,
-          category: catName,
+          category: catSlug,
           note: description.trim() || undefined,
           expense_date: dateStr,
           paid_by: payerId,
@@ -261,10 +264,10 @@ export const AddExpenseModal: React.FC = () => {
 
         await groupsApi.createGroupExpense(selectedGroupId, {
           amount: numericAmount,
-          category: catName,
+          category: catSlug,
           note: description.trim() || undefined,
           expense_date: dateStr,
-          paid_by: groupPaidByUserId || (currentUser?.id || currentUser?.user_id),
+          paid_by: groupPaidByUserId || (currentUser?.user_id || currentUser?.id),
           splits,
         });
         setSuccessMessage('Group expense recorded');
@@ -396,7 +399,8 @@ export const AddExpenseModal: React.FC = () => {
               ) : (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalChips}>
                   {friends.map((f) => {
-                    const fid = f.user_id === currentUser?.id ? f.friend_id : f.user_id;
+                    const myUserId = currentUser?.user_id || currentUser?.id;
+                    const fid = f.profile?.user_id || (f.user_id === myUserId ? f.friend_id : f.user_id);
                     const isSelected = selectedFriendId === fid;
                     const name = f.profile?.display_name || f.profile?.email || 'Friend';
                     const initials = getInitials(name);
@@ -563,7 +567,7 @@ export const AddExpenseModal: React.FC = () => {
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalChips}>
                     {groupMembers.map((m) => {
                       const isSelected = groupPaidByUserId === m.user_id;
-                      const isYou = m.user_id === (currentUser?.id || currentUser?.user_id);
+                      const isYou = m.user_id === (currentUser?.user_id || currentUser?.id);
                       const name = isYou ? 'You' : (m.profile?.display_name || m.profile?.email?.split('@')[0] || 'Member');
                       return (
                         <TouchableOpacity

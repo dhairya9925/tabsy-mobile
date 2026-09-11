@@ -31,6 +31,8 @@ import {
   ChevronUp,
   Plus,
   X,
+  Tag,
+  ChevronRight,
 } from 'lucide-react-native';
 
 const GENERIC_BUDGET_OPTIONS = [10000, 15000, 20000, 30000];
@@ -459,7 +461,31 @@ export const SettingsScreen: React.FC = () => {
         </View>
       </View>
 
-      {/* 3. Appearance */}
+      {/* 3. Categories Management */}
+      <View style={[styles.sectionCard, shadows.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+        <TouchableOpacity
+          style={styles.categoryManageRow}
+          activeOpacity={0.7}
+          onPress={() => (navigation as any).navigate('CategoryManager')}
+        >
+          <View style={styles.sectionHeader}>
+            <View style={[styles.headerIconCircle, { backgroundColor: colors.background }]}>
+              <Tag size={16} color={colors.accent} />
+            </View>
+            <View>
+              <SproutText variant="subtitle" color={colors.text} weight="700">
+                Categories
+              </SproutText>
+              <SproutText variant="caption" color={colors.muted} style={{ marginTop: 2 }}>
+                Create custom spending tags & labels
+              </SproutText>
+            </View>
+          </View>
+          <ChevronRight size={18} color={colors.muted} />
+        </TouchableOpacity>
+      </View>
+
+      {/* 4. Appearance */}
       <View style={[styles.sectionCard, shadows.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
         <View style={styles.sectionHeaderBetween}>
           <View style={styles.sectionHeader}>
@@ -1040,5 +1066,11 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     padding: spacing.sm,
     borderRadius: radii.md,
+  },
+  categoryManageRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 2,
   },
 });

@@ -9,13 +9,13 @@ export const linking: LinkingOptions<RootStackParamList> = {
       AddExpenseModal: 'add-expense',
       Profile: 'profile',
       Settings: 'settings',
+      CategoryManager: 'categories',
       Main: {
         screens: {
           Rhythm: 'rhythm',
           Journal: {
             screens: {
               JournalList: 'journal',
-              CategoryManager: 'categories',
             },
           },
           Shared: {

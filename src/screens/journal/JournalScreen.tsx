@@ -144,7 +144,7 @@ export const JournalScreen: React.FC<Props> = ({ navigation }) => {
         <View style={styles.headerActions}>
           <CircleButton
             icon={<Tag size={18} color={colors.accent} />}
-            onPress={() => navigation.navigate('CategoryManager')}
+            onPress={() => rootNavigation.navigate('CategoryManager')}
             style={styles.actionCircle}
             accessibilityLabel="Manage categories"
           />
