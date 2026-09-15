@@ -4,7 +4,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   Animated,
-  Easing,
   LayoutChangeEvent,
   StyleProp,
   ViewStyle,
@@ -34,53 +33,49 @@ export function SegmentControl<T = string>({
 }: SegmentControlProps<T>) {
   const isLg = size === 'lg';
   const isSm = size === 'sm';
+  const padding = isSm ? 2.5 : 3;
 
-  const [segmentLayouts, setSegmentLayouts] = useState<Record<number, { x: number; width: number }>>({});
+  const [containerWidth, setContainerWidth] = useState(0);
   const selectedIndex = Math.max(0, options.findIndex((opt) => opt.value === value));
 
   const animTranslateX = useRef(new Animated.Value(0)).current;
-  const animWidth = useRef(new Animated.Value(0)).current;
-  const hasInitialized = useRef(false);
+  const isInitialized = useRef(false);
 
-  const handleSegmentLayout = (index: number, e: LayoutChangeEvent) => {
-    const { x, width } = e.nativeEvent.layout;
-    setSegmentLayouts((prev) => {
-      if (prev[index] && Math.abs(prev[index].x - x) < 0.5 && Math.abs(prev[index].width - width) < 0.5) {
-        return prev;
-      }
-      return { ...prev, [index]: { x, width } };
-    });
+  const availableWidth = Math.max(0, containerWidth - padding * 2);
+  const segmentWidth = options.length > 0 && availableWidth > 0 ? availableWidth / options.length : 0;
+
+  const handleContainerLayout = (e: LayoutChangeEvent) => {
+    const { width } = e.nativeEvent.layout;
+    if (Math.abs(width - containerWidth) > 0.5) {
+      setContainerWidth(width);
+    }
   };
 
   useEffect(() => {
-    const targetLayout = segmentLayouts[selectedIndex];
-    if (!targetLayout || targetLayout.width <= 0) return;
+    if (segmentWidth <= 0) return;
 
-    if (!hasInitialized.current) {
-      animTranslateX.setValue(targetLayout.x);
-      animWidth.setValue(targetLayout.width);
-      hasInitialized.current = true;
+    const targetX = selectedIndex * segmentWidth;
+
+    if (!isInitialized.current) {
+      animTranslateX.setValue(targetX);
+      isInitialized.current = true;
       return;
     }
 
-    Animated.parallel([
-      Animated.timing(animTranslateX, {
-        toValue: targetLayout.x,
-        duration: 220,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: false,
-      }),
-      Animated.timing(animWidth, {
-        toValue: targetLayout.width,
-        duration: 220,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: false,
-      }),
-    ]).start();
-  }, [selectedIndex, segmentLayouts]);
+    Animated.spring(animTranslateX, {
+      toValue: targetX,
+      damping: 24,
+      mass: 0.8,
+      stiffness: 280,
+      useNativeDriver: true,
+    }).start();
+  }, [selectedIndex, segmentWidth]);
+
+  const isReady = containerWidth > 0 && segmentWidth > 0;
 
   return (
     <View
+      onLayout={handleContainerLayout}
       style={[
         styles.container,
         isLg && styles.containerLg,
@@ -88,15 +83,18 @@ export function SegmentControl<T = string>({
         style,
       ]}
     >
-      {/* Animated Sliding Pill Indicator */}
-      {hasInitialized.current && (
+      {/* Animated Sliding Pill Indicator with Native Driver */}
+      {isReady && (
         <Animated.View
           pointerEvents="none"
           style={[
             styles.indicatorPill,
             isLg ? styles.indicatorPillLg : styles.indicatorPillMd,
             {
-              width: animWidth,
+              top: padding,
+              bottom: padding,
+              left: padding,
+              width: segmentWidth,
               transform: [{ translateX: animTranslateX }],
             },
           ]}
@@ -109,15 +107,14 @@ export function SegmentControl<T = string>({
         return (
           <TouchableOpacity
             key={String(option.value)}
-            activeOpacity={0.8}
+            activeOpacity={0.75}
             onPress={() => onChange(option.value)}
-            onLayout={(e) => handleSegmentLayout(index, e)}
             style={[
               styles.segment,
               isLg && styles.segmentLg,
               isSm && styles.segmentSm,
-              // Fallback for initial render before layout measurement
-              !hasInitialized.current && isSelected && (isLg ? styles.fallbackSelectedLg : styles.fallbackSelected),
+              // Fallback before container width measurement
+              !isReady && isSelected && (isLg ? styles.fallbackSelectedLg : styles.fallbackSelected),
             ]}
           >
             <SproutText
@@ -132,6 +129,7 @@ export function SegmentControl<T = string>({
                   fontFamily: isSelected ? fontFamilies.bold : fontFamilies.medium,
                 },
               ]}
+              numberOfLines={1}
             >
               {option.label}
             </SproutText>

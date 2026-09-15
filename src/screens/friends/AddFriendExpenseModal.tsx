@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, radii, spacing, shadows, fontFamilies } from '../../theme';
 import {
   SproutText,
+  SegmentControl,
   Toast,
 } from '../../components';
 import { friendsApi } from '../../api/friends';
@@ -293,39 +294,19 @@ export const AddFriendExpenseModal: React.FC = () => {
 
           {/* Who Paid & Split Controls */}
           <View style={styles.subSectionCard}>
+            {/* Who paid */}
             <View style={styles.pillToggleGroup}>
               <SproutText variant="eyebrow" color={colors.muted} style={styles.pillGroupLabel}>
                 WHO PAID?
               </SproutText>
-              <View style={styles.pillToggleRow}>
-                <TouchableOpacity
-                  activeOpacity={0.85}
-                  onPress={() => setPaidBy('me')}
-                  style={[styles.togglePill, paidBy === 'me' && styles.togglePillSelected]}
-                >
-                  <SproutText
-                    variant="caption"
-                    color={paidBy === 'me' ? colors.accent : colors.muted}
-                    weight={paidBy === 'me' ? '800' : '600'}
-                  >
-                    You paid
-                  </SproutText>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  activeOpacity={0.85}
-                  onPress={() => setPaidBy('them')}
-                  style={[styles.togglePill, paidBy === 'them' && styles.togglePillSelected]}
-                >
-                  <SproutText
-                    variant="caption"
-                    color={paidBy === 'them' ? colors.accent : colors.muted}
-                    weight={paidBy === 'them' ? '800' : '600'}
-                    numberOfLines={1}
-                  >
-                    {selectedFriendName || 'Friend'} paid
-                  </SproutText>
-                </TouchableOpacity>
-              </View>
+              <SegmentControl<'me' | 'them'>
+                options={[
+                  { value: 'me', label: 'You paid' },
+                  { value: 'them', label: `${selectedFriendName || 'Friend'} paid` },
+                ]}
+                value={paidBy}
+                onChange={setPaidBy}
+              />
             </View>
 
             {/* Split method */}
@@ -333,34 +314,14 @@ export const AddFriendExpenseModal: React.FC = () => {
               <SproutText variant="eyebrow" color={colors.muted} style={styles.pillGroupLabel}>
                 SPLIT
               </SproutText>
-              <View style={styles.pillToggleRow}>
-                <TouchableOpacity
-                  activeOpacity={0.85}
-                  onPress={() => setSplitType('equal')}
-                  style={[styles.togglePill, splitType === 'equal' && styles.togglePillSelected]}
-                >
-                  <SproutText
-                    variant="caption"
-                    color={splitType === 'equal' ? colors.accent : colors.muted}
-                    weight={splitType === 'equal' ? '800' : '600'}
-                  >
-                    Split equally (50/50)
-                  </SproutText>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  activeOpacity={0.85}
-                  onPress={() => setSplitType('full')}
-                  style={[styles.togglePill, splitType === 'full' && styles.togglePillSelected]}
-                >
-                  <SproutText
-                    variant="caption"
-                    color={splitType === 'full' ? colors.accent : colors.muted}
-                    weight={splitType === 'full' ? '800' : '600'}
-                  >
-                    {paidBy === 'me' ? 'They owe full' : 'You owe full'}
-                  </SproutText>
-                </TouchableOpacity>
-              </View>
+              <SegmentControl<'equal' | 'full'>
+                options={[
+                  { value: 'equal', label: 'Split equally (50/50)' },
+                  { value: 'full', label: paidBy === 'me' ? 'They owe full' : 'You owe full' },
+                ]}
+                value={splitType}
+                onChange={setSplitType}
+              />
 
               {/* Calculation breakdown badge */}
               {numericAmount > 0 && (

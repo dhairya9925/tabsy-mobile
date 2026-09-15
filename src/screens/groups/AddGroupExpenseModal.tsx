@@ -14,6 +14,7 @@ import { RootStackParamList } from '../../navigation/types';
 import { colors, radii, spacing, shadows, fontFamilies } from '../../theme';
 import {
   SproutText,
+  SegmentControl,
   Toast,
 } from '../../components';
 import { groupsApi } from '../../api/groups';
@@ -383,34 +384,14 @@ export const AddGroupExpenseModal: React.FC<Props> = ({ route, navigation }) => 
               <SproutText variant="eyebrow" color={colors.muted} style={styles.pillGroupLabel}>
                 SPLIT METHOD
               </SproutText>
-              <View style={styles.pillToggleRow}>
-                <TouchableOpacity
-                  activeOpacity={0.85}
-                  onPress={() => setSplitMethod('equal')}
-                  style={[styles.togglePill, splitMethod === 'equal' && styles.togglePillSelected]}
-                >
-                  <SproutText
-                    variant="caption"
-                    color={splitMethod === 'equal' ? colors.accent : colors.muted}
-                    weight={splitMethod === 'equal' ? '800' : '600'}
-                  >
-                    Split equally
-                  </SproutText>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  activeOpacity={0.85}
-                  onPress={() => setSplitMethod('custom')}
-                  style={[styles.togglePill, splitMethod === 'custom' && styles.togglePillSelected]}
-                >
-                  <SproutText
-                    variant="caption"
-                    color={splitMethod === 'custom' ? colors.accent : colors.muted}
-                    weight={splitMethod === 'custom' ? '800' : '600'}
-                  >
-                    Exact amounts
-                  </SproutText>
-                </TouchableOpacity>
-              </View>
+              <SegmentControl<'equal' | 'custom'>
+                options={[
+                  { value: 'equal', label: 'Split equally' },
+                  { value: 'custom', label: 'Exact amounts' },
+                ]}
+                value={splitMethod}
+                onChange={setSplitMethod}
+              />
 
               {/* Live equal breakdown summary */}
               {splitMethod === 'equal' && selectedMemberIds.size > 0 && (

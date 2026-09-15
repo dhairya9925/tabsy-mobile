@@ -14,6 +14,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { colors, radii, spacing, shadows, fontFamilies } from '../../theme';
 import {
   SproutText,
+  SegmentControl,
   Toast,
 } from '../../components';
 import { expensesApi } from '../../api/expenses';
@@ -360,29 +361,17 @@ export const AddExpenseModal: React.FC = () => {
           </View>
 
           {/* Mode Switcher Capsule matching Sprout Screen 02 */}
-          <View style={styles.modeContainer}>
-            {(['personal', 'friend', 'group'] as const).map((tab) => {
-              const isSelected = mode === tab;
-              const label = tab === 'personal' ? 'Personal' : tab === 'friend' ? 'Friend' : 'Group';
-              return (
-                <TouchableOpacity
-                  key={tab}
-                  activeOpacity={0.85}
-                  onPress={() => setMode(tab)}
-                  style={[styles.modeTab, isSelected && styles.modeTabSelected]}
-                >
-                  <SproutText
-                    variant="caption"
-                    color={isSelected ? colors.accent : colors.muted}
-                    weight={isSelected ? '800' : '600'}
-                    style={styles.modeText}
-                  >
-                    {label}
-                  </SproutText>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+          <SegmentControl<'personal' | 'friend' | 'group'>
+            size="lg"
+            options={[
+              { value: 'personal', label: 'Personal' },
+              { value: 'friend', label: 'Friend' },
+              { value: 'group', label: 'Group' },
+            ]}
+            value={mode}
+            onChange={setMode}
+            style={{ marginVertical: 12 }}
+          />
 
           {/* Friend Mode Specific Section */}
           {mode === 'friend' && (
@@ -434,35 +423,14 @@ export const AddExpenseModal: React.FC = () => {
                 <SproutText variant="eyebrow" color={colors.muted} style={styles.pillGroupLabel}>
                   WHO PAID?
                 </SproutText>
-                <View style={styles.pillToggleRow}>
-                  <TouchableOpacity
-                    activeOpacity={0.85}
-                    onPress={() => setPaidBy('me')}
-                    style={[styles.togglePill, paidBy === 'me' && styles.togglePillSelected]}
-                  >
-                    <SproutText
-                      variant="caption"
-                      color={paidBy === 'me' ? colors.accent : colors.muted}
-                      weight={paidBy === 'me' ? '800' : '600'}
-                    >
-                      You paid
-                    </SproutText>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    activeOpacity={0.85}
-                    onPress={() => setPaidBy('them')}
-                    style={[styles.togglePill, paidBy === 'them' && styles.togglePillSelected]}
-                  >
-                    <SproutText
-                      variant="caption"
-                      color={paidBy === 'them' ? colors.accent : colors.muted}
-                      weight={paidBy === 'them' ? '800' : '600'}
-                      numberOfLines={1}
-                    >
-                      {selectedFriendName || 'Friend'} paid
-                    </SproutText>
-                  </TouchableOpacity>
-                </View>
+                <SegmentControl<'me' | 'them'>
+                  options={[
+                    { value: 'me', label: 'You paid' },
+                    { value: 'them', label: `${selectedFriendName || 'Friend'} paid` },
+                  ]}
+                  value={paidBy}
+                  onChange={setPaidBy}
+                />
               </View>
 
               {/* How to split */}
@@ -470,34 +438,14 @@ export const AddExpenseModal: React.FC = () => {
                 <SproutText variant="eyebrow" color={colors.muted} style={styles.pillGroupLabel}>
                   SPLIT
                 </SproutText>
-                <View style={styles.pillToggleRow}>
-                  <TouchableOpacity
-                    activeOpacity={0.85}
-                    onPress={() => setSplitType('equal')}
-                    style={[styles.togglePill, splitType === 'equal' && styles.togglePillSelected]}
-                  >
-                    <SproutText
-                      variant="caption"
-                      color={splitType === 'equal' ? colors.accent : colors.muted}
-                      weight={splitType === 'equal' ? '800' : '600'}
-                    >
-                      Split equally (50/50)
-                    </SproutText>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    activeOpacity={0.85}
-                    onPress={() => setSplitType('full')}
-                    style={[styles.togglePill, splitType === 'full' && styles.togglePillSelected]}
-                  >
-                    <SproutText
-                      variant="caption"
-                      color={splitType === 'full' ? colors.accent : colors.muted}
-                      weight={splitType === 'full' ? '800' : '600'}
-                    >
-                      {paidBy === 'me' ? 'They owe full' : 'You owe full'}
-                    </SproutText>
-                  </TouchableOpacity>
-                </View>
+                <SegmentControl<'equal' | 'full'>
+                  options={[
+                    { value: 'equal', label: 'Split equally (50/50)' },
+                    { value: 'full', label: paidBy === 'me' ? 'They owe full' : 'You owe full' },
+                  ]}
+                  value={splitType}
+                  onChange={setSplitType}
+                />
 
                 {/* Calculation breakdown badge */}
                 {numericAmount > 0 && (
