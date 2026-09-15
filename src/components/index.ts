@@ -2,6 +2,7 @@ export * from './SproutText';
 export * from './SproutButton';
 export * from './CircleButton';
 export * from './AvatarCircle';
+export * from './AvatarPickerSheet';
 export * from './FieldRow';
 export * from './ScreenShell';
 export * from './Toast';

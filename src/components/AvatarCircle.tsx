@@ -3,6 +3,7 @@ import { View, Image, StyleSheet, ViewStyle, TouchableOpacity } from 'react-nati
 import { colors, radii } from '../theme';
 import { SproutText } from './SproutText';
 import { getInitials } from '../utils/formatters';
+import { resolveAvatar } from '../utils/avatarRegistry';
 
 export interface AvatarCircleProps {
   name?: string | null;
@@ -24,6 +25,20 @@ export const AvatarCircle: React.FC<AvatarCircleProps> = ({
   const initials = getInitials(name, email);
 
   const renderCircle = () => {
+    const bundled = resolveAvatar(avatarUrl);
+    if (bundled) {
+      return (
+        <Image
+          source={bundled}
+          style={[
+            styles.image,
+            { width: size, height: size, borderRadius: size / 2 },
+          ]}
+          resizeMode="cover"
+        />
+      );
+    }
+
     if (avatarUrl) {
       return (
         <Image
@@ -32,6 +47,7 @@ export const AvatarCircle: React.FC<AvatarCircleProps> = ({
             styles.image,
             { width: size, height: size, borderRadius: size / 2 },
           ]}
+          resizeMode="cover"
         />
       );
     }

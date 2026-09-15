@@ -125,7 +125,11 @@ export const ProfileScreen: React.FC = () => {
       {/* Hero Profile Card */}
       <View style={[styles.heroCard, shadows.card]}>
         <View style={styles.profileHeader}>
-          <AvatarCircle name={displayName !== 'No name set' ? displayName : email} size={58} />
+          <AvatarCircle
+            name={displayName !== 'No name set' ? displayName : email}
+            avatarUrl={user?.avatar_url}
+            size={58}
+          />
           <View style={styles.profileInfo}>
             <SproutText variant="title" color={colors.text} numberOfLines={1}>
               {displayName}
