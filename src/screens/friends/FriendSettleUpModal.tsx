@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   KeyboardAvoidingView,
+  Keyboard,
   Platform,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -18,6 +19,7 @@ import {
   FieldRow,
   Toast,
 } from '../../components';
+import { useTransitionAutoFocus } from '../../hooks';
 import { friendsApi } from '../../api/friends';
 import { useAuthStore } from '../../store/useAuthStore';
 import { formatCurrencyExact, toLocalDateString } from '../../utils/formatters';
@@ -30,6 +32,13 @@ export const FriendSettleUpModal: React.FC = () => {
   const navigation = useNavigation();
   const route = useRoute<FriendSettleUpRouteProp>();
   const currentUser = useAuthStore((s) => s.user);
+
+  const amountInputRef = useTransitionAutoFocus();
+
+  const handleDismiss = () => {
+    Keyboard.dismiss();
+    navigation.goBack();
+  };
 
   const { friendId, friendName, netBalance } = route.params;
   const iOweThem = netBalance < 0;
@@ -51,6 +60,7 @@ export const FriendSettleUpModal: React.FC = () => {
     }
 
     setIsSubmitting(true);
+    Keyboard.dismiss();
     try {
       // If I owe them, payer is current user (undefined in API defaults to current user).
       // If they owe me, payer is friendId.
@@ -92,7 +102,7 @@ export const FriendSettleUpModal: React.FC = () => {
         <View style={styles.header}>
           <CircleButton
             icon={<X size={20} color={colors.text} />}
-            onPress={() => navigation.goBack()}
+            onPress={handleDismiss}
           />
           <SproutText variant="title" color={colors.text}>
             Record a Payment
@@ -140,13 +150,13 @@ export const FriendSettleUpModal: React.FC = () => {
                 ₹
               </SproutText>
               <TextInput
+                ref={amountInputRef}
                 style={styles.amountInput}
                 placeholder="0.00"
                 placeholderTextColor={colors.line}
                 value={amountStr}
                 onChangeText={setAmountStr}
                 keyboardType="numeric"
-                autoFocus
               />
             </View>
 

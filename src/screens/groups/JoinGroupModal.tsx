@@ -97,7 +97,6 @@ export const JoinGroupModal: React.FC = () => {
             value={inviteCode}
             onChangeText={setInviteCode}
             icon={<KeyRound size={18} color={colors.muted} />}
-            autoFocus
             autoCapitalize="none"
           />
         </ScrollView>

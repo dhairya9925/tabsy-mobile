@@ -4,6 +4,8 @@ export * from './CircleButton';
 export * from './AvatarCircle';
 export * from './AvatarPickerSheet';
 export * from './MonthPickerSheet';
+export * from './FriendPickerSheet';
+export * from './GroupPickerSheet';
 export * from './FieldRow';
 export * from './ScreenShell';
 export * from './Toast';

@@ -5,6 +5,7 @@ import {
   TextInput,
   ScrollView,
   KeyboardAvoidingView,
+  Keyboard,
   Platform,
   TouchableOpacity,
   ActivityIndicator,
@@ -16,7 +17,11 @@ import {
   SproutText,
   SegmentControl,
   Toast,
+  AvatarCircle,
+  FriendPickerSheet,
+  GroupPickerSheet,
 } from '../../components';
+import { useTransitionAutoFocus } from '../../hooks';
 import { expensesApi } from '../../api/expenses';
 import { friendsApi } from '../../api/friends';
 import { groupsApi } from '../../api/groups';
@@ -39,6 +44,8 @@ import {
   CheckCheck,
   Users,
   UserCheck,
+  Search,
+  User,
 } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -120,6 +127,13 @@ export const AddExpenseModal: React.FC = () => {
   const rootNavigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const currentUser = useAuthStore((s) => s.user);
 
+  const amountInputRef = useTransitionAutoFocus();
+
+  const handleDismiss = () => {
+    Keyboard.dismiss();
+    navigation.goBack();
+  };
+
   const [mode, setMode] = useState<'personal' | 'friend' | 'group'>('personal');
   const [amountStr, setAmountStr] = useState('');
   const [description, setDescription] = useState('');
@@ -131,12 +145,14 @@ export const AddExpenseModal: React.FC = () => {
   const [friends, setFriends] = useState<FriendRecord[]>([]);
   const [selectedFriendId, setSelectedFriendId] = useState<string>('');
   const [selectedFriendName, setSelectedFriendName] = useState<string>('');
+  const [showFriendPicker, setShowFriendPicker] = useState(false);
   const [paidBy, setPaidBy] = useState<'me' | 'them'>('me');
   const [splitType, setSplitType] = useState<'equal' | 'full'>('equal');
 
   // Group mode state
   const [groups, setGroups] = useState<Group[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<string>('');
+  const [showGroupPicker, setShowGroupPicker] = useState(false);
   const [groupMembers, setGroupMembers] = useState<GroupMember[]>([]);
   const [groupPaidByUserId, setGroupPaidByUserId] = useState<string>('');
 
@@ -182,12 +198,28 @@ export const AddExpenseModal: React.FC = () => {
     }).catch(() => {});
   }, [selectedGroupId, currentUser]);
 
+  const myUserId = currentUser?.user_id || currentUser?.id;
+
+  const selectedFriend = friends.find((f) => {
+    const fid = f.profile?.user_id || (f.user_id === myUserId ? f.friend_id : f.user_id);
+    return fid === selectedFriendId;
+  }) || null;
+
+  const selectedFriendNameComputed = selectedFriend?.profile?.display_name || selectedFriend?.profile?.email || selectedFriendName || 'Friend';
+  const selectedFriendEmail = selectedFriend?.profile?.email || null;
+  const selectedFriendAvatarUrl = selectedFriend?.profile?.avatar_url || null;
+
+  const selectedGroup = groups.find((g) => g.id === selectedGroupId) || null;
+
   const handleSelectFriend = (f: FriendRecord) => {
-    const myUserId = currentUser?.user_id || currentUser?.id;
     const otherId = f.profile?.user_id || (f.user_id === myUserId ? f.friend_id : f.user_id);
     const name = f.profile?.display_name || f.profile?.email || 'Friend';
     setSelectedFriendId(otherId);
     setSelectedFriendName(name);
+  };
+
+  const handleSelectGroup = (g: Group) => {
+    setSelectedGroupId(g.id);
   };
 
   const handleAmountChange = (text: string) => {
@@ -210,6 +242,7 @@ export const AddExpenseModal: React.FC = () => {
     }
 
     setIsSubmitting(true);
+    Keyboard.dismiss();
     try {
       const selectedCat = DEFAULT_SPROUT_CATEGORIES.find((c) => c.id === selectedCategoryId);
       const catSlug = selectedCat?.id || 'other';
@@ -304,7 +337,7 @@ export const AddExpenseModal: React.FC = () => {
         <View style={styles.header}>
           <TouchableOpacity
             activeOpacity={0.8}
-            onPress={() => navigation.goBack()}
+            onPress={handleDismiss}
             style={styles.headerCircleBtn}
             accessibilityLabel="Back"
           >
@@ -322,7 +355,7 @@ export const AddExpenseModal: React.FC = () => {
 
           <TouchableOpacity
             activeOpacity={0.8}
-            onPress={() => navigation.goBack()}
+            onPress={handleDismiss}
             style={styles.headerCircleBtn}
             accessibilityLabel="Close"
           >
@@ -345,6 +378,7 @@ export const AddExpenseModal: React.FC = () => {
                 ₹
               </SproutText>
               <TextInput
+                ref={amountInputRef}
                 style={styles.amountNumberInput}
                 value={amountStr}
                 onChangeText={handleAmountChange}
@@ -352,7 +386,6 @@ export const AddExpenseModal: React.FC = () => {
                 placeholderTextColor={colors.line}
                 keyboardType="decimal-pad"
                 maxLength={8}
-                autoFocus
               />
               <SproutText variant="subtitle" color={colors.muted} style={styles.amountDecimal}>
                 {hasDecimal ? '' : '.00'}
@@ -386,36 +419,102 @@ export const AddExpenseModal: React.FC = () => {
                   </SproutText>
                 </View>
               ) : (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalChips}>
-                  {friends.map((f) => {
-                    const myUserId = currentUser?.user_id || currentUser?.id;
-                    const fid = f.profile?.user_id || (f.user_id === myUserId ? f.friend_id : f.user_id);
-                    const isSelected = selectedFriendId === fid;
-                    const name = f.profile?.display_name || f.profile?.email || 'Friend';
-                    const initials = getInitials(name);
-                    return (
-                      <TouchableOpacity
-                        key={f.id}
-                        activeOpacity={0.8}
-                        onPress={() => handleSelectFriend(f)}
-                        style={[styles.friendChip, isSelected && styles.friendChipSelected]}
-                      >
-                        <View style={[styles.avatarCircle, isSelected && styles.avatarCircleSelected]}>
-                          <SproutText variant="caption" color={isSelected ? colors.onAccent : colors.accent} weight="700">
-                            {initials}
-                          </SproutText>
+                <>
+                  {/* Selected Friend Featured Card (Tap to open full searchable sheet) */}
+                  <TouchableOpacity
+                    activeOpacity={0.75}
+                    onPress={() => setShowFriendPicker(true)}
+                    style={styles.selectedEntityCard}
+                  >
+                    <View style={styles.selectedEntityLeft}>
+                      {selectedFriend ? (
+                        <AvatarCircle
+                          name={selectedFriendNameComputed}
+                          email={selectedFriendEmail}
+                          avatarUrl={selectedFriendAvatarUrl}
+                          size={44}
+                        />
+                      ) : (
+                        <View style={styles.placeholderAvatar}>
+                          <User size={22} color={colors.accent} />
                         </View>
-                        <SproutText
-                          variant="caption"
-                          color={isSelected ? colors.onAccent : colors.text}
-                          weight={isSelected ? '700' : '600'}
-                        >
-                          {name}
+                      )}
+                      <View style={styles.selectedEntityInfo}>
+                        <SproutText variant="eyebrow" color={colors.muted} style={styles.selectorEyebrow}>
+                          SPLIT WITH
                         </SproutText>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </ScrollView>
+                        <SproutText variant="subtitle" color={colors.text} weight="800" numberOfLines={1}>
+                          {selectedFriendNameComputed}
+                        </SproutText>
+                        {selectedFriendEmail ? (
+                          <SproutText variant="caption" color={colors.muted} numberOfLines={1}>
+                            {selectedFriendEmail}
+                          </SproutText>
+                        ) : null}
+                      </View>
+                    </View>
+                    <View style={styles.changeActionBadge}>
+                      <Search size={12} color={colors.accent} style={{ marginRight: 4 }} />
+                      <SproutText variant="caption" color={colors.accent} weight="700">
+                        {friends.length > 1 ? `Change (${friends.length}) ▾` : 'Change ▾'}
+                      </SproutText>
+                    </View>
+                  </TouchableOpacity>
+
+                  {/* Quick Friends Row (top 3-4 friends for 1-tap switching without opening sheet) */}
+                  {friends.length > 1 && (
+                    <View style={styles.quickSelectorRow}>
+                      <SproutText variant="caption" color={colors.muted} style={styles.quickLabel}>
+                        Quick:
+                      </SproutText>
+                      <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.quickChipsContent}
+                      >
+                        {friends.slice(0, 4).map((f) => {
+                          const fid = f.profile?.user_id || (f.user_id === myUserId ? f.friend_id : f.user_id);
+                          const isSelected = selectedFriendId === fid;
+                          const name = f.profile?.display_name || f.profile?.email || 'Friend';
+                          return (
+                            <TouchableOpacity
+                              key={f.id}
+                              activeOpacity={0.7}
+                              onPress={() => handleSelectFriend(f)}
+                              style={[styles.quickChip, isSelected && styles.quickChipSelected]}
+                            >
+                              <AvatarCircle
+                                name={name}
+                                avatarUrl={f.profile?.avatar_url}
+                                size={18}
+                                style={{ marginRight: 5 }}
+                              />
+                              <SproutText
+                                variant="caption"
+                                color={isSelected ? colors.onAccent : colors.text}
+                                weight={isSelected ? '700' : '600'}
+                                numberOfLines={1}
+                              >
+                                {name}
+                              </SproutText>
+                            </TouchableOpacity>
+                          );
+                        })}
+                        {friends.length > 4 && (
+                          <TouchableOpacity
+                            activeOpacity={0.7}
+                            onPress={() => setShowFriendPicker(true)}
+                            style={styles.moreFriendsChip}
+                          >
+                            <SproutText variant="caption" color={colors.accent} weight="700">
+                              +{friends.length - 4} more ▾
+                            </SproutText>
+                          </TouchableOpacity>
+                        )}
+                      </ScrollView>
+                    </View>
+                  )}
+                </>
               )}
 
               {/* Who Paid */}
@@ -482,28 +581,90 @@ export const AddExpenseModal: React.FC = () => {
                   </SproutText>
                 </View>
               ) : (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalChips}>
-                  {groups.map((g) => {
-                    const isSelected = selectedGroupId === g.id;
-                    return (
-                      <TouchableOpacity
-                        key={g.id}
-                        activeOpacity={0.8}
-                        onPress={() => setSelectedGroupId(g.id)}
-                        style={[styles.groupChip, isSelected && styles.groupChipSelected]}
-                      >
-                        <Users size={14} color={isSelected ? colors.onAccent : colors.accent} style={{ marginRight: 6 }} />
-                        <SproutText
-                          variant="caption"
-                          color={isSelected ? colors.onAccent : colors.text}
-                          weight={isSelected ? '700' : '600'}
-                        >
-                          {g.name}
+                <>
+                  {/* Selected Group Featured Card */}
+                  <TouchableOpacity
+                    activeOpacity={0.75}
+                    onPress={() => setShowGroupPicker(true)}
+                    style={styles.selectedEntityCard}
+                  >
+                    <View style={styles.selectedEntityLeft}>
+                      <View style={styles.placeholderAvatar}>
+                        <Users size={22} color={colors.accent} />
+                      </View>
+                      <View style={styles.selectedEntityInfo}>
+                        <SproutText variant="eyebrow" color={colors.muted} style={styles.selectorEyebrow}>
+                          ACTIVE GROUP
                         </SproutText>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </ScrollView>
+                        <SproutText variant="subtitle" color={colors.text} weight="800" numberOfLines={1}>
+                          {selectedGroup?.name || 'Select group'}
+                        </SproutText>
+                        {selectedGroup?.description ? (
+                          <SproutText variant="caption" color={colors.muted} numberOfLines={1}>
+                            {selectedGroup.description}
+                          </SproutText>
+                        ) : null}
+                      </View>
+                    </View>
+                    <View style={styles.changeActionBadge}>
+                      <Search size={12} color={colors.accent} style={{ marginRight: 4 }} />
+                      <SproutText variant="caption" color={colors.accent} weight="700">
+                        {groups.length > 1 ? `Change (${groups.length}) ▾` : 'Change ▾'}
+                      </SproutText>
+                    </View>
+                  </TouchableOpacity>
+
+                  {/* Quick Groups Row */}
+                  {groups.length > 1 && (
+                    <View style={styles.quickSelectorRow}>
+                      <SproutText variant="caption" color={colors.muted} style={styles.quickLabel}>
+                        Quick:
+                      </SproutText>
+                      <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.quickChipsContent}
+                      >
+                        {groups.slice(0, 4).map((g) => {
+                          const isSelected = selectedGroupId === g.id;
+                          return (
+                            <TouchableOpacity
+                              key={g.id}
+                              activeOpacity={0.7}
+                              onPress={() => handleSelectGroup(g)}
+                              style={[styles.quickChip, isSelected && styles.quickChipSelected]}
+                            >
+                              <Users
+                                size={14}
+                                color={isSelected ? colors.onAccent : colors.accent}
+                                style={{ marginRight: 5 }}
+                              />
+                              <SproutText
+                                variant="caption"
+                                color={isSelected ? colors.onAccent : colors.text}
+                                weight={isSelected ? '700' : '600'}
+                                numberOfLines={1}
+                              >
+                                {g.name}
+                              </SproutText>
+                            </TouchableOpacity>
+                          );
+                        })}
+                        {groups.length > 4 && (
+                          <TouchableOpacity
+                            activeOpacity={0.7}
+                            onPress={() => setShowGroupPicker(true)}
+                            style={styles.moreFriendsChip}
+                          >
+                            <SproutText variant="caption" color={colors.accent} weight="700">
+                              +{groups.length - 4} more ▾
+                            </SproutText>
+                          </TouchableOpacity>
+                        )}
+                      </ScrollView>
+                    </View>
+                  )}
+                </>
               )}
 
               {/* Paid By */}
@@ -698,6 +859,23 @@ export const AddExpenseModal: React.FC = () => {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
+
+      {/* Searchable Bottom Sheet Modals for 100+ Friends / Groups */}
+      <FriendPickerSheet
+        visible={showFriendPicker}
+        friends={friends}
+        selectedFriendId={selectedFriendId}
+        currentUserId={myUserId}
+        onSelectFriend={handleSelectFriend}
+        onClose={() => setShowFriendPicker(false)}
+      />
+      <GroupPickerSheet
+        visible={showGroupPicker}
+        groups={groups}
+        selectedGroupId={selectedGroupId}
+        onSelectGroup={handleSelectGroup}
+        onClose={() => setShowGroupPicker(false)}
+      />
     </SafeAreaView>
   );
 };
@@ -829,6 +1007,82 @@ const styles = StyleSheet.create({
     fontSize: 10,
     letterSpacing: 0.7,
     marginBottom: spacing.xs,
+  },
+  selectedEntityCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#E5EDE2',
+    marginBottom: 8,
+  },
+  selectedEntityLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 10,
+  },
+  placeholderAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#E5EFE3',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectedEntityInfo: {
+    flex: 1,
+    marginLeft: 12,
+    gap: 2,
+  },
+  selectorEyebrow: {
+    fontSize: 9,
+    letterSpacing: 0.8,
+  },
+  changeActionBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#DFE9DC',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: radii.full,
+  },
+  quickSelectorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  quickLabel: {
+    fontSize: 11,
+    marginRight: 6,
+  },
+  quickChipsContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  quickChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 5,
+    paddingHorizontal: 9,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: '#E5EDE2',
+  },
+  quickChipSelected: {
+    backgroundColor: colors.accent,
+    borderColor: colors.accent,
+  },
+  moreFriendsChip: {
+    backgroundColor: '#DFE9DC',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: radii.full,
   },
   horizontalChips: {
     gap: spacing.sm,

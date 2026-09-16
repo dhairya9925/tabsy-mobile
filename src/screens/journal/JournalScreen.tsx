@@ -389,14 +389,17 @@ export const JournalScreen: React.FC<Props> = ({ navigation }) => {
             shadows.card,
           ]}
         >
-          {/* Top Row: Eyebrow on left & Clean Status Badge on right */}
+          {/* Top Row: Concise Eyebrow on left & Clean Live Status Badge on right */}
           <View style={styles.heroCardHeaderRow}>
-            <SproutText style={[styles.heroCardEyebrow, isDark && { color: '#A5D2C8' }]}>
+            <SproutText
+              style={[styles.heroCardEyebrow, isDark && { color: '#A5D2C8' }]}
+              numberOfLines={1}
+            >
               {activeSingleSection.isCurrentMonth
-                ? 'CURRENT MONTH · ACTIVE LEDGER'
+                ? 'ACTIVE LEDGER'
                 : activeSingleSection.isPreviousMonth
-                  ? 'PREVIOUS MONTH · ARCHIVE'
-                  : 'ARCHIVED LEDGER'}
+                  ? 'PREVIOUS MONTH'
+                  : 'ARCHIVED RECORD'}
             </SproutText>
 
             <View
@@ -407,6 +410,9 @@ export const JournalScreen: React.FC<Props> = ({ navigation }) => {
                   : (isDark ? styles.heroStatusBadgeDarkPast : styles.heroStatusBadgePast),
               ]}
             >
+              {activeSingleSection.isCurrentMonth && (
+                <View style={[styles.liveDot, isDark && styles.liveDotDark]} />
+              )}
               <SproutText
                 style={[
                   styles.heroStatusBadgeText,
@@ -415,7 +421,7 @@ export const JournalScreen: React.FC<Props> = ({ navigation }) => {
                     : (isDark ? { color: '#A5D2C8' } : { color: '#536D5B' }),
                 ]}
               >
-                {activeSingleSection.isCurrentMonth ? 'Current Month' : 'Past Record'}
+                {activeSingleSection.isCurrentMonth ? 'Current' : 'Archived'}
               </SproutText>
             </View>
           </View>
@@ -479,8 +485,11 @@ export const JournalScreen: React.FC<Props> = ({ navigation }) => {
           ]}
         >
           <View style={styles.heroCardHeaderRow}>
-            <SproutText style={[styles.heroCardEyebrow, isDark && { color: '#A5D2C8' }]}>
-              ALL-TIME LEDGER · ALL MONTHS
+            <SproutText
+              style={[styles.heroCardEyebrow, isDark && { color: '#A5D2C8' }]}
+              numberOfLines={1}
+            >
+              ALL-TIME OVERVIEW
             </SproutText>
 
             <View
@@ -857,18 +866,32 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: spacing.sm,
     marginBottom: 10,
   },
   heroCardEyebrow: {
+    flexShrink: 1,
     fontFamily: fontFamilies.bold,
     fontSize: 11,
     letterSpacing: 0.8,
     color: '#466B53',
   },
   heroStatusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 9,
     paddingVertical: 3.5,
     borderRadius: radii.full,
+  },
+  liveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#235634',
+    marginRight: 5,
+  },
+  liveDotDark: {
+    backgroundColor: '#A5D2C8',
   },
   heroStatusBadgeCurrent: {
     backgroundColor: '#FFFFFF',

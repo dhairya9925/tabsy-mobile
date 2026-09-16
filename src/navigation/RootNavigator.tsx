@@ -21,6 +21,7 @@ import { SplashScreen } from '../screens/auth/SplashScreen';
 import { useAuthStore } from '../store/useAuthStore';
 import { linking } from './linking';
 import { ErrorBoundary } from '../components';
+import { colors } from '../theme';
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 
@@ -38,6 +39,7 @@ export const RootNavigator: React.FC = () => {
         <RootStack.Navigator
           screenOptions={{
             headerShown: false,
+            contentStyle: { backgroundColor: colors.background },
           }}
         >
         {!isAuthenticated ? (

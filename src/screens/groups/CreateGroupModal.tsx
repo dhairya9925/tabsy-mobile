@@ -103,7 +103,6 @@ export const CreateGroupModal: React.FC = () => {
             value={name}
             onChangeText={setName}
             icon={<Users size={18} color={colors.muted} />}
-            autoFocus
           />
 
           {/* Group Type Selector */}
