@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, radii, spacing, shadows, fontFamilies } from '../../theme';
 import {
   SproutText,
+  SproutAmountInput,
   SegmentControl,
   Toast,
   AvatarCircle,
@@ -158,7 +159,6 @@ export const AddFriendExpenseModal: React.FC = () => {
   };
 
   const numericAmount = parseFloat(amountStr) || 0;
-  const hasDecimal = amountStr.includes('.');
 
   const handleSave = async () => {
     setErrorMessage('');
@@ -254,29 +254,15 @@ export const AddFriendExpenseModal: React.FC = () => {
           contentContainerStyle={styles.scrollContent}
         >
           {/* Amount Card */}
-          <View style={styles.sproutAmountCard}>
-            <SproutText variant="caption" color={colors.muted} style={styles.howMuchLabel}>
-              How much?
-            </SproutText>
-            <View style={styles.amountDisplayRow}>
-              <SproutText variant="amount" color={colors.text} style={styles.currencySymbol}>
-                ₹
-              </SproutText>
-              <TextInput
-                ref={amountInputRef}
-                style={styles.amountNumberInput}
-                value={amountStr}
-                onChangeText={handleAmountChange}
-                placeholder="480"
-                placeholderTextColor={colors.line}
-                keyboardType="decimal-pad"
-                maxLength={8}
-              />
-              <SproutText variant="subtitle" color={colors.muted} style={styles.amountDecimal}>
-                {hasDecimal ? '' : '.00'}
-              </SproutText>
-            </View>
-          </View>
+          <SproutAmountInput
+            ref={amountInputRef}
+            value={amountStr}
+            onChangeText={handleAmountChange}
+            placeholder="480"
+            label="How much?"
+            testID="friend-expense-amount-input"
+            style={{ marginBottom: 12 }}
+          />
 
           {/* Friend Selector (if multiple friends or unselected) */}
           {!initialFriendId && friends.length > 0 && (
@@ -620,47 +606,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.xs,
     paddingBottom: spacing.xl,
-  },
-  sproutAmountCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 20,
-    paddingVertical: 16,
-    paddingHorizontal: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: spacing.xs,
-    marginBottom: 12,
-  },
-  howMuchLabel: {
-    fontSize: 12,
-    marginBottom: 4,
-  },
-  amountDisplayRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-  },
-  currencySymbol: {
-    fontSize: 28,
-    fontFamily: fontFamilies.bold,
-    marginTop: 8,
-    marginRight: 2,
-  },
-  amountNumberInput: {
-    fontSize: 52,
-    fontFamily: fontFamilies.bold,
-    letterSpacing: -2,
-    color: colors.text,
-    textAlign: 'center',
-    minWidth: 70,
-    padding: 0,
-    margin: 0,
-  },
-  amountDecimal: {
-    fontSize: 18,
-    fontFamily: fontFamilies.bold,
-    marginTop: 10,
-    marginLeft: 1,
   },
   subSectionCard: {
     backgroundColor: colors.surface,

@@ -1,5 +1,6 @@
 export * from './SproutText';
 export * from './SproutButton';
+export * from './SproutAmountInput';
 export * from './CircleButton';
 export * from './AvatarCircle';
 export * from './AvatarPickerSheet';

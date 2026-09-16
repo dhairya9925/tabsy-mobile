@@ -15,6 +15,7 @@ import { RootStackParamList } from '../../navigation/types';
 import { colors, radii, spacing, shadows, fontFamilies } from '../../theme';
 import {
   SproutText,
+  SproutAmountInput,
   SegmentControl,
   Toast,
   GroupPickerSheet,
@@ -184,7 +185,6 @@ export const AddGroupExpenseModal: React.FC<Props> = ({ route, navigation }) => 
   };
 
   const numericAmount = parseFloat(amountStr) || 0;
-  const hasDecimal = amountStr.includes('.');
 
   const equalShares = numericAmount > 0 && selectedMemberIds.size > 0
     ? splitEqual(numericAmount, selectedMemberIds.size)
@@ -312,29 +312,15 @@ export const AddGroupExpenseModal: React.FC<Props> = ({ route, navigation }) => 
           contentContainerStyle={styles.scrollContent}
         >
           {/* Amount Card */}
-          <View style={styles.sproutAmountCard}>
-            <SproutText variant="caption" color={colors.muted} style={styles.howMuchLabel}>
-              How much?
-            </SproutText>
-            <View style={styles.amountDisplayRow}>
-              <SproutText variant="amount" color={colors.text} style={styles.currencySymbol}>
-                ₹
-              </SproutText>
-              <TextInput
-                ref={amountInputRef}
-                style={styles.amountNumberInput}
-                value={amountStr}
-                onChangeText={handleAmountChange}
-                placeholder="480"
-                placeholderTextColor={colors.line}
-                keyboardType="decimal-pad"
-                maxLength={8}
-              />
-              <SproutText variant="subtitle" color={colors.muted} style={styles.amountDecimal}>
-                {hasDecimal ? '' : '.00'}
-              </SproutText>
-            </View>
-          </View>
+          <SproutAmountInput
+            ref={amountInputRef}
+            value={amountStr}
+            onChangeText={handleAmountChange}
+            placeholder="480"
+            label="How much?"
+            testID="group-expense-amount-input"
+            style={{ marginBottom: 12 }}
+          />
 
           {/* Group Selector (if multiple groups) */}
           {groups.length > 1 && (
@@ -729,47 +715,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.xs,
     paddingBottom: spacing.xl,
-  },
-  sproutAmountCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 20,
-    paddingVertical: 16,
-    paddingHorizontal: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: spacing.xs,
-    marginBottom: 12,
-  },
-  howMuchLabel: {
-    fontSize: 12,
-    marginBottom: 4,
-  },
-  amountDisplayRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-  },
-  currencySymbol: {
-    fontSize: 28,
-    fontFamily: fontFamilies.bold,
-    marginTop: 8,
-    marginRight: 2,
-  },
-  amountNumberInput: {
-    fontSize: 52,
-    fontFamily: fontFamilies.bold,
-    letterSpacing: -2,
-    color: colors.text,
-    textAlign: 'center',
-    minWidth: 70,
-    padding: 0,
-    margin: 0,
-  },
-  amountDecimal: {
-    fontSize: 18,
-    fontFamily: fontFamilies.bold,
-    marginTop: 10,
-    marginLeft: 1,
   },
   subSectionCard: {
     backgroundColor: colors.surface,
