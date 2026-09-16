@@ -111,3 +111,27 @@ test('groupExpensesByMonth groups expenses into distinct month sections with day
   assert.strictEqual(aug.expenseCount, 2);
   assert.strictEqual(aug.dayGroups.length, 2);
 });
+
+test('month navigation stepping finds chronological prev and next correctly', () => {
+  const months = extractAvailableMonths(mockExpenses);
+  // months: [ { key: '2026-09' }, { key: '2026-08' } ]
+  assert.strictEqual(months.length, 2);
+
+  const idxSep = months.findIndex((m) => m.key === '2026-09');
+  const idxAug = months.findIndex((m) => m.key === '2026-08');
+
+  // Next in time from August is September (idx - 1)
+  assert.strictEqual(idxAug > 0, true);
+  assert.strictEqual(months[idxAug - 1].key, '2026-09');
+
+  // Prev in time from September is August (idx + 1)
+  assert.strictEqual(idxSep < months.length - 1, true);
+  assert.strictEqual(months[idxSep + 1].key, '2026-08');
+
+  // September has no next (latest month)
+  assert.strictEqual(idxSep > 0, false);
+
+  // August has no prev (earliest month)
+  assert.strictEqual(idxAug < months.length - 1, false);
+});
+
