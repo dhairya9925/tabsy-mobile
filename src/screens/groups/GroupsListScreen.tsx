@@ -96,9 +96,52 @@ export const GroupsListScreen: React.FC = () => {
           friendsApi.getFriendBalances().catch(() => []),
         ]);
 
+        const currentUserId = currentUser?.id;
+        const acceptedFriendIds = new Set<string>();
+        const acceptedEmails = new Set<string>();
+
+        friendsData.forEach((f) => {
+          const counterpartId = f.user_id === currentUserId ? f.friend_id : f.user_id;
+          if (counterpartId) acceptedFriendIds.add(counterpartId);
+          if (f.profile?.user_id) acceptedFriendIds.add(f.profile.user_id);
+          if (f.profile?.email) acceptedEmails.add(f.profile.email.toLowerCase());
+        });
+
+        // Filter out sent requests where counterpart is already an accepted friend or profile is missing
+        const validSentData = sentData.filter((s) => {
+          if (!s.profile && !s.friend_id) return false;
+          const counterpartId = s.user_id === currentUserId ? s.friend_id : s.user_id;
+          if (counterpartId && acceptedFriendIds.has(counterpartId)) return false;
+          if (s.profile?.user_id && acceptedFriendIds.has(s.profile.user_id)) return false;
+          if (s.profile?.email && acceptedEmails.has(s.profile.email.toLowerCase())) return false;
+          return true;
+        });
+
+        // Background auto-clean stale sent requests on the server
+        sentData.forEach((s) => {
+          const counterpartId = s.user_id === currentUserId ? s.friend_id : s.user_id;
+          const isStale = (!s.profile && !s.friend_id) ||
+            (counterpartId && acceptedFriendIds.has(counterpartId)) ||
+            (s.profile?.user_id && acceptedFriendIds.has(s.profile.user_id)) ||
+            (s.profile?.email && acceptedEmails.has(s.profile.email.toLowerCase()));
+          if (isStale && s.id) {
+            friendsApi.removeFriend(s.id).catch(() => {});
+          }
+        });
+
+        // Also filter out pending (incoming) requests where counterpart is already friends
+        const validPendingData = pendingData.filter((p) => {
+          if (!p.profile && !p.user_id) return false;
+          const counterpartId = p.user_id === currentUserId ? p.friend_id : p.user_id;
+          if (counterpartId && acceptedFriendIds.has(counterpartId)) return false;
+          if (p.profile?.user_id && acceptedFriendIds.has(p.profile.user_id)) return false;
+          if (p.profile?.email && acceptedEmails.has(p.profile.email.toLowerCase())) return false;
+          return true;
+        });
+
         setFriends(friendsData);
-        setPendingRequests(pendingData);
-        setSentRequests(sentData);
+        setPendingRequests(validPendingData);
+        setSentRequests(validSentData);
         setFriendBalances(balancesData);
       }
     } catch (err: any) {
@@ -137,6 +180,19 @@ export const GroupsListScreen: React.FC = () => {
       loadData();
     } catch (err: any) {
       setErrorMessage(err.message || 'Failed to reject request');
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handleCancelSentRequest = async (id: string) => {
+    setActionLoadingId(id);
+    try {
+      await friendsApi.removeFriend(id);
+      setSentRequests((prev) => prev.filter((r) => r.id !== id));
+      setSuccessMessage('Friend request cancelled');
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Failed to cancel request');
     } finally {
       setActionLoadingId(null);
     }
@@ -466,6 +522,8 @@ export const GroupsListScreen: React.FC = () => {
                       key={req.id}
                       friend={req}
                       mode="sent"
+                      isActionLoading={actionLoadingId === req.id}
+                      onCancel={() => handleCancelSentRequest(req.id)}
                     />
                   ))}
                 </View>

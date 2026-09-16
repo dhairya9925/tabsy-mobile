@@ -23,6 +23,7 @@ interface FriendCardProps {
   onAccept?: () => void;
   onReject?: () => void;
   onRemove?: () => void;
+  onCancel?: () => void;
   onSettleUp?: () => void;
 }
 
@@ -35,6 +36,7 @@ export const FriendCard: React.FC<FriendCardProps> = ({
   onAccept,
   onReject,
   onRemove,
+  onCancel,
   onSettleUp,
 }) => {
   const profile = friend.profile;
@@ -106,11 +108,28 @@ export const FriendCard: React.FC<FriendCardProps> = ({
           )}
 
           {mode === 'sent' && (
-            <View style={styles.sentBadge}>
-              <Clock size={10} color="#D8E8CB" style={{ marginRight: 4 }} />
-              <SproutText style={styles.sentBadgeText}>
-                Pending
-              </SproutText>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <View style={styles.sentBadge}>
+                <Clock size={10} color="#D8E8CB" style={{ marginRight: 4 }} />
+                <SproutText style={styles.sentBadgeText}>
+                  Pending
+                </SproutText>
+              </View>
+              {onCancel && (
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={onCancel}
+                  style={styles.cancelBtn}
+                  accessibilityLabel="Cancel friend request"
+                  disabled={isActionLoading}
+                >
+                  {isActionLoading ? (
+                    <ActivityIndicator size="small" color="#AF4932" />
+                  ) : (
+                    <X size={13} color="#AF4932" strokeWidth={2.5} />
+                  )}
+                </TouchableOpacity>
+              )}
             </View>
           )}
 
@@ -295,6 +314,14 @@ const styles = StyleSheet.create({
     fontSize: 10,
     letterSpacing: 0.2,
     color: '#D8E8CB',
+  },
+  cancelBtn: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#F6DDD4',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   divider: {
     height: 1,
