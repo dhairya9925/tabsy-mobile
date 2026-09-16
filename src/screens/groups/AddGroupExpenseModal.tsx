@@ -59,31 +59,31 @@ const DEFAULT_SPROUT_CATEGORIES: SproutCategoryItem[] = [
     id: 'food',
     name: 'Food & Dining',
     shortLabel: 'Food',
-    icon: (c) => <Utensils size={20} color={c} strokeWidth={1.8} />,
+    icon: (c) => <Utensils size={14} color={c} strokeWidth={2} />,
   },
   {
     id: 'transport',
     name: 'Transport',
     shortLabel: 'Travel',
-    icon: (c) => <Car size={20} color={c} strokeWidth={1.8} />,
+    icon: (c) => <Car size={14} color={c} strokeWidth={2} />,
   },
   {
     id: 'shopping',
     name: 'Shopping',
     shortLabel: 'Shop',
-    icon: (c) => <ShoppingBag size={20} color={c} strokeWidth={1.8} />,
+    icon: (c) => <ShoppingBag size={14} color={c} strokeWidth={2} />,
   },
   {
     id: 'bills',
     name: 'Bills & Utilities',
     shortLabel: 'Bills',
-    icon: (c) => <ReceiptText size={20} color={c} strokeWidth={1.8} />,
+    icon: (c) => <ReceiptText size={14} color={c} strokeWidth={2} />,
   },
   {
     id: 'other',
     name: 'Other',
     shortLabel: 'Other',
-    icon: (c) => <MoreHorizontal size={20} color={c} strokeWidth={1.8} />,
+    icon: (c) => <MoreHorizontal size={14} color={c} strokeWidth={2} />,
   },
 ];
 
@@ -319,219 +319,191 @@ export const AddGroupExpenseModal: React.FC<Props> = ({ route, navigation }) => 
             placeholder="480"
             label="How much?"
             testID="group-expense-amount-input"
-            style={{ marginBottom: 12 }}
+            style={{ marginBottom: 6 }}
           />
 
-          {/* Group Selector (if multiple groups) */}
-          {groups.length > 1 && (
-            <View style={styles.subSectionCard}>
-              <SproutText variant="eyebrow" color={colors.muted} style={styles.subSectionTitle}>
-                SELECT GROUP
-              </SproutText>
-
-              {/* Selected Group Featured Card */}
-              <TouchableOpacity
-                activeOpacity={0.75}
-                onPress={() => setShowGroupPicker(true)}
-                style={styles.selectedEntityCard}
-              >
-                <View style={styles.selectedEntityLeft}>
-                  <View style={styles.placeholderAvatar}>
-                    <Users size={22} color={colors.accent} />
-                  </View>
-                  <View style={styles.selectedEntityInfo}>
-                    <SproutText variant="eyebrow" color={colors.muted} style={styles.selectorEyebrow}>
-                      ACTIVE GROUP
-                    </SproutText>
-                    <SproutText variant="subtitle" color={colors.text} weight="800" numberOfLines={1}>
-                      {selectedGroup?.name || 'Select group'}
-                    </SproutText>
-                    {selectedGroup?.description ? (
-                      <SproutText variant="caption" color={colors.muted} numberOfLines={1}>
-                        {selectedGroup.description}
-                      </SproutText>
-                    ) : null}
-                  </View>
-                </View>
-                <View style={styles.changeActionBadge}>
-                  <Search size={12} color={colors.accent} style={{ marginRight: 4 }} />
-                  <SproutText variant="caption" color={colors.accent} weight="700">
-                    Change ({groups.length}) ▾
-                  </SproutText>
-                </View>
-              </TouchableOpacity>
-
-              {/* Quick Groups Row */}
-              <View style={styles.quickSelectorRow}>
-                <SproutText variant="caption" color={colors.muted} style={styles.quickLabel}>
-                  Quick:
-                </SproutText>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.quickChipsContent}
+          {/* High-density Group & Paid By Card */}
+          <View style={styles.compactEntityCard}>
+            {groups.length > 1 && (
+              <View style={styles.compactEntityHeaderRow}>
+                <TouchableOpacity
+                  activeOpacity={0.75}
+                  onPress={() => setShowGroupPicker(true)}
+                  style={styles.compactEntityMain}
                 >
-                  {groups.slice(0, 4).map((g) => {
+                  <View style={styles.compactGroupIconWrap}>
+                    <Users size={14} color={colors.accent} />
+                  </View>
+                  <View style={styles.compactEntityInfo}>
+                    <SproutText variant="caption" color={colors.text} weight="700" numberOfLines={1} style={styles.compactEntityName}>
+                      {selectedGroup?.name || 'Select group'} ▾
+                    </SproutText>
+                  </View>
+                </TouchableOpacity>
+
+                <View style={styles.compactQuickRow}>
+                  {groups.slice(0, 3).map((g) => {
                     const isSelected = selectedGroupId === g.id;
                     return (
                       <TouchableOpacity
                         key={g.id}
                         activeOpacity={0.7}
                         onPress={() => handleSelectGroup(g)}
-                        style={[styles.quickChip, isSelected && styles.quickChipSelected]}
+                        style={[
+                          styles.compactQuickGroupPill,
+                          isSelected && styles.compactQuickGroupPillSelected,
+                        ]}
                       >
-                        <Users
-                          size={14}
-                          color={isSelected ? colors.onAccent : colors.accent}
-                          style={{ marginRight: 5 }}
-                        />
                         <SproutText
                           variant="caption"
                           color={isSelected ? colors.onAccent : colors.text}
                           weight={isSelected ? '700' : '600'}
                           numberOfLines={1}
+                          style={{ fontSize: 11 }}
                         >
                           {g.name}
                         </SproutText>
                       </TouchableOpacity>
                     );
                   })}
-                  {groups.length > 4 && (
+                  {groups.length > 3 && (
                     <TouchableOpacity
                       activeOpacity={0.7}
                       onPress={() => setShowGroupPicker(true)}
-                      style={styles.moreFriendsChip}
+                      style={styles.compactQuickMoreBadge}
                     >
-                      <SproutText variant="caption" color={colors.accent} weight="700">
-                        +{groups.length - 4} more ▾
+                      <SproutText variant="caption" color={colors.accent} weight="700" style={{ fontSize: 10 }}>
+                        +{groups.length - 3}
                       </SproutText>
                     </TouchableOpacity>
                   )}
-                </ScrollView>
-              </View>
-            </View>
-          )}
-
-          {/* Paid By Selector */}
-          <View style={styles.subSectionCard}>
-            <SproutText variant="eyebrow" color={colors.muted} style={styles.subSectionTitle}>
-              PAID BY
-            </SproutText>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalChips}>
-              {members.map((m) => {
-                const isSelected = paidByUserId === m.user_id;
-                const isYou = m.user_id === (currentUser?.user_id || currentUser?.id);
-                const name = isYou ? 'You' : (m.profile?.display_name || m.profile?.email?.split('@')[0] || 'Member');
-                return (
-                  <TouchableOpacity
-                    key={m.user_id}
-                    activeOpacity={0.8}
-                    onPress={() => setPaidByUserId(m.user_id)}
-                    style={[styles.payerChip, isSelected && styles.payerChipSelected]}
-                  >
-                    <UserCheck size={13} color={isSelected ? colors.onAccent : colors.accent} style={{ marginRight: 4 }} />
-                    <SproutText
-                      variant="caption"
-                      color={isSelected ? colors.onAccent : colors.text}
-                      weight={isSelected ? '700' : '600'}
-                    >
-                      {name}
-                    </SproutText>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-
-            {/* Split Method Toggle */}
-            <View style={styles.pillToggleGroup}>
-              <SproutText variant="eyebrow" color={colors.muted} style={styles.pillGroupLabel}>
-                SPLIT METHOD
-              </SproutText>
-              <SegmentControl<'equal' | 'custom'>
-                options={[
-                  { value: 'equal', label: 'Split equally' },
-                  { value: 'custom', label: 'Exact amounts' },
-                ]}
-                value={splitMethod}
-                onChange={setSplitMethod}
-              />
-
-              {/* Live equal breakdown summary */}
-              {splitMethod === 'equal' && selectedMemberIds.size > 0 && (
-                <View style={[styles.breakdownPill, styles.breakdownPillPositive]}>
-                  <SproutText variant="caption" color="#25603A" weight="700">
-                    {numericAmount > 0
-                      ? `₹${(numericAmount / selectedMemberIds.size).toFixed(2)} each across ${selectedMemberIds.size} members`
-                      : `Split equally among ${selectedMemberIds.size} members`}
-                  </SproutText>
                 </View>
-              )}
+              </View>
+            )}
 
-              {/* Members inclusion list */}
-              {splitMethod === 'equal' && (
-                <View style={styles.membersList}>
+            {/* Paid By & Split Method */}
+            <View style={styles.compactControlsRow}>
+              <View style={{ flex: 1, marginRight: 6 }}>
+                <SproutText variant="eyebrow" color={colors.muted} style={styles.compactControlLabel}>
+                  PAID BY
+                </SproutText>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.compactGroupPaidByRow}>
                   {members.map((m) => {
-                    const isIncluded = selectedMemberIds.has(m.user_id);
+                    const isSelected = paidByUserId === m.user_id;
                     const isYou = m.user_id === (currentUser?.user_id || currentUser?.id);
                     const name = isYou ? 'You' : (m.profile?.display_name || m.profile?.email?.split('@')[0] || 'Member');
                     return (
                       <TouchableOpacity
                         key={m.user_id}
                         activeOpacity={0.8}
-                        onPress={() => toggleMemberSelection(m.user_id)}
-                        style={[styles.memberRow, isIncluded && styles.memberRowIncluded]}
+                        onPress={() => setPaidByUserId(m.user_id)}
+                        style={[styles.compactPayerPill, isSelected && styles.compactPayerPillSelected]}
                       >
-                        <View style={[styles.checkCircle, isIncluded && styles.checkCircleActive]}>
-                          {isIncluded && <Check size={12} color="#FFFFFF" strokeWidth={3} />}
-                        </View>
-                        <SproutText variant="body" color={colors.text} style={{ flex: 1 }}>
+                        <SproutText
+                          variant="caption"
+                          color={isSelected ? colors.onAccent : colors.text}
+                          weight={isSelected ? '700' : '600'}
+                          style={{ fontSize: 11 }}
+                        >
                           {name}
-                        </SproutText>
-                        <SproutText variant="caption" color={colors.muted} weight="600">
-                          {isIncluded && numericAmount > 0
-                            ? `₹${(numericAmount / selectedMemberIds.size).toFixed(2)}`
-                            : 'Excluded'}
                         </SproutText>
                       </TouchableOpacity>
                     );
                   })}
-                </View>
-              )}
+                </ScrollView>
+              </View>
 
-              {/* Custom amounts input list */}
-              {splitMethod === 'custom' && (
-                <View style={styles.membersList}>
-                  {members.map((m) => {
-                    const isYou = m.user_id === (currentUser?.user_id || currentUser?.id);
-                    const name = isYou ? 'You' : (m.profile?.display_name || m.profile?.email?.split('@')[0] || 'Member');
-                    return (
-                      <View key={m.user_id} style={styles.customMemberRow}>
-                        <SproutText variant="body" color={colors.text} style={{ flex: 1 }}>
-                          {name}
-                        </SproutText>
-                        <View style={styles.customInputBox}>
-                          <SproutText variant="caption" color={colors.muted} style={{ marginRight: 2 }}>
-                            ₹
-                          </SproutText>
-                          <TextInput
-                            style={styles.customTextInput}
-                            keyboardType="decimal-pad"
-                            placeholder="0.00"
-                            placeholderTextColor={colors.line}
-                            value={customAmounts[m.user_id] || ''}
-                            onChangeText={(val) => handleCustomAmountChange(m.user_id, val)}
-                          />
-                        </View>
-                      </View>
-                    );
-                  })}
-                </View>
-              )}
+              <View style={{ flex: 1, marginLeft: 6 }}>
+                <SproutText variant="eyebrow" color={colors.muted} style={styles.compactControlLabel}>
+                  SPLIT
+                </SproutText>
+                <SegmentControl<'equal' | 'custom'>
+                  size="sm"
+                  options={[
+                    { value: 'equal', label: 'Equally' },
+                    { value: 'custom', label: 'Exact' },
+                  ]}
+                  value={splitMethod}
+                  onChange={setSplitMethod}
+                />
+              </View>
             </View>
+
+            {/* Live equal breakdown summary */}
+            {splitMethod === 'equal' && selectedMemberIds.size > 0 && (
+              <View style={[styles.compactBreakdownPill, styles.breakdownPillPositive]}>
+                <SproutText variant="caption" color="#25603A" weight="700" style={{ fontSize: 11, textAlign: 'center' }}>
+                  {numericAmount > 0
+                    ? `₹${(numericAmount / selectedMemberIds.size).toFixed(2)} each across ${selectedMemberIds.size} members`
+                    : `Split equally among ${selectedMemberIds.size} members`}
+                </SproutText>
+              </View>
+            )}
+
+            {/* Members inclusion list (equal split) */}
+            {splitMethod === 'equal' && members.length > 2 && (
+              <View style={styles.compactMembersList}>
+                {members.map((m) => {
+                  const isIncluded = selectedMemberIds.has(m.user_id);
+                  const isYou = m.user_id === (currentUser?.user_id || currentUser?.id);
+                  const name = isYou ? 'You' : (m.profile?.display_name || m.profile?.email?.split('@')[0] || 'Member');
+                  return (
+                    <TouchableOpacity
+                      key={m.user_id}
+                      activeOpacity={0.8}
+                      onPress={() => toggleMemberSelection(m.user_id)}
+                      style={[styles.compactMemberRow, isIncluded && styles.memberRowIncluded]}
+                    >
+                      <View style={[styles.compactCheckCircle, isIncluded && styles.checkCircleActive]}>
+                        {isIncluded && <Check size={10} color="#FFFFFF" strokeWidth={3} />}
+                      </View>
+                      <SproutText variant="caption" color={colors.text} style={{ flex: 1, fontSize: 12 }}>
+                        {name}
+                      </SproutText>
+                      <SproutText variant="caption" color={colors.muted} weight="600" style={{ fontSize: 11 }}>
+                        {isIncluded && numericAmount > 0
+                          ? `₹${(numericAmount / selectedMemberIds.size).toFixed(2)}`
+                          : 'Excluded'}
+                      </SproutText>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            )}
+
+            {/* Custom amounts input list */}
+            {splitMethod === 'custom' && (
+              <View style={styles.compactMembersList}>
+                {members.map((m) => {
+                  const isYou = m.user_id === (currentUser?.user_id || currentUser?.id);
+                  const name = isYou ? 'You' : (m.profile?.display_name || m.profile?.email?.split('@')[0] || 'Member');
+                  return (
+                    <View key={m.user_id} style={styles.compactCustomMemberRow}>
+                      <SproutText variant="caption" color={colors.text} style={{ flex: 1, fontSize: 12 }}>
+                        {name}
+                      </SproutText>
+                      <View style={styles.compactCustomInputBox}>
+                        <SproutText variant="caption" color={colors.muted} style={{ marginRight: 2, fontSize: 11 }}>
+                          ₹
+                        </SproutText>
+                        <TextInput
+                          style={styles.compactCustomTextInput}
+                          keyboardType="decimal-pad"
+                          placeholder="0.00"
+                          placeholderTextColor={colors.line}
+                          value={customAmounts[m.user_id] || ''}
+                          onChangeText={(val) => handleCustomAmountChange(m.user_id, val)}
+                        />
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            )}
           </View>
 
-          {/* Category Grid */}
-          <View style={styles.categoryGrid}>
+          {/* Category Pill Strip */}
+          <View style={styles.compactCategoryRow}>
             {DEFAULT_SPROUT_CATEGORIES.map((cat) => {
               const isSelected = selectedCategoryId === cat.id;
               return (
@@ -540,8 +512,8 @@ export const AddGroupExpenseModal: React.FC<Props> = ({ route, navigation }) => 
                   activeOpacity={0.8}
                   onPress={() => setSelectedCategoryId(cat.id)}
                   style={[
-                    styles.categoryBtn,
-                    isSelected && styles.categoryBtnSelected,
+                    styles.compactCategoryPill,
+                    isSelected && styles.compactCategoryPillSelected,
                   ]}
                 >
                   {cat.icon(isSelected ? colors.onAccent : colors.muted)}
@@ -549,7 +521,7 @@ export const AddGroupExpenseModal: React.FC<Props> = ({ route, navigation }) => 
                     variant="caption"
                     color={isSelected ? colors.onAccent : colors.muted}
                     weight={isSelected ? '700' : '600'}
-                    style={styles.categoryLabel}
+                    style={styles.compactCategoryLabel}
                   >
                     {cat.shortLabel}
                   </SproutText>
@@ -558,78 +530,80 @@ export const AddGroupExpenseModal: React.FC<Props> = ({ route, navigation }) => 
             })}
           </View>
 
-          {/* Details Fields */}
-          <View style={styles.fieldsContainer}>
+          {/* Details Fields: Single unified 2-in-1 card */}
+          <View style={styles.compactFieldsCard}>
             {/* Note Field */}
-            <View style={styles.sproutFieldRow}>
-              <FileText size={18} color={colors.muted} strokeWidth={1.8} style={styles.fieldIcon} />
+            <View style={styles.compactFieldRow}>
+              <FileText size={16} color={colors.muted} strokeWidth={1.8} style={{ marginRight: 8 }} />
               <TextInput
-                style={styles.fieldInput}
+                style={styles.compactFieldInput}
                 placeholder="Dinner at Social"
                 placeholderTextColor={colors.muted}
                 value={description}
                 onChangeText={setDescription}
               />
-              <SproutText variant="caption" color={colors.muted} style={styles.fieldTag}>
+              <SproutText variant="caption" color={colors.muted} style={{ fontSize: 11 }}>
                 Note
               </SproutText>
             </View>
+
+            <View style={styles.compactFieldDivider} />
 
             {/* Date Field */}
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={() => setShowDatePicker(!showDatePicker)}
-              style={styles.sproutFieldRow}
+              style={styles.compactFieldRow}
             >
-              <CalendarDays size={18} color={colors.muted} strokeWidth={1.8} style={styles.fieldIcon} />
-              <SproutText variant="body" color={colors.text} style={styles.fieldValue}>
+              <CalendarDays size={16} color={colors.muted} strokeWidth={1.8} style={{ marginRight: 8 }} />
+              <SproutText variant="body" color={colors.text} style={{ flex: 1, fontSize: 12, fontFamily: fontFamilies.bold }}>
                 {formatFriendlyDate(dateStr)}
               </SproutText>
-              <SproutText variant="caption" color={colors.accent} weight="700" style={styles.fieldActionTag}>
+              <SproutText variant="caption" color={colors.accent} weight="700" style={{ fontSize: 11 }}>
                 Change
               </SproutText>
             </TouchableOpacity>
-
-            {showDatePicker && (
-              <View style={styles.datePickerChips}>
-                {[
-                  { label: 'Today', date: toLocalDateString(new Date()) },
-                  {
-                    label: 'Yesterday',
-                    date: (() => {
-                      const d = new Date();
-                      d.setDate(d.getDate() - 1);
-                      return toLocalDateString(d);
-                    })(),
-                  },
-                ].map((item) => {
-                  const isSelected = dateStr === item.date;
-                  return (
-                    <TouchableOpacity
-                      key={item.label}
-                      onPress={() => {
-                        setDateStr(item.date);
-                        setShowDatePicker(false);
-                      }}
-                      style={[styles.dateChip, isSelected && styles.dateChipSelected]}
-                    >
-                      <SproutText
-                        variant="caption"
-                        color={isSelected ? colors.onAccent : colors.text}
-                        weight="700"
-                      >
-                        {item.label}
-                      </SproutText>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            )}
           </View>
+
+          {showDatePicker && (
+            <View style={styles.compactDatePickerChips}>
+              {[
+                { label: 'Today', date: toLocalDateString(new Date()) },
+                {
+                  label: 'Yesterday',
+                  date: (() => {
+                    const d = new Date();
+                    d.setDate(d.getDate() - 1);
+                    return toLocalDateString(d);
+                  })(),
+                },
+              ].map((item) => {
+                const isSelected = dateStr === item.date;
+                return (
+                  <TouchableOpacity
+                    key={item.label}
+                    onPress={() => {
+                      setDateStr(item.date);
+                      setShowDatePicker(false);
+                    }}
+                    style={[styles.compactDateChip, isSelected && styles.compactDateChipSelected]}
+                  >
+                    <SproutText
+                      variant="caption"
+                      color={isSelected ? colors.onAccent : colors.text}
+                      weight="700"
+                    >
+                      {item.label}
+                    </SproutText>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
 
           {/* Affirmation Note */}
           <View style={styles.affirmationRow}>
-            <CheckCheck size={16} color={colors.accent} strokeWidth={2.4} />
+            <CheckCheck size={14} color={colors.accent} strokeWidth={2.4} />
             <SproutText variant="caption" color={colors.muted} style={styles.affirmationText}>
               Shared rhythm · All shares added to group ledger.
             </SproutText>
@@ -727,285 +701,229 @@ const styles = StyleSheet.create({
     letterSpacing: 0.7,
     marginBottom: spacing.xs,
   },
-  selectedEntityCard: {
+  compactEntityCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 8,
+    borderWidth: 1,
+    borderColor: '#E5EDE2',
+    marginBottom: 6,
+  },
+  compactEntityHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#E5EDE2',
-    marginBottom: 8,
+    paddingBottom: 6,
+    marginBottom: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F4EE',
   },
-  selectedEntityLeft: {
+  compactEntityMain: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
-    marginRight: 10,
   },
-  placeholderAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#E5EFE3',
+  compactGroupIconWrap: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: '#DFE9DC',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  selectedEntityInfo: {
+  compactEntityInfo: {
+    marginLeft: 7,
     flex: 1,
-    marginLeft: 12,
-    gap: 2,
   },
-  selectorEyebrow: {
-    fontSize: 9,
-    letterSpacing: 0.8,
+  compactEntityName: {
+    fontSize: 13,
+    lineHeight: 16,
   },
-  changeActionBadge: {
+  compactQuickRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 4,
+  },
+  compactQuickGroupPill: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: '#E5EDE2',
+  },
+  compactQuickGroupPillSelected: {
+    backgroundColor: colors.accent,
+    borderColor: colors.accent,
+  },
+  compactQuickMoreBadge: {
     backgroundColor: '#DFE9DC',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingVertical: 3,
+    paddingHorizontal: 6,
     borderRadius: radii.full,
   },
-  quickSelectorRow: {
+  compactControlsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    justifyContent: 'space-between',
   },
-  quickLabel: {
-    fontSize: 11,
-    marginRight: 6,
+  compactControlLabel: {
+    fontSize: 9,
+    letterSpacing: 0.5,
+    marginBottom: 3,
   },
-  quickChipsContent: {
+  compactGroupPaidByRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    paddingVertical: 2,
   },
-  quickChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  compactPayerPill: {
     backgroundColor: '#FFFFFF',
-    paddingVertical: 5,
-    paddingHorizontal: 9,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
     borderRadius: radii.full,
     borderWidth: 1,
     borderColor: '#E5EDE2',
   },
-  quickChipSelected: {
+  compactPayerPillSelected: {
     backgroundColor: colors.accent,
     borderColor: colors.accent,
   },
-  moreFriendsChip: {
-    backgroundColor: '#DFE9DC',
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: radii.full,
-  },
-  horizontalChips: {
-    gap: spacing.sm,
+  compactBreakdownPill: {
+    marginTop: 6,
     paddingVertical: 4,
-  },
-  groupChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: radii.full,
-    borderWidth: 1,
-    borderColor: colors.line,
-  },
-  groupChipSelected: {
-    backgroundColor: colors.accent,
-    borderColor: colors.accent,
-  },
-  payerChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: radii.full,
-    borderWidth: 1,
-    borderColor: colors.line,
-  },
-  payerChipSelected: {
-    backgroundColor: colors.accent,
-    borderColor: colors.accent,
-  },
-  pillToggleGroup: {
-    marginTop: spacing.md,
-  },
-  pillGroupLabel: {
-    fontSize: 10,
-    letterSpacing: 0.7,
-    marginBottom: 6,
-  },
-  pillToggleRow: {
-    flexDirection: 'row',
-    backgroundColor: '#DFE9DC',
-    borderRadius: 999,
-    padding: 3,
-    gap: 4,
-  },
-  togglePill: {
-    flex: 1,
-    paddingVertical: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 999,
-  },
-  togglePillSelected: {
-    backgroundColor: colors.surface,
-    shadowColor: '#183228',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  breakdownPill: {
-    marginTop: 10,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 10,
+    paddingHorizontal: 8,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
   breakdownPillPositive: {
     backgroundColor: '#D8E8CB',
   },
-  membersList: {
-    marginTop: 10,
-    gap: 6,
+  compactMembersList: {
+    marginTop: 6,
+    gap: 4,
   },
-  memberRow: {
+  compactMemberRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderRadius: 10,
+    paddingVertical: 5,
+    paddingHorizontal: 8,
+    borderRadius: 8,
     backgroundColor: colors.background,
   },
   memberRowIncluded: {
     backgroundColor: '#F3F8F1',
   },
-  checkCircle: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 1.5,
+  compactCheckCircle: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 1.2,
     borderColor: colors.line,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 10,
+    marginRight: 8,
     backgroundColor: colors.surface,
   },
   checkCircleActive: {
     backgroundColor: colors.accent,
     borderColor: colors.accent,
   },
-  customMemberRow: {
+  compactCustomMemberRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 10,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 8,
     backgroundColor: colors.background,
   },
-  customInputBox: {
+  compactCustomInputBox: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.line,
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    width: 100,
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    width: 80,
   },
-  customTextInput: {
+  compactCustomTextInput: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 12,
     color: colors.text,
     fontFamily: fontFamilies.bold,
     padding: 0,
     textAlign: 'right',
   },
-  categoryGrid: {
+  compactCategoryRow: {
     flexDirection: 'row',
-    gap: 7,
+    justifyContent: 'space-between',
+    gap: 5,
     marginVertical: 4,
   },
-  categoryBtn: {
+  compactCategoryPill: {
     flex: 1,
-    height: 64,
-    borderRadius: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 34,
+    borderRadius: radii.full,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.line,
-    alignItems: 'center',
-    justifyContent: 'center',
     gap: 4,
+    paddingHorizontal: 2,
   },
-  categoryBtnSelected: {
+  compactCategoryPillSelected: {
     backgroundColor: colors.accent,
     borderColor: colors.accent,
   },
-  categoryLabel: {
-    fontSize: 10,
+  compactCategoryLabel: {
+    fontSize: 11,
   },
-  fieldsContainer: {
-    marginTop: 8,
-  },
-  sproutFieldRow: {
-    height: 49,
+  compactFieldsCard: {
     backgroundColor: colors.surface,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: colors.line,
-    paddingHorizontal: 13,
+    marginTop: 2,
+    marginBottom: 4,
+    paddingHorizontal: 12,
+  },
+  compactFieldRow: {
+    height: 36,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
   },
-  fieldIcon: {
-    marginRight: 10,
-  },
-  fieldInput: {
+  compactFieldInput: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: fontFamilies.regular,
     color: colors.text,
     padding: 0,
   },
-  fieldValue: {
-    flex: 1,
-    fontSize: 13,
-    fontFamily: fontFamilies.bold,
+  compactFieldDivider: {
+    height: 1,
+    backgroundColor: colors.line,
+    opacity: 0.6,
   },
-  fieldTag: {
-    fontSize: 11,
-  },
-  fieldActionTag: {
-    fontSize: 11,
-  },
-  datePickerChips: {
+  compactDatePickerChips: {
     flexDirection: 'row',
     gap: spacing.sm,
-    marginBottom: 8,
-    paddingLeft: 4,
-  },
-  dateChip: {
-    backgroundColor: colors.surface,
     paddingVertical: 6,
-    paddingHorizontal: 12,
+  },
+  compactDateChip: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 4,
+    paddingHorizontal: 10,
     borderRadius: radii.full,
     borderWidth: 1,
     borderColor: colors.line,
   },
-  dateChipSelected: {
+  compactDateChipSelected: {
     backgroundColor: colors.accent,
     borderColor: colors.accent,
   },
@@ -1013,9 +931,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    marginTop: 10,
-    marginBottom: 6,
+    gap: 5,
+    marginVertical: 4,
   },
   affirmationText: {
     fontSize: 11,
@@ -1026,8 +943,8 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xs,
   },
   saveCtaBtn: {
-    height: 52,
-    borderRadius: 16,
+    height: 48,
+    borderRadius: 14,
     backgroundColor: colors.accent,
     flexDirection: 'row',
     alignItems: 'center',

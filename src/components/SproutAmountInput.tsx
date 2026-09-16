@@ -175,25 +175,25 @@ SproutAmountInput.displayName = 'SproutAmountInput';
 const styles = StyleSheet.create({
   sproutAmountCard: {
     backgroundColor: colors.surface,
-    borderRadius: 20,
-    paddingVertical: 16,
-    paddingHorizontal: 18,
+    borderRadius: 18,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: colors.line,
-    marginTop: spacing.xs,
+    marginTop: 2,
     ...shadows.card,
     position: 'relative',
   },
   howMuchLabel: {
-    fontSize: 12,
-    marginBottom: 4,
+    fontSize: 11,
+    marginBottom: 2,
   },
   amountDisplayRow: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 4,
+    paddingVertical: 0,
   },
   amountMainText: {
     textAlign: 'center',
