@@ -33,3 +33,4 @@ export * from './HeroActionSlipCard';
 export * from './HouseholdProgressCard';
 export * from './MonthlyLedgerTable';
 export * from './CoordinatorClearingSection';
+export * from './WhoOwesWhomSection';

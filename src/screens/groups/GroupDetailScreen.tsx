@@ -19,6 +19,7 @@ import {
   GroupBalanceBanner,
   GroupExpenseRow,
   GroupBalanceRow,
+  WhoOwesWhomSection,
   GroupMemberRow,
   FieldRow,
   Toast,
@@ -315,55 +316,39 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
       {subTab === 'balances' && (
         <View style={styles.section}>
+          {/* Monthly Settlement Banner (Yellow marked area - Fixed) */}
           <TouchableOpacity
             style={styles.settlementBanner}
-            activeOpacity={0.8}
+            activeOpacity={0.75}
             onPress={() => navigation.navigate('MonthlySettlementDetail', { groupId, groupName: group?.name })}
           >
             <View style={styles.settlementBannerLeft}>
               <View style={styles.settlementIconCircle}>
-                <Calendar size={18} color={colors.accent} />
+                <Calendar size={20} color={colors.accent} strokeWidth={2} />
               </View>
-              <View>
-                <SproutText variant="body" color={colors.text} weight="700">
+              <View style={styles.settlementTextCol}>
+                <SproutText variant="body" color={colors.text} weight="700" numberOfLines={1} style={styles.settlementBannerTitle}>
                   {group?.type === 'shared_living' ? 'Monthly Household Ledger' : 'Monthly Settlements'}
                 </SproutText>
-                <SproutText variant="caption" color={colors.muted}>
+                <SproutText variant="caption" color={colors.muted} numberOfLines={1} ellipsizeMode="tail" style={styles.settlementBannerDesc}>
                   {group?.type === 'shared_living'
                     ? 'Rent, shared expenses & coordinator clearing'
                     : 'Member finalization & lock status'}
                 </SproutText>
               </View>
             </View>
-            <ChevronRight size={18} color={colors.accent} />
+            <View style={styles.settlementChevronWrap}>
+              <ChevronRight size={15} color={colors.accent} strokeWidth={2.5} />
+            </View>
           </TouchableOpacity>
 
-          <SproutText variant="title" color={colors.text} style={styles.sectionTitle}>
-            Who Owes Whom
-          </SproutText>
-
-          {balances.length === 0 && !isLoading ? (
-            <View style={styles.emptyCard}>
-              <CheckCircle2 size={42} color={colors.accent} strokeWidth={1.5} />
-              <SproutText variant="subtitle" color={colors.text} style={styles.emptyTitle}>
-                All settled up!
-              </SproutText>
-              <SproutText variant="caption" color={colors.muted}>
-                No outstanding balances in this group.
-              </SproutText>
-            </View>
-          ) : (
-            <View style={styles.balancesList}>
-              {balances.map((b, idx) => (
-                <GroupBalanceRow
-                  key={`${b.from_user_id}-${b.to_user_id}-${idx}`}
-                  balance={b}
-                  currentUserId={currUserId}
-                  onSettle={handleSettleBalance}
-                />
-              ))}
-            </View>
-          )}
+          {/* Redesigned Simplified Debts & Settlements Section */}
+          <WhoOwesWhomSection
+            balances={balances}
+            currentUserId={currUserId}
+            onSettle={handleSettleBalance}
+            isLoading={isLoading}
+          />
         </View>
       )}
 
@@ -546,21 +531,54 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: colors.surface,
-    padding: spacing.md,
-    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: 18,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
     marginBottom: spacing.md,
+    shadowColor: colors.text,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 3,
+    elevation: 1,
   },
   settlementBannerLeft: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
+    gap: 12,
+    marginRight: 8,
+    minWidth: 0,
   },
   settlementIconCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: radii.md,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     backgroundColor: colors.soft,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
+  },
+  settlementTextCol: {
+    flex: 1,
+    minWidth: 0,
+  },
+  settlementBannerTitle: {
+    fontSize: 14.5,
+    letterSpacing: -0.3,
+  },
+  settlementBannerDesc: {
+    fontSize: 11,
+    marginTop: 1.5,
+  },
+  settlementChevronWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.soft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
   },
 });
