@@ -7,6 +7,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import Svg, { Circle } from 'react-native-svg';
 import { colors, radii, spacing, fontFamilies, shadows } from '../theme';
 import { SproutText } from './SproutText';
 import { UserLedgerActionSummary, MonthlyLedgerSummary, CoordinatorChecklist } from '../types';
@@ -33,132 +34,68 @@ export interface HeroActionSlipCardProps {
   totalMembers?: number;
 }
 
-/** Compact inline progress strip embedded within the Hero card */
-const ProgressStrip: React.FC<{
-  summary: MonthlyLedgerSummary;
-  coordinatorSummary?: CoordinatorChecklist | null;
-  totalMembers: number;
-}> = ({ summary, coordinatorSummary, totalMembers }) => {
-  const {
-    collection_progress_pct = 0,
-    total_paid = 0,
-    members_to_contribute = 0,
-    total_rent = 0,
-    bill_progress_pct = 0,
-  } = summary;
+/** Elegant SVG Donut Progress Dial (Echoes Rhythm MonthlyPaceCard) */
+interface CircularProgressDialProps {
+  percentage: number;
+  size?: number;
+  label?: string;
+  fillColor?: string;
+}
 
-  const pendingCount = coordinatorSummary?.members_to_collect?.length ?? 0;
-  const settledCount = Math.max(0, totalMembers - pendingCount);
-
-  const rentBill = coordinatorSummary?.external_bills_pending?.find(
-    (b) => b.category === 'rent' || b.category === 'landlord_rent'
-  );
-  const isRentCleared = rentBill ? rentBill.status === 'cleared' : bill_progress_pct >= 100;
-
-  const clampedPct = Math.min(100, Math.max(0, Math.round(collection_progress_pct)));
-  const clampedBillPct = Math.min(100, Math.max(0, Math.round(bill_progress_pct)));
+const CircularProgressDial: React.FC<CircularProgressDialProps> = ({
+  percentage,
+  size = 50,
+  label = 'COLLECTED',
+  fillColor = colors.sun,
+}) => {
+  const strokeWidth = 4;
+  const r = size / 2;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const clamped = Math.min(100, Math.max(0, Math.round(percentage)));
+  const strokeDashoffset = circumference - (clamped / 100) * circumference;
 
   return (
-    <View style={progressStyles.container}>
-      {/* Row 1: Collections */}
-      <View style={progressStyles.row}>
-        <View style={progressStyles.labelRow}>
-          <View style={progressStyles.iconTitleRow}>
-            <Users size={12} color="#BDCABF" style={{ marginRight: 5 }} />
-            <SproutText style={progressStyles.label} weight="600">
-              Collections
-            </SproutText>
-          </View>
-          <SproutText style={progressStyles.pct} weight="700">
-            {clampedPct}%
-          </SproutText>
-        </View>
-
-        <View style={progressStyles.barTrack}>
-          <View
-            style={[
-              progressStyles.barFill,
-              {
-                width: `${clampedPct}%`,
-                backgroundColor: colors.sun,
-              },
-            ]}
+    <View style={dialStyles.container}>
+      <View style={[dialStyles.ringContainer, { width: size, height: size, borderRadius: r }]}>
+        <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+          {/* Track Circle */}
+          <Circle
+            cx={r}
+            cy={r}
+            r={radius}
+            stroke="#264335"
+            strokeWidth={strokeWidth}
+            fill="transparent"
           />
-        </View>
-
-        <View style={progressStyles.metaRow}>
-          <SproutText style={progressStyles.metaLeft}>
-            {formatCurrencyExact(total_paid)}
-            {members_to_contribute > 0 && (
-              <SproutText style={progressStyles.metaMuted}>
-                {' '}· {formatCurrencyExact(members_to_contribute)} left
-              </SproutText>
-            )}
-          </SproutText>
-          {totalMembers > 0 && (
-            <SproutText style={progressStyles.metaRight} weight="700">
-              {settledCount}/{totalMembers} cleared
-            </SproutText>
+          {/* Progress Arc */}
+          {clamped > 0 && (
+            <Circle
+              cx={r}
+              cy={r}
+              r={radius}
+              stroke={fillColor}
+              strokeWidth={strokeWidth}
+              strokeDasharray={`${circumference} ${circumference}`}
+              strokeDashoffset={strokeDashoffset}
+              strokeLinecap="round"
+              transform={`rotate(-90 ${r} ${r})`}
+              fill="transparent"
+            />
           )}
-        </View>
-      </View>
-
-      {/* Thin divider */}
-      <View style={progressStyles.divider} />
-
-      {/* Row 2: Rent / Bills */}
-      <View style={progressStyles.row}>
-        <View style={progressStyles.labelRow}>
-          <View style={progressStyles.iconTitleRow}>
-            <Building2 size={12} color="#BDCABF" style={{ marginRight: 5 }} />
-            <SproutText style={progressStyles.label} weight="600">
-              Household Rent
-            </SproutText>
-          </View>
-          <View
-            style={[
-              progressStyles.rentBadge,
-              isRentCleared ? progressStyles.rentBadgeCleared : progressStyles.rentBadgePending,
-            ]}
-          >
-            {isRentCleared ? (
-              <CheckCircle2 size={10} color="#D8E8CB" style={{ marginRight: 3 }} />
-            ) : (
-              <AlertCircle size={10} color={colors.text} style={{ marginRight: 3 }} />
-            )}
-            <SproutText
-              style={[
-                progressStyles.rentBadgeText,
-                { color: isRentCleared ? '#D8E8CB' : colors.text },
-              ]}
-              weight="700"
-            >
-              {isRentCleared ? 'Paid' : 'Pending'}
-            </SproutText>
-          </View>
-        </View>
-
-        <View style={progressStyles.barTrack}>
-          <View
-            style={[
-              progressStyles.barFill,
-              {
-                width: `${clampedBillPct}%`,
-                backgroundColor: isRentCleared ? '#D8E8CB' : colors.sun,
-              },
-            ]}
-          />
-        </View>
-
-        <View style={progressStyles.metaRow}>
-          <SproutText style={progressStyles.metaLeft}>
-            {formatCurrencyExact(total_rent)} total rent
+        </Svg>
+        <View style={dialStyles.ringTextWrap}>
+          <SproutText style={dialStyles.ringNumber} weight="800">
+            {clamped}
           </SproutText>
-          <SproutText style={progressStyles.metaRight}>
-            {clampedBillPct}% cleared
+          <SproutText style={dialStyles.ringPercent} weight="700">
+            %
           </SproutText>
         </View>
       </View>
+      <SproutText style={dialStyles.dialSublabel} weight="700">
+        {label}
+      </SproutText>
     </View>
   );
 };
@@ -211,14 +148,53 @@ export const HeroActionSlipCard: React.FC<HeroActionSlipCardProps> = ({
     }
   };
 
-  const renderProgressStrip = () => {
+  /** Unified status footer with clearance ratio and landlord rent status */
+  const renderStatusBar = () => {
     if (!summary) return null;
+
+    const {
+      members_to_contribute = 0,
+      bill_progress_pct = 0,
+    } = summary;
+
+    const pendingCount = coordinatorSummary?.members_to_collect?.length ?? 0;
+    const settledCount = Math.max(0, totalMembers - pendingCount);
+
+    const rentBill = coordinatorSummary?.external_bills_pending?.find(
+      (b) => b.category === 'rent' || b.category === 'landlord_rent'
+    );
+    const isRentCleared = rentBill ? rentBill.status === 'cleared' : bill_progress_pct >= 100;
+
     return (
-      <ProgressStrip
-        summary={summary}
-        coordinatorSummary={coordinatorSummary}
-        totalMembers={totalMembers}
-      />
+      <View style={styles.statusBar}>
+        <View style={styles.statusItemLeft}>
+          <Users size={11} color="#BDCABF" style={{ marginRight: 4 }} />
+          <SproutText style={styles.statusTextLeft} numberOfLines={1}>
+            {totalMembers > 0 ? `${settledCount}/${totalMembers} cleared` : 'All flatmates'}
+            {members_to_contribute > 0 && ` · ₹${Math.round(members_to_contribute / 1000)}k left`}
+          </SproutText>
+        </View>
+
+        <View style={styles.statusItemRight}>
+          <Building2 size={11} color="#BDCABF" style={{ marginRight: 4 }} />
+          <SproutText style={styles.statusLabelRight}>Rent:</SproutText>
+          <View
+            style={[
+              styles.rentPill,
+              isRentCleared ? styles.rentPillCleared : styles.rentPillPending,
+            ]}
+          >
+            {isRentCleared ? (
+              <CheckCircle2 size={9} color="#183228" style={{ marginRight: 2 }} />
+            ) : (
+              <AlertCircle size={9} color="#183228" style={{ marginRight: 2 }} />
+            )}
+            <SproutText style={styles.rentPillText} weight="700">
+              {isRentCleared ? 'Paid' : 'Pending'}
+            </SproutText>
+          </View>
+        </View>
+      </View>
     );
   };
 
@@ -226,41 +202,50 @@ export const HeroActionSlipCard: React.FC<HeroActionSlipCardProps> = ({
   if (action === 'pay_coordinator') {
     return (
       <View style={[styles.card, shadows.card]}>
-        {/* Header Eyebrow & Details Toggle */}
+        {/* Header Eyebrow Row */}
         <View style={styles.cardHeader}>
-          <View style={styles.headerBadge}>
-            <SproutText style={styles.headerBadgeText} weight="800">
-              {monthName.toUpperCase()} DUES
-            </SproutText>
-          </View>
+          <SproutText style={styles.headerBadgeText} weight="800">
+            {monthName.toUpperCase()} DUES
+          </SproutText>
           <TouchableOpacity
             style={styles.breakdownToggle}
             onPress={() => setShowBreakdown((prev) => !prev)}
             activeOpacity={0.7}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <SproutText style={styles.breakdownToggleText} weight="600">
+            <SproutText style={styles.breakdownToggleText} weight="700">
               {showBreakdown ? 'Hide details' : 'Details'}
             </SproutText>
             {showBreakdown ? (
-              <ChevronUp size={13} color="#BDCABF" />
+              <ChevronUp size={12} color="#BDCABF" />
             ) : (
-              <ChevronDown size={13} color="#BDCABF" />
+              <ChevronDown size={12} color="#BDCABF" />
             )}
           </TouchableOpacity>
         </View>
 
-        {/* Hero Amount Section */}
-        <View style={styles.amountSection}>
-          <SproutText style={styles.amountEyebrow} weight="800">
-            YOU NEED TO PAY
-          </SproutText>
-          <SproutText style={styles.amountValue} weight="800">
-            {formatCurrencyExact(amount)}
-          </SproutText>
-          <SproutText style={styles.recipientText}>
-            to <SproutText style={styles.recipientName} weight="700">{coordinator_name || 'Coordinator'}</SproutText>
-          </SproutText>
+        {/* Hero Body Row: Left = Due info, Right = Circular Dial */}
+        <View style={styles.heroBodyRow}>
+          <View style={styles.heroLeftCol}>
+            <SproutText style={styles.amountEyebrow} weight="800">
+              YOU NEED TO PAY
+            </SproutText>
+            <SproutText style={styles.amountValue} weight="800">
+              {formatCurrencyExact(amount)}
+            </SproutText>
+            <SproutText style={styles.recipientText} numberOfLines={1}>
+              to <SproutText style={styles.recipientName} weight="700">{coordinator_name || 'Coordinator'}</SproutText>
+            </SproutText>
+          </View>
+
+          {summary && (
+            <CircularProgressDial
+              percentage={summary.collection_progress_pct || 0}
+              size={50}
+              label="COLLECTED"
+              fillColor={colors.sun}
+            />
+          )}
         </View>
 
         {/* Expanded Mathematical Breakdown */}
@@ -311,7 +296,7 @@ export const HeroActionSlipCard: React.FC<HeroActionSlipCardProps> = ({
               onPress={handlePayViaUPI}
               activeOpacity={0.85}
             >
-              <ExternalLink size={14} color="#183228" style={{ marginRight: 6 }} />
+              <ExternalLink size={13} color="#183228" style={{ marginRight: 5 }} />
               <SproutText style={styles.upiBtnText} weight="700">
                 Pay via UPI
               </SproutText>
@@ -320,8 +305,8 @@ export const HeroActionSlipCard: React.FC<HeroActionSlipCardProps> = ({
 
           {isAlreadySubmitted ? (
             <View style={styles.submittedStatusBox}>
-              <Clock size={15} color="#D8E8CB" style={{ marginRight: 6 }} />
-              <SproutText style={styles.submittedStatusText} weight="600">
+              <Clock size={13} color="#D8E8CB" style={{ marginRight: 5 }} />
+              <SproutText style={styles.submittedStatusText} weight="700">
                 Payment submitted · Awaiting confirmation
               </SproutText>
             </View>
@@ -343,8 +328,8 @@ export const HeroActionSlipCard: React.FC<HeroActionSlipCardProps> = ({
           )}
         </View>
 
-        {/* Merged Progress Strip */}
-        {renderProgressStrip()}
+        {/* Unified Bottom Status Bar */}
+        {renderStatusBar()}
       </View>
     );
   }
@@ -355,40 +340,52 @@ export const HeroActionSlipCard: React.FC<HeroActionSlipCardProps> = ({
 
     return (
       <View style={[styles.card, shadows.card]}>
+        {/* Header Eyebrow Row */}
         <View style={styles.cardHeader}>
-          <View style={styles.headerBadge}>
-            <SproutText style={styles.headerBadgeText} weight="800">
-              {isRefunded ? 'REFUND SETTLED ✓' : `${monthName.toUpperCase()} REFUND`}
-            </SproutText>
-          </View>
+          <SproutText style={styles.headerBadgeText} weight="800">
+            {isRefunded ? 'REFUND SETTLED ✓' : `${monthName.toUpperCase()} REFUND`}
+          </SproutText>
           <TouchableOpacity
             style={styles.breakdownToggle}
             onPress={() => setShowBreakdown((prev) => !prev)}
             activeOpacity={0.7}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <SproutText style={styles.breakdownToggleText} weight="600">
+            <SproutText style={styles.breakdownToggleText} weight="700">
               {showBreakdown ? 'Hide details' : 'Details'}
             </SproutText>
             {showBreakdown ? (
-              <ChevronUp size={13} color="#BDCABF" />
+              <ChevronUp size={12} color="#BDCABF" />
             ) : (
-              <ChevronDown size={13} color="#BDCABF" />
+              <ChevronDown size={12} color="#BDCABF" />
             )}
           </TouchableOpacity>
         </View>
 
-        <View style={styles.amountSection}>
-          <SproutText style={styles.amountEyebrow} weight="800">
-            {isRefunded ? 'REFUND DISBURSED' : 'YOU ARE OWED A REFUND'}
-          </SproutText>
-          <SproutText style={[styles.amountValue, { color: '#D8E8CB' }]} weight="800">
-            +{formatCurrencyExact(amount)}
-          </SproutText>
-          <SproutText style={styles.recipientText}>
-            {isRefunded
-              ? 'Disbursed by coordinator'
-              : `from ${coordinator_name || 'Coordinator'}`}
-          </SproutText>
+        {/* Hero Body Row */}
+        <View style={styles.heroBodyRow}>
+          <View style={styles.heroLeftCol}>
+            <SproutText style={styles.amountEyebrow} weight="800">
+              {isRefunded ? 'REFUND DISBURSED' : 'YOU ARE OWED A REFUND'}
+            </SproutText>
+            <SproutText style={[styles.amountValue, { color: '#D8E8CB' }]} weight="800">
+              +{formatCurrencyExact(amount)}
+            </SproutText>
+            <SproutText style={styles.recipientText} numberOfLines={1}>
+              {isRefunded
+                ? 'Disbursed by coordinator'
+                : `from ${coordinator_name || 'Coordinator'}`}
+            </SproutText>
+          </View>
+
+          {summary && (
+            <CircularProgressDial
+              percentage={summary.collection_progress_pct || 0}
+              size={50}
+              label="COLLECTED"
+              fillColor="#D8E8CB"
+            />
+          )}
         </View>
 
         {showBreakdown && breakdown && (
@@ -422,8 +419,8 @@ export const HeroActionSlipCard: React.FC<HeroActionSlipCardProps> = ({
           </View>
         )}
 
-        {/* Merged Progress Strip */}
-        {renderProgressStrip()}
+        {/* Unified Bottom Status Bar */}
+        {renderStatusBar()}
       </View>
     );
   }
@@ -431,107 +428,75 @@ export const HeroActionSlipCard: React.FC<HeroActionSlipCardProps> = ({
   // 3. SETTLED STATE: All squared away
   return (
     <View style={[styles.card, shadows.card]}>
-      <View style={styles.settledRow}>
-        <View style={styles.settledIconCircle}>
-          <CheckCircle2 size={24} color="#D8E8CB" />
+      <View style={styles.heroBodyRow}>
+        <View style={styles.settledRow}>
+          <View style={styles.settledIconCircle}>
+            <CheckCircle2 size={20} color="#D8E8CB" />
+          </View>
+          <View style={{ flex: 1, paddingRight: 8 }}>
+            <SproutText style={styles.settledTitle} weight="800">
+              {monthName} {year} All Squared Away
+            </SproutText>
+            <SproutText style={styles.settledSubtitle}>
+              Your share of rent and expenses is completely cleared.
+            </SproutText>
+          </View>
         </View>
-        <View style={{ flex: 1 }}>
-          <SproutText style={styles.settledTitle} weight="700">
-            {monthName} {year} All Squared Away
-          </SproutText>
-          <SproutText style={styles.settledSubtitle}>
-            Your share of rent and expenses is completely cleared.
-          </SproutText>
-        </View>
+
+        {summary && (
+          <CircularProgressDial
+            percentage={summary.collection_progress_pct || 100}
+            size={50}
+            label="COLLECTED"
+            fillColor="#D8E8CB"
+          />
+        )}
       </View>
 
-      {/* Merged Progress Strip */}
-      {renderProgressStrip()}
+      {/* Unified Bottom Status Bar */}
+      {renderStatusBar()}
     </View>
   );
 };
 
-/* ---------- Progress strip styles ---------- */
-const progressStyles = StyleSheet.create({
+/* ---------- Circular Dial Styles ---------- */
+const dialStyles = StyleSheet.create({
   container: {
-    backgroundColor: '#132820', // Inset deep forest matching breakdown box
-    borderRadius: 12,
-    paddingVertical: 7,
-    paddingHorizontal: 9,
-    marginTop: 6,
-  },
-  row: {
-    marginVertical: 0,
-  },
-  labelRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 3,
+    justifyContent: 'center',
+    marginLeft: spacing.sm,
   },
-  iconTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  label: {
-    fontSize: 10,
-    fontFamily: fontFamilies.medium,
-    color: '#BDCABF',
-  },
-  pct: {
-    fontSize: 10,
-    fontFamily: fontFamilies.bold,
-    color: '#F6F7ED',
-  },
-  barTrack: {
-    height: 4,
-    borderRadius: radii.full,
-    backgroundColor: '#476056', // Ring base from MonthlyPaceCard
+  ringContainer: {
     overflow: 'hidden',
-  },
-  barFill: {
-    height: '100%',
-    borderRadius: radii.full,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 2,
-  },
-  metaLeft: {
-    fontSize: 9,
-    fontFamily: fontFamilies.medium,
-    color: '#BDCABF',
-  },
-  metaMuted: {
-    color: 'rgba(189, 202, 191, 0.7)',
-  },
-  metaRight: {
-    fontSize: 9,
-    fontFamily: fontFamilies.bold,
-    color: '#F6F7ED',
-  },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: 'rgba(203, 215, 204, 0.18)',
-    marginVertical: 4,
-  },
-  rentBadge: {
-    flexDirection: 'row',
+    position: 'relative',
     alignItems: 'center',
-    paddingHorizontal: 6,
-    paddingVertical: 1.5,
-    borderRadius: radii.full,
+    justifyContent: 'center',
   },
-  rentBadgeCleared: {
-    backgroundColor: 'rgba(216, 232, 203, 0.2)',
+  ringTextWrap: {
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  rentBadgePending: {
-    backgroundColor: colors.clay,
+  ringNumber: {
+    fontSize: 13,
+    fontFamily: fontFamilies.extraBold,
+    color: '#F6F7ED',
+    lineHeight: 15,
+    includeFontPadding: false,
   },
-  rentBadgeText: {
-    fontSize: 8.5,
+  ringPercent: {
+    fontSize: 7.5,
     fontFamily: fontFamilies.bold,
+    color: '#BDCABF',
+    marginTop: -2,
+    includeFontPadding: false,
+  },
+  dialSublabel: {
+    fontSize: 7,
+    letterSpacing: 0.8,
+    color: '#BDCABF',
+    marginTop: 2,
+    textTransform: 'uppercase',
   },
 });
 
@@ -544,7 +509,7 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
     padding: 13,
-    marginHorizontal: spacing.md,
+    marginHorizontal: 0,
     marginBottom: 6,
   },
   cardHeader: {
@@ -552,9 +517,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 2,
-  },
-  headerBadge: {
-    paddingVertical: 1,
   },
   headerBadgeText: {
     fontSize: 7.5,
@@ -570,14 +532,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   breakdownToggleText: {
-    fontSize: 10.5,
+    fontSize: 10,
     fontFamily: fontFamilies.bold,
     color: '#BDCABF',
     marginRight: 2,
   },
-  amountSection: {
+  heroBodyRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 2,
+    justifyContent: 'space-between',
+    marginTop: 2,
+    marginBottom: 6,
+  },
+  heroLeftCol: {
+    flex: 1,
+    paddingRight: 6,
   },
   amountEyebrow: {
     fontSize: 7.5,
@@ -593,10 +562,9 @@ const styles = StyleSheet.create({
     fontSize: 26,
     lineHeight: 32,
     fontFamily: fontFamilies.extraBold,
-    color: colors.sun, // Warm gold #F0BF67 — matches MonthlyPaceCard ring accent
+    color: colors.sun, // Warm gold #F0BF67
     letterSpacing: -0.8,
     includeFontPadding: false,
-    textAlign: 'center',
   },
   recipientText: {
     fontSize: 11,
@@ -614,7 +582,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#132820',
     borderRadius: 12,
     padding: 8,
-    marginVertical: 4,
+    marginBottom: 6,
   },
   breakdownRow: {
     flexDirection: 'row',
@@ -650,8 +618,7 @@ const styles = StyleSheet.create({
   actionsRow: {
     flexDirection: 'row',
     gap: 6,
-    marginTop: 5,
-    marginBottom: 2,
+    marginBottom: 3,
   },
   upiBtn: {
     flex: 1,
@@ -696,29 +663,79 @@ const styles = StyleSheet.create({
     fontSize: 10.5,
     color: '#D8E8CB',
   },
+  statusBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(203, 215, 204, 0.18)',
+    marginTop: 6,
+    paddingTop: 6,
+  },
+  statusItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 6,
+  },
+  statusTextLeft: {
+    fontSize: 9.5,
+    fontFamily: fontFamilies.medium,
+    color: '#BDCABF',
+    flexShrink: 1,
+  },
+  statusItemRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexShrink: 0,
+  },
+  statusLabelRight: {
+    fontSize: 9.5,
+    fontFamily: fontFamilies.medium,
+    color: '#BDCABF',
+    marginRight: 3,
+  },
+  rentPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    paddingVertical: 1.5,
+    borderRadius: radii.full,
+  },
+  rentPillCleared: {
+    backgroundColor: '#D8E8CB',
+  },
+  rentPillPending: {
+    backgroundColor: colors.clay, // Soft peach beige #F4DACD
+  },
+  rentPillText: {
+    fontSize: 8.5,
+    fontFamily: fontFamilies.bold,
+    color: '#183228',
+  },
   settledRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-    paddingVertical: 6,
+    flex: 1,
   },
   settledIconCircle: {
-    width: 42,
-    height: 42,
+    width: 36,
+    height: 36,
     borderRadius: radii.full,
     backgroundColor: 'rgba(216, 232, 203, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: 8,
   },
   settledTitle: {
-    fontSize: 15,
+    fontSize: 14,
     fontFamily: fontFamilies.bold,
     color: '#F6F7ED',
   },
   settledSubtitle: {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: fontFamilies.medium,
     color: '#BDCABF',
-    marginTop: 2,
+    marginTop: 1,
   },
 });

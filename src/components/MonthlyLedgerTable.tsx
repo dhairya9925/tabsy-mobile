@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface, // Warm white card surface #FBFDF7
     borderRadius: radii.lg,
     padding: 12,
-    marginHorizontal: spacing.md,
+    marginHorizontal: 0,
     marginBottom: 6,
   },
   tableHeader: {

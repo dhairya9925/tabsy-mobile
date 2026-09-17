@@ -549,7 +549,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.line,
     padding: spacing.lg,
-    marginHorizontal: spacing.md,
+    marginHorizontal: 0,
     marginBottom: spacing.lg,
   },
   statusRow: {
