@@ -17,6 +17,7 @@ import {
   FieldRow,
   ScreenShell,
   Toast,
+  ShareGroupSheet,
 } from '../../components';
 import { groupsApi } from '../../api/groups';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -38,6 +39,7 @@ export const GroupSettingsScreen: React.FC<Props> = ({ route, navigation }) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [shareSheetVisible, setShareSheetVisible] = useState(false);
 
   useEffect(() => {
     setIsLoading(true);
@@ -99,15 +101,8 @@ export const GroupSettingsScreen: React.FC<Props> = ({ route, navigation }) => {
     );
   };
 
-  const handleShareCode = async () => {
-    try {
-      await Share.share({
-        title: `Join ${group?.name || 'Group'} on Tabsy`,
-        message: `Join our group "${group?.name}" on Tabsy! Use code: ${groupId}`,
-      });
-    } catch {
-      // Ignored
-    }
+  const handleShareCode = () => {
+    setShareSheetVisible(true);
   };
 
   const typeMeta = getGroupTypeMeta(group?.type);
@@ -175,25 +170,23 @@ export const GroupSettingsScreen: React.FC<Props> = ({ route, navigation }) => {
         </View>
 
         {/* Share Code Card */}
-        <View style={styles.shareCard}>
+        <TouchableOpacity
+          style={styles.shareCard}
+          activeOpacity={0.7}
+          onPress={handleShareCode}
+          accessibilityRole="button"
+          accessibilityLabel="Share invite code"
+        >
           <View style={styles.shareLeft}>
             <SproutText variant="eyebrow" color={colors.muted} style={styles.cardEyebrow}>
               INVITE CODE
             </SproutText>
-            <SproutText variant="caption" color={colors.text} weight="700" numberOfLines={1}>
-              {groupId}
+            <SproutText variant="subtitle" color={colors.text} weight="800" numberOfLines={1}>
+              {group?.invite_code || groupId}
             </SproutText>
           </View>
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={handleShareCode}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            accessibilityRole="button"
-            accessibilityLabel="Share invite code"
-          >
-            <Share2 size={20} color={colors.text} strokeWidth={2} />
-          </TouchableOpacity>
-        </View>
+          <Share2 size={20} color={colors.text} strokeWidth={2} />
+        </TouchableOpacity>
 
         {/* Save CTA */}
         {isAdmin && (
@@ -227,6 +220,15 @@ export const GroupSettingsScreen: React.FC<Props> = ({ route, navigation }) => {
           </View>
         )}
       </View>
+
+      {/* Share Group Sheet */}
+      <ShareGroupSheet
+        visible={shareSheetVisible}
+        onClose={() => setShareSheetVisible(false)}
+        groupId={groupId}
+        groupName={group?.name || 'Group'}
+        inviteCode={group?.invite_code}
+      />
     </ScreenShell>
   );
 };

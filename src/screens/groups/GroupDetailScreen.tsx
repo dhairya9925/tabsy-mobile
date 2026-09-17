@@ -23,6 +23,7 @@ import {
   GroupMemberRow,
   FieldRow,
   Toast,
+  ShareGroupSheet,
 } from '../../components';
 import { groupsApi } from '../../api/groups';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -64,6 +65,7 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [shareSheetVisible, setShareSheetVisible] = useState(false);
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
@@ -88,6 +90,7 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   }, [groupId]);
 
   useEffect(() => {
+    loadData();
     const unsubscribe = navigation.addListener('focus', () => {
       loadData();
     });
@@ -106,15 +109,8 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     }
   });
 
-  const handleShareInvite = async () => {
-    try {
-      await Share.share({
-        title: `Join ${group?.name || 'Group'} on Tabsy`,
-        message: `Join my group "${group?.name}" on Tabsy! Use group code: ${groupId}`,
-      });
-    } catch {
-      // The system share sheet was dismissed.
-    }
+  const handleShareInvite = () => {
+    setShareSheetVisible(true);
   };
 
   const handleAddMember = async () => {
@@ -402,6 +398,15 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
           </View>
         </View>
       )}
+
+      {/* Share Group Sheet */}
+      <ShareGroupSheet
+        visible={shareSheetVisible}
+        onClose={() => setShareSheetVisible(false)}
+        groupId={groupId}
+        groupName={group?.name || 'Group'}
+        inviteCode={group?.invite_code}
+      />
     </ScreenShell>
   );
 };

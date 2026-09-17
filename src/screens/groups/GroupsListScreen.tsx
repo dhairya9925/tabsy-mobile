@@ -19,6 +19,7 @@ import {
   Toast,
   GroupListSkeleton,
   EmptyState,
+  JoinGroupPopup,
 } from '../../components';
 import { groupsApi } from '../../api/groups';
 import { friendsApi } from '../../api/friends';
@@ -50,6 +51,7 @@ export const GroupsListScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [showJoinPopup, setShowJoinPopup] = useState(false);
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
@@ -125,7 +127,7 @@ export const GroupsListScreen: React.FC = () => {
             (s.profile?.user_id && acceptedFriendIds.has(s.profile.user_id)) ||
             (s.profile?.email && acceptedEmails.has(s.profile.email.toLowerCase()));
           if (isStale && s.id) {
-            friendsApi.removeFriend(s.id).catch(() => {});
+            friendsApi.removeFriend(s.id).catch(() => { });
           }
         });
 
@@ -356,20 +358,23 @@ export const GroupsListScreen: React.FC = () => {
 
             <TouchableOpacity
               activeOpacity={0.8}
-              onPress={() => rootNavigation.navigate('JoinGroupModal')}
-              style={styles.keyBtn}
+              onPress={() => setShowJoinPopup(true)}
+              style={styles.secondaryActionBtn}
               accessibilityLabel="Join group with code"
             >
-              <KeyRound size={18} color="#335C44" strokeWidth={2} />
+              <KeyRound size={15} color={colors.text} strokeWidth={2.2} style={{ marginRight: 5 }} />
+              <SproutText style={styles.secondaryActionBtnText}>
+                Join
+              </SproutText>
             </TouchableOpacity>
           </>
         ) : (
           <TouchableOpacity
             activeOpacity={0.85}
             onPress={() => rootNavigation.navigate('AddFriendModal')}
-            style={styles.primaryActionBtn}
+            style={styles.singleActionBtn}
           >
-            <UserPlus size={16} color="#FFFFFF" strokeWidth={2.4} style={{ marginRight: 5 }} />
+            <UserPlus size={16} color="#FFFFFF" strokeWidth={2.4} style={{ marginRight: 6 }} />
             <SproutText style={styles.primaryActionBtnText}>
               Add friend
             </SproutText>
@@ -532,6 +537,17 @@ export const GroupsListScreen: React.FC = () => {
           )}
         </View>
       )}
+
+      {/* Pop-up Dialog for Joining a Group */}
+      <JoinGroupPopup
+        visible={showJoinPopup}
+        onClose={() => setShowJoinPopup(false)}
+        onSuccess={() => {
+          setShowJoinPopup(false);
+          setSuccessMessage('Successfully joined group!');
+          loadData();
+        }}
+      />
     </ScreenShell>
   );
 };
@@ -597,37 +613,62 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: spacing.sm + 2,
-    gap: 8,
+    gap: 10,
   },
   primaryActionBtn: {
-    flex: 1,
-    height: 42,
-    borderRadius: 13,
-    backgroundColor: '#355E47',
+    flex: 1.3,
+    height: 44,
+    borderRadius: radii.md,
+    backgroundColor: colors.text, // #183228
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.md,
     shadowColor: '#183228',
-    shadowOffset: { width: 0, height: 1.5 },
-    shadowOpacity: 0.07,
-    shadowRadius: 3,
-    elevation: 1.5,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
   primaryActionBtnText: {
     fontFamily: fontFamilies.bold,
-    fontSize: 14,
+    fontSize: 13.5,
     color: '#FFFFFF',
   },
-  keyBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 13,
-    backgroundColor: '#E2ECE0',
-    borderWidth: 1.5,
-    borderColor: '#355E47',
+  secondaryActionBtn: {
+    flex: 0.9,
+    height: 44,
+    borderRadius: radii.md,
+    backgroundColor: colors.soft, // #E6F0E0
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: spacing.md,
+    shadowColor: '#183228',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  secondaryActionBtnText: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 13.5,
+    color: colors.text,
+  },
+  singleActionBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: radii.full,
+    backgroundColor: colors.text,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.md,
+    shadowColor: '#183228',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
   listSection: {
     marginTop: 0,

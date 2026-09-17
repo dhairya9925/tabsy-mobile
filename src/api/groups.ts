@@ -73,9 +73,10 @@ export const groupsApi = {
     return res;
   },
 
-  /** Join a group using invite ID */
-  async joinGroup(id: string): Promise<GroupMember> {
-    const res: any = await apiClient.post(`/api/v1/groups/${id}/join`, {});
+  /** Join a group using invite code or group ID */
+  async joinGroup(idOrCode: string): Promise<GroupMember> {
+    const trimmed = idOrCode.trim();
+    const res: any = await apiClient.post('/api/v1/groups/join', { code: trimmed });
     return res;
   },
 

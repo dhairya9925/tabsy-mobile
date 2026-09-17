@@ -102,6 +102,7 @@ export interface Group {
   type: GroupTypeKey | string;
   monthly_rent?: number | null;
   sponsor_id?: string | null;
+  invite_code?: string;
 }
 
 export interface GroupCreate {
