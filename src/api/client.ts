@@ -106,6 +106,8 @@ apiClient.interceptors.response.use(
       if (currentBase.includes('localhost') || currentBase.includes('127.0.0.1')) {
         if (devHost && devHost !== 'localhost' && devHost !== '127.0.0.1') {
           fallbackBase = `http://${devHost}:8000`;
+        } else {
+          fallbackBase = 'http://10.254.155.231:8000';
         }
       } else {
         fallbackBase = 'http://localhost:8000';
