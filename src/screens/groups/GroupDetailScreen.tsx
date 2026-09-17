@@ -326,10 +326,12 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
               </View>
               <View>
                 <SproutText variant="body" color={colors.text} weight="700">
-                  Monthly Settlements
+                  {group?.type === 'shared_living' ? 'Monthly Household Ledger' : 'Monthly Settlements'}
                 </SproutText>
                 <SproutText variant="caption" color={colors.muted}>
-                  Member finalization & lock status
+                  {group?.type === 'shared_living'
+                    ? 'Rent, shared expenses & coordinator clearing'
+                    : 'Member finalization & lock status'}
                 </SproutText>
               </View>
             </View>

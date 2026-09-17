@@ -13,6 +13,11 @@ import {
   MonthlySettlement,
   MemberMonthlyStatus,
   SettlementExpense,
+  MonthlyLedgerResponse,
+  MonthlyLedgerContributionPayload,
+  MonthlyLedgerDisbursementPayload,
+  MonthlyLedgerDisbursement,
+  MonthlyLedgerLockPayload,
 } from '../types';
 
 export const groupsApi = {
@@ -148,5 +153,53 @@ export const groupsApi = {
   /** Mark current user expenses complete for a monthly settlement */
   async markMemberCompleted(groupId: string, settlementId: string): Promise<MemberMonthlyStatus> {
     return apiClient.post(`/api/v1/groups/${groupId}/settlements/${settlementId}/member-status`);
+  },
+
+  /** Shared Living: Get complete Monthly Household Ledger */
+  async getMonthlyLedger(groupId: string, month: number, year: number): Promise<MonthlyLedgerResponse> {
+    const res: any = await apiClient.get(`/api/v1/groups/${groupId}/monthly-ledger?month=${month}&year=${year}`);
+    return res;
+  },
+
+  /** Shared Living: Record a member payment contribution */
+  async recordMonthlyLedgerContribution(
+    groupId: string,
+    month: number,
+    year: number,
+    payload: MonthlyLedgerContributionPayload
+  ): Promise<MemberMonthlyStatus> {
+    const res: any = await apiClient.post(
+      `/api/v1/groups/${groupId}/monthly-ledger/contributions?month=${month}&year=${year}`,
+      payload
+    );
+    return res;
+  },
+
+  /** Shared Living: Record a coordinator disbursement (vendor bill / member refund) */
+  async recordMonthlyLedgerDisbursement(
+    groupId: string,
+    month: number,
+    year: number,
+    payload: MonthlyLedgerDisbursementPayload
+  ): Promise<MonthlyLedgerDisbursement> {
+    const res: any = await apiClient.post(
+      `/api/v1/groups/${groupId}/monthly-ledger/disbursements?month=${month}&year=${year}`,
+      payload
+    );
+    return res;
+  },
+
+  /** Shared Living: Lock the monthly cycle and roll forward unrefunded overpayments */
+  async lockMonthlyLedger(
+    groupId: string,
+    month: number,
+    year: number,
+    payload: MonthlyLedgerLockPayload
+  ): Promise<MonthlySettlement> {
+    const res: any = await apiClient.post(
+      `/api/v1/groups/${groupId}/monthly-ledger/lock?month=${month}&year=${year}`,
+      payload
+    );
+    return res;
   },
 };
