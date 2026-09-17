@@ -18,7 +18,6 @@ import {
   Toast,
   MonthSelectorCapsule,
   HeroActionSlipCard,
-  HouseholdProgressCard,
   MonthlyLedgerTable,
   CoordinatorClearingSection,
 } from '../../components';
@@ -299,10 +298,10 @@ export const MonthlySettlementDetailScreen: React.FC<Props> = ({ route, navigati
           onPress={() => navigation.goBack()}
         />
         <View style={styles.topBarCenter}>
-          <SproutText variant="eyebrow" color={colors.accent}>
-            {groupName ? groupName.toUpperCase() : 'GROUP'}
+          <SproutText variant="eyebrow" color={colors.muted} style={styles.topBarEyebrow}>
+            {groupName ? `${groupName.toUpperCase()} · SETTLEMENT` : 'HOUSEHOLD · SETTLEMENT'}
           </SproutText>
-          <SproutText variant="subtitle" color={colors.text} weight="700">
+          <SproutText variant="title" color={colors.text} weight="700" style={styles.topBarTitle}>
             Monthly Household Ledger
           </SproutText>
         </View>
@@ -322,17 +321,13 @@ export const MonthlySettlementDetailScreen: React.FC<Props> = ({ route, navigati
       {/* ========================================================================= */}
       {ledger ? (
         <>
-          {/* Personalized Hero Action Slip Card */}
+          {/* Hero Action Slip Card (with merged progress gauges) */}
           <HeroActionSlipCard
             mySummary={ledger.my_summary || null}
             monthName={getMonthName(month)}
             year={year}
             onRecordPaymentPress={handleRecordMyPayment}
             isSubmittingPayment={isSubmittingPayment}
-          />
-
-          {/* Dual Progress Gauges: Collections & External Bills */}
-          <HouseholdProgressCard
             summary={ledger.summary}
             coordinatorSummary={ledger.coordinator_summary}
             totalMembers={ledger.members.length}
@@ -524,7 +519,7 @@ export const MonthlySettlementDetailScreen: React.FC<Props> = ({ route, navigati
 
 const styles = StyleSheet.create({
   container: {
-    paddingBottom: 116,
+    paddingBottom: 80,
   },
   topBar: {
     flexDirection: 'row',
@@ -536,6 +531,17 @@ const styles = StyleSheet.create({
   },
   topBarCenter: {
     alignItems: 'center',
+  },
+  topBarEyebrow: {
+    fontSize: 8,
+    letterSpacing: 1.2,
+    color: colors.muted,
+    marginBottom: 2,
+  },
+  topBarTitle: {
+    fontSize: 16,
+    letterSpacing: -0.4,
+    color: colors.text,
   },
   card: {
     backgroundColor: colors.surface,

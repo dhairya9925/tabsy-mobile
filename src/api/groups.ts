@@ -156,9 +156,14 @@ export const groupsApi = {
   },
 
   /** Shared Living: Get complete Monthly Household Ledger */
-  async getMonthlyLedger(groupId: string, month: number, year: number): Promise<MonthlyLedgerResponse> {
-    const res: any = await apiClient.get(`/api/v1/groups/${groupId}/monthly-ledger?month=${month}&year=${year}`);
-    return res;
+  async getMonthlyLedger(groupId: string, month: number, year: number): Promise<MonthlyLedgerResponse | null> {
+    try {
+      const res: any = await apiClient.get(`/api/v1/groups/${groupId}/monthly-ledger?month=${month}&year=${year}`);
+      return res || null;
+    } catch (err: any) {
+      console.log('[groupsApi.getMonthlyLedger] non-fatal:', err?.message || err);
+      return null;
+    }
   },
 
   /** Shared Living: Record a member payment contribution */

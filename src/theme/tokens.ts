@@ -237,7 +237,24 @@ export const shadows = {
   },
 } as const;
 
+export const statusColors = {
+  negativeText: '#991B1B', // Deep red for owing/unpaid (WCAG AAA)
+  negativeBg: '#FEE2E2',   // Soft light red pill surface
+  positiveText: '#166534', // Deep emerald for paid/overpaid
+  positiveBg: '#DCFCE7',   // Soft light emerald pill surface
+  warningText: '#9A3412',  // Deep amber for pending coordinator actions
+  warningBg: '#FFEDD5',   // Soft light amber pill surface
+  neutralText: '#334155',  // Slate for settled/neutral
+  neutralBg: '#F1F5F9',   // Slate soft pill surface
+  leadBadgeBg: '#183228',  // Deep forest green capsule
+  leadBadgeText: '#E8F5E9',// Mint white text
+  forestCardBg: '#183228', // Signature Sprout dark forest card
+  forestCardBorder: '#284C3E',
+} as const;
+
 export type Colors = typeof colors;
 export type ChartColors = typeof chartColors;
 export type Radii = typeof radii;
 export type Spacing = typeof spacing;
+export type StatusColors = typeof statusColors;
+

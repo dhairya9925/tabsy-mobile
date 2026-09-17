@@ -32,6 +32,15 @@ export const SproutText: React.FC<SproutTextProps> = ({
   const family = getWeightFamily(weight);
   const familyOverride = family ? { fontFamily: family } : null;
 
+  const flatStyle = StyleSheet.flatten(style);
+  const effectiveFontSize = flatStyle?.fontSize || variantStyle.fontSize;
+  const currentLineHeight = flatStyle?.lineHeight ?? variantStyle.lineHeight;
+
+  let safeLineHeightOverride: { lineHeight?: number } | null = null;
+  if (effectiveFontSize && currentLineHeight && currentLineHeight < effectiveFontSize) {
+    safeLineHeightOverride = { lineHeight: Math.round(effectiveFontSize * 1.25) };
+  }
+
   return (
     <RNText
       style={[
@@ -39,6 +48,7 @@ export const SproutText: React.FC<SproutTextProps> = ({
         familyOverride,
         color ? { color } : null,
         style,
+        safeLineHeightOverride,
       ]}
       {...rest}
     >

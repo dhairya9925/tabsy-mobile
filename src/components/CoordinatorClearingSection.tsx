@@ -24,7 +24,6 @@ import {
   ChevronDown,
   ChevronUp,
 } from 'lucide-react-native';
-import { useThemeStore } from '../store/useThemeStore';
 
 export interface CoordinatorClearingSectionProps {
   ledger: MonthlyLedgerResponse;
@@ -45,9 +44,10 @@ export const CoordinatorClearingSection: React.FC<CoordinatorClearingSectionProp
   onLockMonth,
   isLoading = false,
 }) => {
-  const isDark = useThemeStore((s) => s.isDark);
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
   const [actionInProgress, setActionInProgress] = useState<string | null>(null);
+  const [showAllCollections, setShowAllCollections] = useState(false);
+  const [showAllRefunds, setShowAllRefunds] = useState(false);
 
   if (!isCoordinator) {
     return null;
@@ -64,6 +64,12 @@ export const CoordinatorClearingSection: React.FC<CoordinatorClearingSectionProp
     (b) => b.category === 'rent' || b.category === 'landlord_rent'
   );
   const isRentDisbursed = rentBill ? rentBill.status === 'cleared' : summary.bill_progress_pct >= 100;
+
+  // Count total pending actions for the badge
+  const pendingActionCount =
+    pendingCollections.length +
+    pendingRefunds.length +
+    (isRentDisbursed ? 0 : 1);
 
   const handleConfirm = async (member: CoordinatorPendingCollection) => {
     setActionInProgress(`confirm-${member.user_id}`);
@@ -116,7 +122,7 @@ export const CoordinatorClearingSection: React.FC<CoordinatorClearingSectionProp
   };
 
   return (
-    <View style={[styles.container, isDark && styles.containerDark, shadows.card]}>
+    <View style={[styles.container, shadows.card]}>
       {/* Header */}
       <TouchableOpacity
         style={styles.header}
@@ -124,22 +130,38 @@ export const CoordinatorClearingSection: React.FC<CoordinatorClearingSectionProp
         activeOpacity={0.8}
       >
         <View style={styles.headerLeft}>
-          <ShieldAlert size={18} color={colors.clay} style={{ marginRight: 6 }} />
+          <ShieldAlert size={18} color={pendingActionCount > 0 ? colors.accent : colors.muted} style={{ marginRight: 8 }} />
           <View>
-            <SproutText style={styles.title} weight="700">
+            <SproutText style={styles.title} weight="800">
               Coordinator Clearing Desk
             </SproutText>
-            <SproutText style={styles.subtitle}>
-              Pramukh controls for bill payouts & member refunds
-            </SproutText>
+            {collapsed && pendingActionCount > 0 && (
+              <SproutText style={styles.pendingCountText} weight="600">
+                {pendingActionCount} pending action{pendingActionCount !== 1 ? 's' : ''}
+              </SproutText>
+            )}
+            {!collapsed && (
+              <SproutText style={styles.subtitle}>
+                Bill payouts, member refunds & period lock
+              </SproutText>
+            )}
           </View>
         </View>
 
-        {collapsed ? (
-          <ChevronDown size={18} color={colors.muted} />
-        ) : (
-          <ChevronUp size={18} color={colors.muted} />
-        )}
+        <View style={styles.headerRight}>
+          {collapsed && pendingActionCount > 0 && (
+            <View style={styles.countBadge}>
+              <SproutText style={styles.countBadgeText} weight="800">
+                {pendingActionCount}
+              </SproutText>
+            </View>
+          )}
+          {collapsed ? (
+            <ChevronDown size={16} color={colors.muted} />
+          ) : (
+            <ChevronUp size={16} color={colors.muted} />
+          )}
+        </View>
       </TouchableOpacity>
 
       {!collapsed && (
@@ -147,7 +169,7 @@ export const CoordinatorClearingSection: React.FC<CoordinatorClearingSectionProp
           {/* Section 1: Landlord Rent Disbursal */}
           <View style={styles.subCard}>
             <View style={styles.subCardHeader}>
-              <Building2 size={16} color={colors.accent} style={{ marginRight: 6 }} />
+              <Building2 size={15} color={colors.accent} style={{ marginRight: 6 }} />
               <SproutText style={styles.subCardTitle} weight="700">
                 Landlord Rent Payout
               </SproutText>
@@ -155,7 +177,7 @@ export const CoordinatorClearingSection: React.FC<CoordinatorClearingSectionProp
 
             <View style={styles.rentRow}>
               <View>
-                <SproutText style={styles.rentAmount} weight="700">
+                <SproutText style={styles.rentAmount} weight="800">
                   {formatCurrencyExact(rentAmount)}
                 </SproutText>
                 <SproutText style={styles.rentMeta}>
@@ -165,7 +187,7 @@ export const CoordinatorClearingSection: React.FC<CoordinatorClearingSectionProp
 
               {isRentDisbursed ? (
                 <View style={styles.clearedBadge}>
-                  <CheckCircle2 size={14} color={colors.positive} style={{ marginRight: 4 }} />
+                  <CheckCircle2 size={13} color="#183228" style={{ marginRight: 4 }} />
                   <SproutText style={styles.clearedText} weight="700">
                     Paid
                   </SproutText>
@@ -195,13 +217,13 @@ export const CoordinatorClearingSection: React.FC<CoordinatorClearingSectionProp
               <SproutText style={styles.subCardTitle} weight="700">
                 Awaiting Roommate Collections ({pendingCollections.length})
               </SproutText>
-              {pendingCollections.map((m) => (
+              {(showAllCollections ? pendingCollections : pendingCollections.slice(0, 3)).map((m) => (
                 <View key={m.user_id} style={styles.itemRow}>
-                  <View>
-                    <SproutText style={styles.itemName} weight="600">
+                  <View style={{ flex: 1, marginRight: spacing.xs }}>
+                    <SproutText style={styles.itemName} weight="600" numberOfLines={1} ellipsizeMode="tail">
                       {m.display_name}
                     </SproutText>
-                    <SproutText style={styles.itemSub}>
+                    <SproutText style={styles.itemSub} numberOfLines={1} ellipsizeMode="tail">
                       Owes {formatCurrencyExact(m.amount)} · {m.status === 'submitted' ? 'Marked "I\'ve paid"' : 'Unpaid'}
                     </SproutText>
                   </View>
@@ -222,6 +244,23 @@ export const CoordinatorClearingSection: React.FC<CoordinatorClearingSectionProp
                   </TouchableOpacity>
                 </View>
               ))}
+
+              {pendingCollections.length > 3 && (
+                <TouchableOpacity
+                  style={styles.showMoreRow}
+                  onPress={() => setShowAllCollections((prev) => !prev)}
+                  activeOpacity={0.7}
+                >
+                  <SproutText style={styles.showMoreText} weight="700">
+                    {showAllCollections ? 'Show fewer collections' : `Show all ${pendingCollections.length} collections`}
+                  </SproutText>
+                  {showAllCollections ? (
+                    <ChevronUp size={11} color={colors.accent} style={{ marginLeft: 3 }} />
+                  ) : (
+                    <ChevronDown size={11} color={colors.accent} style={{ marginLeft: 3 }} />
+                  )}
+                </TouchableOpacity>
+              )}
             </View>
           )}
 
@@ -229,18 +268,18 @@ export const CoordinatorClearingSection: React.FC<CoordinatorClearingSectionProp
           {pendingRefunds.length > 0 && (
             <View style={styles.subCard}>
               <View style={styles.subCardHeader}>
-                <Sparkles size={16} color={colors.accent} style={{ marginRight: 6 }} />
+                <Sparkles size={14} color={colors.accent} style={{ marginRight: 5 }} />
                 <SproutText style={styles.subCardTitle} weight="700">
                   Pending Member Reimbursements ({pendingRefunds.length})
                 </SproutText>
               </View>
-              {pendingRefunds.map((m) => (
+              {(showAllRefunds ? pendingRefunds : pendingRefunds.slice(0, 3)).map((m) => (
                 <View key={m.user_id} style={styles.itemRow}>
-                  <View>
-                    <SproutText style={styles.itemName} weight="600">
+                  <View style={{ flex: 1, marginRight: spacing.xs }}>
+                    <SproutText style={styles.itemName} weight="600" numberOfLines={1} ellipsizeMode="tail">
                       {m.display_name}
                     </SproutText>
-                    <SproutText style={styles.itemSub}>
+                    <SproutText style={styles.itemSub} numberOfLines={1} ellipsizeMode="tail">
                       Refund remaining: {formatCurrencyExact(m.remaining_refund)}
                     </SproutText>
                   </View>
@@ -252,22 +291,39 @@ export const CoordinatorClearingSection: React.FC<CoordinatorClearingSectionProp
                     activeOpacity={0.8}
                   >
                     {actionInProgress === `refund-${m.user_id}` ? (
-                      <ActivityIndicator size="small" color="#FFFFFF" />
+                      <ActivityIndicator size="small" color="#183228" />
                     ) : (
-                      <SproutText style={styles.actionBtnText} weight="700">
+                      <SproutText style={[styles.actionBtnText, { color: '#183228' }]} weight="700">
                         Disburse Refund
                       </SproutText>
                     )}
                   </TouchableOpacity>
                 </View>
               ))}
+
+              {pendingRefunds.length > 3 && (
+                <TouchableOpacity
+                  style={styles.showMoreRow}
+                  onPress={() => setShowAllRefunds((prev) => !prev)}
+                  activeOpacity={0.7}
+                >
+                  <SproutText style={styles.showMoreText} weight="700">
+                    {showAllRefunds ? 'Show fewer refunds' : `Show all ${pendingRefunds.length} refunds`}
+                  </SproutText>
+                  {showAllRefunds ? (
+                    <ChevronUp size={11} color={colors.accent} style={{ marginLeft: 3 }} />
+                  ) : (
+                    <ChevronDown size={11} color={colors.accent} style={{ marginLeft: 3 }} />
+                  )}
+                </TouchableOpacity>
+              )}
             </View>
           )}
 
           {/* Section 4: Lock Month & Rollover */}
           <View style={styles.lockCard}>
             <View style={styles.lockRow}>
-              <Lock size={16} color={isLocked ? colors.muted : colors.text} style={{ marginRight: 6 }} />
+              <Lock size={15} color={isLocked ? colors.muted : colors.text} style={{ marginRight: 6 }} />
               <SproutText style={styles.lockTitle} weight="700">
                 {isLocked ? 'Month Locked' : 'Close Monthly Cycle'}
               </SproutText>
@@ -288,7 +344,7 @@ export const CoordinatorClearingSection: React.FC<CoordinatorClearingSectionProp
                 {actionInProgress === 'lock' ? (
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
-                  <SproutText style={styles.actionBtnText} weight="700">
+                  <SproutText style={[styles.actionBtnText, { color: '#F6F7ED' }]} weight="700">
                     Lock Month & Rollover
                   </SproutText>
                 )}
@@ -303,145 +359,180 @@ export const CoordinatorClearingSection: React.FC<CoordinatorClearingSectionProp
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#FAF8F4',
-    borderRadius: radii.xl,
-    padding: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    padding: 12,
     marginHorizontal: spacing.md,
-    marginBottom: spacing.lg,
-    borderWidth: 1,
-    borderColor: '#E7DFCA',
-  },
-  containerDark: {
-    backgroundColor: '#1E2520',
-    borderColor: '#374238',
+    marginBottom: spacing.sm,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingVertical: 1,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   title: {
-    fontSize: 14,
+    fontSize: 13.5,
     color: colors.text,
-    fontFamily: fontFamilies.interface,
   },
   subtitle: {
-    fontSize: 11,
+    fontSize: 10,
     color: colors.muted,
+    marginTop: 1,
+  },
+  pendingCountText: {
+    fontSize: 10.5,
+    color: colors.accent,
+    marginTop: 1,
+  },
+  countBadge: {
+    backgroundColor: '#F4DACD',
+    borderRadius: radii.full,
+    minWidth: 20,
+    height: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 5,
+  },
+  countBadgeText: {
+    fontSize: 10,
+    fontFamily: fontFamilies.bold,
+    color: '#183228',
   },
   content: {
-    marginTop: spacing.md,
+    marginTop: 6,
   },
   subCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radii.lg,
-    padding: spacing.sm,
-    marginBottom: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.line,
+    backgroundColor: colors.background,
+    borderRadius: radii.md,
+    padding: 8,
+    marginBottom: 5,
   },
   subCardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 3,
   },
   subCardTitle: {
-    fontSize: 12,
+    fontSize: 11,
+    fontFamily: fontFamilies.bold,
     color: colors.text,
-    fontFamily: fontFamilies.interface,
   },
   rentRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: 2,
   },
   rentAmount: {
-    fontSize: 18,
-    fontFamily: fontFamilies.numeric,
+    fontSize: 14,
     color: colors.text,
   },
   rentMeta: {
-    fontSize: 10,
+    fontSize: 9.5,
+    fontFamily: fontFamilies.medium,
     color: colors.muted,
+    marginTop: 1,
   },
   itemRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 6,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.line,
-    marginTop: 4,
+    paddingVertical: 2.5,
+    marginTop: 2,
   },
   itemName: {
-    fontSize: 13,
+    fontSize: 11.5,
+    fontFamily: fontFamilies.medium,
     color: colors.text,
   },
   itemSub: {
-    fontSize: 10,
+    fontSize: 9.5,
+    fontFamily: fontFamilies.medium,
     color: colors.muted,
   },
   actionBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: radii.full,
+    paddingHorizontal: 9,
+    paddingVertical: 3.5,
+    borderRadius: 10,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   rentActionBtn: {
-    backgroundColor: colors.accent,
+    backgroundColor: colors.text,
   },
   confirmBtn: {
-    backgroundColor: colors.accent,
+    backgroundColor: colors.text,
   },
   refundActionBtn: {
-    backgroundColor: colors.positive,
+    backgroundColor: colors.sun, // Warm gold button
   },
   lockBtn: {
-    backgroundColor: colors.clay,
-    marginTop: spacing.sm,
+    backgroundColor: colors.text, // Forest button #183228
+    marginTop: 4,
+    paddingVertical: 7,
+    borderRadius: 10,
   },
   actionBtnText: {
-    fontSize: 11,
+    fontSize: 10,
+    fontFamily: fontFamilies.bold,
     color: '#FFFFFF',
-    fontFamily: fontFamilies.interface,
+  },
+  showMoreRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 4,
+    marginTop: 2,
+  },
+  showMoreText: {
+    fontSize: 10,
+    fontFamily: fontFamilies.bold,
+    color: colors.accent,
   },
   clearedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#EBF6EE',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    backgroundColor: '#D8E8CB',
+    paddingHorizontal: 7,
+    paddingVertical: 2.5,
     borderRadius: radii.full,
   },
   clearedText: {
-    fontSize: 11,
-    color: colors.positive,
-    fontFamily: fontFamilies.numeric,
+    fontSize: 9.5,
+    fontFamily: fontFamilies.bold,
+    color: '#183228',
   },
   lockCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radii.lg,
-    padding: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.line,
+    backgroundColor: colors.background,
+    borderRadius: radii.md,
+    padding: 8,
   },
   lockRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   lockTitle: {
-    fontSize: 13,
+    fontSize: 11.5,
+    fontFamily: fontFamilies.bold,
     color: colors.text,
   },
   lockSubtitle: {
-    fontSize: 11,
+    fontSize: 9.5,
+    fontFamily: fontFamilies.medium,
     color: colors.muted,
-    marginTop: 2,
+    marginTop: 1,
   },
 });

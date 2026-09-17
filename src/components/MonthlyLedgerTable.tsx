@@ -6,7 +6,6 @@ import { AvatarCircle } from './AvatarCircle';
 import { MemberLedgerItem, MonthlyLedgerSummary } from '../types';
 import { formatCurrencyExact } from '../utils/formatters';
 import { ChevronDown, ChevronUp } from 'lucide-react-native';
-import { useThemeStore } from '../store/useThemeStore';
 
 export interface MonthlyLedgerTableProps {
   members: MemberLedgerItem[];
@@ -25,8 +24,19 @@ export const MonthlyLedgerTable: React.FC<MonthlyLedgerTableProps> = ({
   onConfirmContribution,
   onDisburseRefund,
 }) => {
-  const isDark = useThemeStore((s) => s.isDark);
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
+  const [showAllMembers, setShowAllMembers] = useState<boolean>(false);
+
+  // When there are more than 5 members, show top 5 unless expanded.
+  // Ensure the current user ('YOU') is always included in the initial view.
+  const visibleMembers = React.useMemo(() => {
+    if (showAllMembers || members.length <= 5) return members;
+    const myIndex = members.findIndex((m) => m.user_id === currentUserId);
+    if (myIndex >= 5) {
+      return [...members.slice(0, 4), members[myIndex]];
+    }
+    return members.slice(0, 5);
+  }, [members, showAllMembers, currentUserId]);
 
   const toggleExpand = (userId: string) => {
     setExpandedUserId((prev) => (prev === userId ? null : userId));
@@ -37,44 +47,51 @@ export const MonthlyLedgerTable: React.FC<MonthlyLedgerTableProps> = ({
       case 'confirmed':
         return {
           label: 'Confirmed ✓',
-          bg: '#EBF6EE',
-          text: colors.positive,
+          bg: '#D8E8CB',
+          text: '#183228',
         };
       case 'refunded':
         return {
           label: 'Refunded ✓',
-          bg: '#EAF3FF',
-          text: '#1C5BBA',
+          bg: '#D8E8CB',
+          text: '#183228',
         };
       case 'submitted':
         return {
           label: 'Pending Verification',
-          bg: '#FDF5EB',
-          text: colors.clay,
+          bg: '#F4DACD',
+          text: '#183228',
         };
       case 'pending':
       default:
         return item.balance <= 0
-          ? { label: 'Settled', bg: '#F0F4EE', text: colors.muted }
-          : { label: 'Unpaid', bg: '#FDF1EE', text: colors.negative };
+          ? { label: 'Settled', bg: colors.background, text: colors.muted }
+          : { label: 'Unpaid', bg: '#F4DACD', text: '#183228' };
     }
   };
 
   return (
-    <View style={[styles.container, isDark && styles.containerDark, shadows.card]}>
+    <View style={[styles.container, shadows.card]}>
       {/* Table Header */}
       <View style={styles.tableHeader}>
-        <SproutText style={styles.tableTitle} weight="700">
-          Household Ledger
-        </SproutText>
-        <SproutText style={styles.tableCount}>
-          {members.length} {members.length === 1 ? 'member' : 'members'}
-        </SproutText>
+        <View>
+          <SproutText variant="eyebrow" color={colors.muted} style={styles.eyebrow}>
+            MEMBERS BREAKDOWN
+          </SproutText>
+          <SproutText style={styles.tableTitle} weight="800">
+            Household Ledger
+          </SproutText>
+        </View>
+        <View style={styles.memberCountBadge}>
+          <SproutText style={styles.tableCount} weight="700">
+            {members.length} {members.length === 1 ? 'member' : 'members'}
+          </SproutText>
+        </View>
       </View>
 
       {/* Member Rows */}
       <View style={styles.listContainer}>
-        {members.map((item, index) => {
+        {visibleMembers.map((item, index) => {
           const isMe = item.user_id === currentUserId;
           const isExpanded = expandedUserId === item.user_id;
           const isOverpaid = item.balance < 0;
@@ -87,42 +104,42 @@ export const MonthlyLedgerTable: React.FC<MonthlyLedgerTableProps> = ({
               key={item.user_id}
               style={[
                 styles.memberCard,
-                isDark && styles.memberCardDark,
-                index === members.length - 1 && styles.lastCard,
+                index === visibleMembers.length - 1 && (!members.length || showAllMembers || members.length <= 5) && styles.lastCard,
               ]}
             >
-              {/* Main Member Row */}
+              {/* Single-line row */}
               <TouchableOpacity
                 style={styles.rowClickable}
                 onPress={() => toggleExpand(item.user_id)}
                 activeOpacity={0.7}
               >
                 <View style={styles.leftCol}>
-                  <AvatarCircle name={item.display_name} size={36} />
+                  <AvatarCircle name={item.display_name} size={22} />
                   <View style={styles.nameBlock}>
                     <View style={styles.nameLine}>
-                      <SproutText style={styles.memberName} weight="700" numberOfLines={1}>
+                      <SproutText
+                        style={styles.memberName}
+                        weight="700"
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                      >
                         {item.display_name}
                       </SproutText>
                       {isMe && (
                         <View style={styles.youBadge}>
-                          <SproutText style={styles.youBadgeText}>YOU</SproutText>
+                          <SproutText style={styles.youBadgeText} weight="700">YOU</SproutText>
                         </View>
                       )}
                       {isLead && (
                         <View style={styles.coordBadge}>
-                          <SproutText style={styles.coordBadgeText}>LEAD</SproutText>
+                          <SproutText style={styles.coordBadgeText} weight="700">LEAD</SproutText>
                         </View>
                       )}
                     </View>
-                    <SproutText style={styles.obligationSubtext}>
-                      Paid: {formatCurrencyExact(item.total_paid)} / Exp:{' '}
-                      {formatCurrencyExact(item.total_expense)}
-                    </SproutText>
                   </View>
                 </View>
 
-                {/* Right Column: Balance Pill & Expand Chevron */}
+                {/* Right: Balance Pill (Echoes Rhythm BalancePillsRow) + Chevron */}
                 <View style={styles.rightCol}>
                   <View
                     style={[
@@ -134,29 +151,28 @@ export const MonthlyLedgerTable: React.FC<MonthlyLedgerTableProps> = ({
                     <SproutText
                       style={[
                         styles.balancePillText,
-                        isOverpaid && styles.overpaidPillText,
                         isCleared && styles.clearedPillText,
                       ]}
                       weight="700"
                     >
                       {isCleared
-                        ? 'Cleared'
+                        ? '✓ Settled'
                         : isOverpaid
-                        ? `+${formatCurrencyExact(Math.abs(item.balance))}`
-                        : `-${formatCurrencyExact(item.balance)}`}
+                          ? `+${formatCurrencyExact(Math.abs(item.balance))}`
+                          : `-${formatCurrencyExact(item.balance)}`}
                     </SproutText>
                   </View>
                   {isExpanded ? (
-                    <ChevronUp size={16} color={colors.muted} style={{ marginLeft: 4 }} />
+                    <ChevronUp size={14} color={colors.muted} style={{ marginLeft: 6 }} />
                   ) : (
-                    <ChevronDown size={16} color={colors.muted} style={{ marginLeft: 4 }} />
+                    <ChevronDown size={14} color={colors.muted} style={{ marginLeft: 6 }} />
                   )}
                 </View>
               </TouchableOpacity>
 
               {/* Expanded Breakdown Accordion */}
               {isExpanded && (
-                <View style={[styles.accordionBox, isDark && styles.accordionBoxDark]}>
+                <View style={styles.accordionBox}>
                   <View style={styles.accordionRow}>
                     <SproutText style={styles.accordionLabel}>Rent Share (Ceil):</SproutText>
                     <SproutText style={styles.accordionValue}>
@@ -179,13 +195,13 @@ export const MonthlyLedgerTable: React.FC<MonthlyLedgerTableProps> = ({
                   )}
                   <View style={styles.accordionRow}>
                     <SproutText style={styles.accordionLabel}>Total Obligation:</SproutText>
-                    <SproutText style={styles.accordionValue} weight="600">
+                    <SproutText style={styles.accordionValue} weight="700">
                       {formatCurrencyExact(item.total_expense)}
                     </SproutText>
                   </View>
                   <View style={styles.accordionRow}>
-                    <SproutText style={styles.accordionLabel}>Total Paid / Fronted:</SproutText>
-                    <SproutText style={[styles.accordionValue, { color: colors.accent }]} weight="600">
+                    <SproutText style={styles.accordionLabel}>Paid / Fronted:</SproutText>
+                    <SproutText style={[styles.accordionValue, { color: colors.accent }]} weight="700">
                       {formatCurrencyExact(item.total_paid)}
                     </SproutText>
                   </View>
@@ -194,33 +210,32 @@ export const MonthlyLedgerTable: React.FC<MonthlyLedgerTableProps> = ({
 
                   <View style={styles.accordionRow}>
                     <SproutText style={styles.accordionNetLabel} weight="700">
-                      {isOverpaid ? 'Refund Due to Member:' : 'Remaining to Pay:'}
+                      {isOverpaid ? 'Refund Due:' : 'Net Remaining:'}
                     </SproutText>
                     <SproutText
                       style={[
                         styles.accordionNetValue,
-                        isOverpaid ? { color: colors.positive } : { color: colors.clay },
+                        isOverpaid ? { color: colors.accent } : { color: colors.text },
                       ]}
-                      weight="700"
+                      weight="800"
                     >
                       {formatCurrencyExact(Math.abs(item.balance))}
                     </SproutText>
                   </View>
 
-                  {/* Status Indicator */}
+                  {/* Status + Coordinator Actions */}
                   <View style={styles.accordionStatusRow}>
                     <View style={[styles.statusChip, { backgroundColor: statusBadge.bg }]}>
-                      <SproutText style={[styles.statusChipText, { color: statusBadge.text }]}>
+                      <SproutText style={[styles.statusChipText, { color: statusBadge.text }]} weight="700">
                         {statusBadge.label}
                       </SproutText>
                     </View>
 
-                    {/* Coordinator Fast Actions */}
                     {isCoordinator && item.balance > 0 && item.status !== 'confirmed' && (
                       <TouchableOpacity
                         style={styles.actionPillBtn}
                         onPress={() => onConfirmContribution?.(item)}
-                        activeOpacity={0.7}
+                        activeOpacity={0.8}
                       >
                         <SproutText style={styles.actionPillBtnText} weight="700">
                           Confirm Received
@@ -232,9 +247,9 @@ export const MonthlyLedgerTable: React.FC<MonthlyLedgerTableProps> = ({
                       <TouchableOpacity
                         style={[styles.actionPillBtn, styles.refundBtn]}
                         onPress={() => onDisburseRefund?.(item)}
-                        activeOpacity={0.7}
+                        activeOpacity={0.8}
                       >
-                        <SproutText style={styles.actionPillBtnText} weight="700">
+                        <SproutText style={[styles.actionPillBtnText, { color: '#183228' }]} weight="700">
                           Mark Refunded
                         </SproutText>
                       </TouchableOpacity>
@@ -245,40 +260,56 @@ export const MonthlyLedgerTable: React.FC<MonthlyLedgerTableProps> = ({
             </View>
           );
         })}
+        {members.length > 5 && (
+          <TouchableOpacity
+            style={styles.showMoreRow}
+            onPress={() => setShowAllMembers((prev) => !prev)}
+            activeOpacity={0.7}
+          >
+            <SproutText style={styles.showMoreText} weight="700">
+              {showAllMembers ? 'Show fewer' : `Show all ${members.length} members`}
+            </SproutText>
+            {showAllMembers ? (
+              <ChevronUp size={12} color={colors.accent} style={{ marginLeft: 3 }} />
+            ) : (
+              <ChevronDown size={12} color={colors.accent} style={{ marginLeft: 3 }} />
+            )}
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Summary Footer Card */}
       {summary && (
-        <View style={[styles.summaryFooter, isDark && styles.summaryFooterDark]}>
-          <SproutText style={styles.summaryTitle} weight="700">
-            Monthly Clearing Totals
+        <View style={styles.summaryFooter}>
+          <SproutText style={styles.summaryTitle} weight="800">
+            CLEARING TOTALS
           </SproutText>
 
           <View style={styles.summaryGrid}>
             <View style={styles.summaryCol}>
-              <SproutText style={styles.summaryLabel}>Expected In</SproutText>
-              <SproutText style={styles.summaryValue} weight="700">
+              <SproutText style={styles.summaryLabel}>Expected</SproutText>
+              <SproutText style={styles.summaryValue} weight="800">
                 {formatCurrencyExact(summary.grand_total)}
               </SproutText>
             </View>
 
             <View style={styles.summaryCol}>
               <SproutText style={styles.summaryLabel}>Collected</SproutText>
-              <SproutText style={[styles.summaryValue, { color: colors.accent }]} weight="700">
+              <SproutText style={[styles.summaryValue, { color: colors.accent }]} weight="800">
                 {formatCurrencyExact(summary.total_paid)}
               </SproutText>
             </View>
 
             <View style={styles.summaryCol}>
-              <SproutText style={styles.summaryLabel}>Refunds Due</SproutText>
-              <SproutText style={[styles.summaryValue, { color: colors.positive }]} weight="700">
+              <SproutText style={styles.summaryLabel}>Refunds</SproutText>
+              <SproutText style={[styles.summaryValue, { color: colors.muted }]} weight="800">
                 {formatCurrencyExact(summary.over_contributed)}
               </SproutText>
             </View>
 
             <View style={styles.summaryCol}>
-              <SproutText style={styles.summaryLabel}>Bills Pool</SproutText>
-              <SproutText style={[styles.summaryValue, { color: colors.clay }]} weight="700">
+              <SproutText style={styles.summaryLabel}>Pool Reserve</SproutText>
+              <SproutText style={[styles.summaryValue, { color: colors.text }]} weight="800">
                 {formatCurrencyExact(summary.remaining_for_bills)}
               </SproutText>
             </View>
@@ -291,47 +322,47 @@ export const MonthlyLedgerTable: React.FC<MonthlyLedgerTableProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.surface,
-    borderRadius: radii.xl,
-    padding: spacing.md,
+    backgroundColor: colors.surface, // Warm white card surface #FBFDF7
+    borderRadius: radii.lg,
+    padding: 12,
     marginHorizontal: spacing.md,
-    marginBottom: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.line,
-  },
-  containerDark: {
-    backgroundColor: '#1E2C24',
-    borderColor: '#2D3F34',
+    marginBottom: 6,
   },
   tableHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.sm,
-    paddingBottom: spacing.xs,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.line,
+    marginBottom: 3,
+    paddingBottom: 2,
+  },
+  eyebrow: {
+    fontSize: 7.5,
+    letterSpacing: 1.2,
+    marginBottom: 1,
   },
   tableTitle: {
-    fontSize: 15,
+    fontSize: 14,
+    letterSpacing: -0.3,
     color: colors.text,
-    fontFamily: fontFamilies.interface,
+  },
+  memberCountBadge: {
+    backgroundColor: colors.background,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: radii.full,
   },
   tableCount: {
-    fontSize: 12,
+    fontSize: 9.5,
+    fontFamily: fontFamilies.bold,
     color: colors.muted,
-    fontFamily: fontFamilies.numeric,
   },
   listContainer: {
-    marginVertical: spacing.xs,
+    marginVertical: 1,
   },
   memberCard: {
-    paddingVertical: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.line,
-  },
-  memberCardDark: {
-    borderBottomColor: '#2D3F34',
+    paddingVertical: 3.5,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.line, // Single crisp hairline matching ExpenseRow
   },
   lastCard: {
     borderBottomWidth: 0,
@@ -340,96 +371,98 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    minHeight: 28,
   },
   leftCol: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
+    marginRight: 6,
   },
   nameBlock: {
-    marginLeft: spacing.sm,
+    marginLeft: 6,
     flex: 1,
   },
   nameLine: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
   },
   memberName: {
-    fontSize: 14,
+    fontSize: 12,
+    fontFamily: fontFamilies.medium,
     color: colors.text,
-    fontFamily: fontFamilies.interface,
-    maxWidth: 130,
+    flexShrink: 1,
   },
   youBadge: {
     backgroundColor: colors.accentSoft,
-    paddingHorizontal: 5,
-    paddingVertical: 1,
-    borderRadius: radii.sm,
-    marginLeft: 6,
-  },
-  youBadgeText: {
-    fontSize: 9,
-    fontWeight: '700',
-    color: colors.accent,
-    fontFamily: fontFamilies.numeric,
-  },
-  coordBadge: {
-    backgroundColor: '#F7E7CD',
-    paddingHorizontal: 5,
+    paddingHorizontal: 4,
     paddingVertical: 1,
     borderRadius: radii.sm,
     marginLeft: 4,
+    flexShrink: 0,
+  },
+  youBadgeText: {
+    fontSize: 8,
+    fontFamily: fontFamilies.bold,
+    color: colors.accent,
+  },
+  coordBadge: {
+    backgroundColor: colors.text,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: radii.sm,
+    marginLeft: 3,
+    flexShrink: 0,
   },
   coordBadgeText: {
-    fontSize: 9,
-    fontWeight: '700',
-    color: colors.clay,
-    fontFamily: fontFamilies.numeric,
-  },
-  obligationSubtext: {
-    fontSize: 11,
-    color: colors.muted,
-    marginTop: 2,
-    fontFamily: fontFamilies.numeric,
+    fontSize: 7.5,
+    fontFamily: fontFamilies.bold,
+    color: '#F6F7ED',
+    letterSpacing: 0.5,
   },
   rightCol: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexShrink: 0,
   },
   balancePill: {
-    backgroundColor: '#FDF5EB',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: radii.full,
+    backgroundColor: '#F4DACD', // Soft peach for to pay (BalancePillsRow)
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 10,
   },
   balancePillText: {
-    fontSize: 11,
-    color: colors.clay,
-    fontFamily: fontFamilies.numeric,
+    fontSize: 10,
+    fontFamily: fontFamilies.bold,
+    color: '#183228',
   },
   overpaidPill: {
-    backgroundColor: '#EBF6EE',
-  },
-  overpaidPillText: {
-    color: colors.positive,
+    backgroundColor: '#D8E8CB', // Soft sage for to receive / overpaid (BalancePillsRow)
   },
   clearedPill: {
-    backgroundColor: '#F0F4EE',
+    backgroundColor: colors.background,
   },
   clearedPillText: {
     color: colors.muted,
   },
-  accordionBox: {
-    backgroundColor: '#F8FAF6',
-    borderRadius: radii.md,
-    padding: spacing.sm,
-    marginTop: spacing.xs,
-    borderWidth: 1,
-    borderColor: colors.line,
+  showMoreRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 5,
+    marginTop: 2,
   },
-  accordionBoxDark: {
-    backgroundColor: '#16231B',
-    borderColor: '#2D3F34',
+  showMoreText: {
+    fontSize: 10.5,
+    fontFamily: fontFamilies.bold,
+    color: colors.accent,
+  },
+  accordionBox: {
+    backgroundColor: colors.background,
+    borderRadius: radii.md,
+    padding: 8,
+    marginTop: 4,
   },
   accordionRow: {
     flexDirection: 'row',
@@ -437,76 +470,72 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   accordionLabel: {
-    fontSize: 11,
+    fontSize: 10.5,
+    fontFamily: fontFamilies.medium,
     color: colors.muted,
-    fontFamily: fontFamilies.interface,
   },
   accordionValue: {
-    fontSize: 11,
+    fontSize: 10.5,
+    fontFamily: fontFamilies.bold,
     color: colors.text,
-    fontFamily: fontFamilies.numeric,
   },
   accordionDivider: {
-    height: 1,
+    height: StyleSheet.hairlineWidth,
     backgroundColor: colors.line,
-    marginVertical: 4,
+    marginVertical: 3,
   },
   accordionNetLabel: {
-    fontSize: 12,
+    fontSize: 11,
+    fontFamily: fontFamilies.bold,
     color: colors.text,
-    fontFamily: fontFamilies.interface,
   },
   accordionNetValue: {
-    fontSize: 12,
-    fontFamily: fontFamilies.numeric,
+    fontSize: 11,
+    fontFamily: fontFamilies.extraBold,
   },
   accordionStatusRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: spacing.xs,
-    paddingTop: 4,
+    justifyContent: 'space-between',
+    marginTop: 4,
+    paddingTop: 3,
   },
   statusChip: {
-    paddingHorizontal: 8,
+    paddingHorizontal: 7,
     paddingVertical: 2,
-    borderRadius: radii.sm,
+    borderRadius: radii.full,
   },
   statusChipText: {
-    fontSize: 10,
-    fontWeight: '700',
-    fontFamily: fontFamilies.numeric,
+    fontSize: 9.5,
+    fontFamily: fontFamilies.bold,
   },
   actionPillBtn: {
     backgroundColor: colors.accent,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingHorizontal: 9,
+    paddingVertical: 3.5,
     borderRadius: radii.full,
   },
-  refundBtn: {
-    backgroundColor: colors.positive,
-  },
   actionPillBtnText: {
-    fontSize: 11,
+    fontSize: 10,
+    fontFamily: fontFamilies.bold,
     color: '#FFFFFF',
-    fontFamily: fontFamilies.interface,
+  },
+  refundBtn: {
+    backgroundColor: colors.sun, // Warm gold button
   },
   summaryFooter: {
-    backgroundColor: '#F3F6F0',
-    borderRadius: radii.lg,
-    padding: spacing.sm,
-    marginTop: spacing.sm,
-  },
-  summaryFooterDark: {
-    backgroundColor: '#16231B',
+    backgroundColor: colors.background,
+    borderRadius: radii.md,
+    padding: 8,
+    marginTop: 6,
   },
   summaryTitle: {
-    fontSize: 11,
-    color: colors.muted,
+    fontSize: 7.5,
+    letterSpacing: 1.2,
+    fontFamily: fontFamilies.extraBold,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: spacing.xs,
-    fontFamily: fontFamilies.numeric,
+    color: colors.muted,
+    marginBottom: 3,
   },
   summaryGrid: {
     flexDirection: 'row',
@@ -516,14 +545,14 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   summaryLabel: {
-    fontSize: 10,
+    fontSize: 9,
+    fontFamily: fontFamilies.medium,
     color: colors.muted,
-    fontFamily: fontFamilies.interface,
+    marginBottom: 1,
   },
   summaryValue: {
-    fontSize: 12,
+    fontSize: 10.5,
+    fontFamily: fontFamilies.extraBold,
     color: colors.text,
-    fontFamily: fontFamilies.numeric,
-    marginTop: 2,
   },
 });

@@ -9,8 +9,7 @@ import {
 } from 'react-native';
 import { colors, radii, spacing, fontFamilies, shadows } from '../theme';
 import { SproutText } from './SproutText';
-import { SproutButton } from './SproutButton';
-import { UserLedgerActionSummary } from '../types';
+import { UserLedgerActionSummary, MonthlyLedgerSummary, CoordinatorChecklist } from '../types';
 import { formatCurrencyExact } from '../utils/formatters';
 import {
   CheckCircle2,
@@ -19,9 +18,9 @@ import {
   ChevronDown,
   ChevronUp,
   Clock,
-  Sparkles,
+  Users,
+  Building2,
 } from 'lucide-react-native';
-import { useThemeStore } from '../store/useThemeStore';
 
 export interface HeroActionSlipCardProps {
   mySummary: UserLedgerActionSummary | null;
@@ -29,7 +28,140 @@ export interface HeroActionSlipCardProps {
   year: number;
   onRecordPaymentPress?: () => void;
   isSubmittingPayment?: boolean;
+  summary?: MonthlyLedgerSummary | null;
+  coordinatorSummary?: CoordinatorChecklist | null;
+  totalMembers?: number;
 }
+
+/** Compact inline progress strip embedded within the Hero card */
+const ProgressStrip: React.FC<{
+  summary: MonthlyLedgerSummary;
+  coordinatorSummary?: CoordinatorChecklist | null;
+  totalMembers: number;
+}> = ({ summary, coordinatorSummary, totalMembers }) => {
+  const {
+    collection_progress_pct = 0,
+    total_paid = 0,
+    members_to_contribute = 0,
+    total_rent = 0,
+    bill_progress_pct = 0,
+  } = summary;
+
+  const pendingCount = coordinatorSummary?.members_to_collect?.length ?? 0;
+  const settledCount = Math.max(0, totalMembers - pendingCount);
+
+  const rentBill = coordinatorSummary?.external_bills_pending?.find(
+    (b) => b.category === 'rent' || b.category === 'landlord_rent'
+  );
+  const isRentCleared = rentBill ? rentBill.status === 'cleared' : bill_progress_pct >= 100;
+
+  const clampedPct = Math.min(100, Math.max(0, Math.round(collection_progress_pct)));
+  const clampedBillPct = Math.min(100, Math.max(0, Math.round(bill_progress_pct)));
+
+  return (
+    <View style={progressStyles.container}>
+      {/* Row 1: Collections */}
+      <View style={progressStyles.row}>
+        <View style={progressStyles.labelRow}>
+          <View style={progressStyles.iconTitleRow}>
+            <Users size={12} color="#BDCABF" style={{ marginRight: 5 }} />
+            <SproutText style={progressStyles.label} weight="600">
+              Collections
+            </SproutText>
+          </View>
+          <SproutText style={progressStyles.pct} weight="700">
+            {clampedPct}%
+          </SproutText>
+        </View>
+
+        <View style={progressStyles.barTrack}>
+          <View
+            style={[
+              progressStyles.barFill,
+              {
+                width: `${clampedPct}%`,
+                backgroundColor: colors.sun,
+              },
+            ]}
+          />
+        </View>
+
+        <View style={progressStyles.metaRow}>
+          <SproutText style={progressStyles.metaLeft}>
+            {formatCurrencyExact(total_paid)}
+            {members_to_contribute > 0 && (
+              <SproutText style={progressStyles.metaMuted}>
+                {' '}· {formatCurrencyExact(members_to_contribute)} left
+              </SproutText>
+            )}
+          </SproutText>
+          {totalMembers > 0 && (
+            <SproutText style={progressStyles.metaRight} weight="700">
+              {settledCount}/{totalMembers} cleared
+            </SproutText>
+          )}
+        </View>
+      </View>
+
+      {/* Thin divider */}
+      <View style={progressStyles.divider} />
+
+      {/* Row 2: Rent / Bills */}
+      <View style={progressStyles.row}>
+        <View style={progressStyles.labelRow}>
+          <View style={progressStyles.iconTitleRow}>
+            <Building2 size={12} color="#BDCABF" style={{ marginRight: 5 }} />
+            <SproutText style={progressStyles.label} weight="600">
+              Household Rent
+            </SproutText>
+          </View>
+          <View
+            style={[
+              progressStyles.rentBadge,
+              isRentCleared ? progressStyles.rentBadgeCleared : progressStyles.rentBadgePending,
+            ]}
+          >
+            {isRentCleared ? (
+              <CheckCircle2 size={10} color="#D8E8CB" style={{ marginRight: 3 }} />
+            ) : (
+              <AlertCircle size={10} color={colors.text} style={{ marginRight: 3 }} />
+            )}
+            <SproutText
+              style={[
+                progressStyles.rentBadgeText,
+                { color: isRentCleared ? '#D8E8CB' : colors.text },
+              ]}
+              weight="700"
+            >
+              {isRentCleared ? 'Paid' : 'Pending'}
+            </SproutText>
+          </View>
+        </View>
+
+        <View style={progressStyles.barTrack}>
+          <View
+            style={[
+              progressStyles.barFill,
+              {
+                width: `${clampedBillPct}%`,
+                backgroundColor: isRentCleared ? '#D8E8CB' : colors.sun,
+              },
+            ]}
+          />
+        </View>
+
+        <View style={progressStyles.metaRow}>
+          <SproutText style={progressStyles.metaLeft}>
+            {formatCurrencyExact(total_rent)} total rent
+          </SproutText>
+          <SproutText style={progressStyles.metaRight}>
+            {clampedBillPct}% cleared
+          </SproutText>
+        </View>
+      </View>
+    </View>
+  );
+};
 
 export const HeroActionSlipCard: React.FC<HeroActionSlipCardProps> = ({
   mySummary,
@@ -37,22 +169,30 @@ export const HeroActionSlipCard: React.FC<HeroActionSlipCardProps> = ({
   year,
   onRecordPaymentPress,
   isSubmittingPayment = false,
+  summary,
+  coordinatorSummary,
+  totalMembers = 0,
 }) => {
-  const isDark = useThemeStore((s) => s.isDark);
   const [showBreakdown, setShowBreakdown] = useState(false);
 
   if (!mySummary) {
     return null;
   }
 
-  const { action, amount, coordinator_name, status, upi_uri, breakdown } = mySummary;
+  const {
+    action,
+    amount,
+    status,
+    coordinator_name,
+    upi_uri,
+    breakdown,
+  } = mySummary;
+
+  const isAlreadySubmitted = status === 'paid_pending_confirmation';
 
   const handlePayViaUPI = async () => {
     if (!upi_uri) {
-      Alert.alert(
-        'UPI ID Unavailable',
-        `Coordinator ${coordinator_name || 'Admin'} has not configured a UPI ID yet.`
-      );
+      Alert.alert('No UPI details', 'Coordinator has not provided a UPI ID.');
       return;
     }
 
@@ -61,58 +201,71 @@ export const HeroActionSlipCard: React.FC<HeroActionSlipCardProps> = ({
       if (supported) {
         await Linking.openURL(upi_uri);
       } else {
-        Alert.alert(
-          'UPI App Not Found',
-          `Could not find a supported UPI app on this device. Payment link:\n${upi_uri}`
-        );
+        await Linking.openURL(upi_uri);
       }
     } catch {
-      Alert.alert('Payment Error', 'Unable to launch UPI app. Please pay manually.');
+      Alert.alert(
+        'Unable to open UPI App',
+        'Could not automatically launch your UPI app. Please copy the UPI ID and pay via GPay, PhonePe, or Paytm.'
+      );
     }
   };
 
-  // 1. DEBTOR STATE: Roommate owes the coordinator
-  if (action === 'pay_coordinator') {
-    const isAlreadySubmitted = status === 'submitted';
-
+  const renderProgressStrip = () => {
+    if (!summary) return null;
     return (
-      <View style={[styles.card, styles.debtorCard, isDark && styles.cardDark, shadows.card]}>
+      <ProgressStrip
+        summary={summary}
+        coordinatorSummary={coordinatorSummary}
+        totalMembers={totalMembers}
+      />
+    );
+  };
+
+  // 1. DEBTOR STATE: Member owes rent/expenses to coordinator
+  if (action === 'pay_coordinator') {
+    return (
+      <View style={[styles.card, shadows.card]}>
+        {/* Header Eyebrow & Details Toggle */}
         <View style={styles.cardHeader}>
-          <View style={styles.badgeWrapper}>
-            <View style={[styles.statusBadge, styles.debtorBadge]}>
-              <SproutText style={styles.statusBadgeText}>
-                {isAlreadySubmitted ? 'PAYMENT SUBMITTED' : `${monthName.toUpperCase()} DUES`}
-              </SproutText>
-            </View>
+          <View style={styles.headerBadge}>
+            <SproutText style={styles.headerBadgeText} weight="800">
+              {monthName.toUpperCase()} DUES
+            </SproutText>
           </View>
           <TouchableOpacity
             style={styles.breakdownToggle}
             onPress={() => setShowBreakdown((prev) => !prev)}
             activeOpacity={0.7}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <SproutText style={styles.breakdownToggleText}>
-              {showBreakdown ? 'Hide Breakdown' : 'View Breakdown'}
+            <SproutText style={styles.breakdownToggleText} weight="600">
+              {showBreakdown ? 'Hide details' : 'Details'}
             </SproutText>
             {showBreakdown ? (
-              <ChevronUp size={14} color={colors.accent} />
+              <ChevronUp size={13} color="#BDCABF" />
             ) : (
-              <ChevronDown size={14} color={colors.accent} />
+              <ChevronDown size={13} color="#BDCABF" />
             )}
           </TouchableOpacity>
         </View>
 
+        {/* Hero Amount Section */}
         <View style={styles.amountSection}>
-          <SproutText style={styles.amountLabel}>You need to pay</SproutText>
-          <SproutText style={[styles.amountText, styles.debtorAmount]} weight="700">
+          <SproutText style={styles.amountEyebrow} weight="800">
+            YOU NEED TO PAY
+          </SproutText>
+          <SproutText style={styles.amountValue} weight="800">
             {formatCurrencyExact(amount)}
           </SproutText>
           <SproutText style={styles.recipientText}>
-            to <SproutText weight="700">{coordinator_name || 'Coordinator'}</SproutText>
+            to <SproutText style={styles.recipientName} weight="700">{coordinator_name || 'Coordinator'}</SproutText>
           </SproutText>
         </View>
 
+        {/* Expanded Mathematical Breakdown */}
         {showBreakdown && breakdown && (
-          <View style={[styles.breakdownContainer, isDark && styles.breakdownContainerDark]}>
+          <View style={styles.breakdownBox}>
             <View style={styles.breakdownRow}>
               <SproutText style={styles.breakdownLabel}>Rent share (ceil rounded):</SproutText>
               <SproutText style={styles.breakdownValue}>
@@ -127,7 +280,7 @@ export const HeroActionSlipCard: React.FC<HeroActionSlipCardProps> = ({
             </View>
             {breakdown.adjustments > 0 && (
               <View style={styles.breakdownRow}>
-                <SproutText style={styles.breakdownLabel}>Individual adjustments:</SproutText>
+                <SproutText style={styles.breakdownLabel}>Adjustments:</SproutText>
                 <SproutText style={styles.breakdownValue}>
                   +{formatCurrencyExact(breakdown.adjustments)}
                 </SproutText>
@@ -135,29 +288,30 @@ export const HeroActionSlipCard: React.FC<HeroActionSlipCardProps> = ({
             )}
             <View style={styles.breakdownRow}>
               <SproutText style={styles.breakdownLabel}>Less already paid / fronted:</SproutText>
-              <SproutText style={[styles.breakdownValue, { color: colors.accent }]}>
+              <SproutText style={[styles.breakdownValue, { color: '#D8E8CB' }]}>
                 -{formatCurrencyExact(breakdown.already_paid)}
               </SproutText>
             </View>
             <View style={[styles.breakdownRow, styles.breakdownTotalRow]}>
               <SproutText style={styles.breakdownTotalLabel} weight="700">
-                Outstanding balance:
+                Outstanding due:
               </SproutText>
-              <SproutText style={styles.breakdownTotalValue} weight="700">
+              <SproutText style={styles.breakdownTotalValue} weight="800">
                 {formatCurrencyExact(amount)}
               </SproutText>
             </View>
           </View>
         )}
 
+        {/* Tactile Action Buttons */}
         <View style={styles.actionsRow}>
           {upi_uri && !isAlreadySubmitted && (
             <TouchableOpacity
-              style={[styles.actionBtn, styles.upiBtn]}
+              style={styles.upiBtn}
               onPress={handlePayViaUPI}
-              activeOpacity={0.8}
+              activeOpacity={0.85}
             >
-              <ExternalLink size={15} color="#FFFFFF" style={{ marginRight: 6 }} />
+              <ExternalLink size={14} color="#183228" style={{ marginRight: 6 }} />
               <SproutText style={styles.upiBtnText} weight="700">
                 Pay via UPI
               </SproutText>
@@ -166,20 +320,20 @@ export const HeroActionSlipCard: React.FC<HeroActionSlipCardProps> = ({
 
           {isAlreadySubmitted ? (
             <View style={styles.submittedStatusBox}>
-              <Clock size={16} color={colors.accent} style={{ marginRight: 6 }} />
-              <SproutText style={styles.submittedStatusText}>
+              <Clock size={15} color="#D8E8CB" style={{ marginRight: 6 }} />
+              <SproutText style={styles.submittedStatusText} weight="600">
                 Payment submitted · Awaiting confirmation
               </SproutText>
             </View>
           ) : (
             <TouchableOpacity
-              style={[styles.actionBtn, styles.paidBtn]}
+              style={styles.paidBtn}
               onPress={onRecordPaymentPress}
               disabled={isSubmittingPayment}
-              activeOpacity={0.8}
+              activeOpacity={0.85}
             >
               {isSubmittingPayment ? (
-                <ActivityIndicator size="small" color={colors.accent} />
+                <ActivityIndicator size="small" color="#F6F7ED" />
               ) : (
                 <SproutText style={styles.paidBtnText} weight="700">
                   I've Paid
@@ -188,6 +342,9 @@ export const HeroActionSlipCard: React.FC<HeroActionSlipCardProps> = ({
             </TouchableOpacity>
           )}
         </View>
+
+        {/* Merged Progress Strip */}
+        {renderProgressStrip()}
       </View>
     );
   }
@@ -197,52 +354,45 @@ export const HeroActionSlipCard: React.FC<HeroActionSlipCardProps> = ({
     const isRefunded = status === 'refunded';
 
     return (
-      <View style={[styles.card, styles.creditorCard, isDark && styles.cardDark, shadows.card]}>
+      <View style={[styles.card, shadows.card]}>
         <View style={styles.cardHeader}>
-          <View style={styles.badgeWrapper}>
-            <View style={[styles.statusBadge, styles.creditorBadge]}>
-              <SproutText style={styles.statusBadgeText}>
-                {isRefunded ? 'REFUND RECEIVED ✓' : `${monthName.toUpperCase()} REIMBURSEMENT`}
-              </SproutText>
-            </View>
+          <View style={styles.headerBadge}>
+            <SproutText style={styles.headerBadgeText} weight="800">
+              {isRefunded ? 'REFUND SETTLED ✓' : `${monthName.toUpperCase()} REFUND`}
+            </SproutText>
           </View>
           <TouchableOpacity
             style={styles.breakdownToggle}
             onPress={() => setShowBreakdown((prev) => !prev)}
             activeOpacity={0.7}
           >
-            <SproutText style={styles.breakdownToggleText}>
-              {showBreakdown ? 'Hide Breakdown' : 'View Breakdown'}
+            <SproutText style={styles.breakdownToggleText} weight="600">
+              {showBreakdown ? 'Hide details' : 'Details'}
             </SproutText>
             {showBreakdown ? (
-              <ChevronUp size={14} color={colors.accent} />
+              <ChevronUp size={13} color="#BDCABF" />
             ) : (
-              <ChevronDown size={14} color={colors.accent} />
+              <ChevronDown size={13} color="#BDCABF" />
             )}
           </TouchableOpacity>
         </View>
 
         <View style={styles.amountSection}>
-          <SproutText style={styles.amountLabel}>You get back</SproutText>
-          <SproutText style={[styles.amountText, styles.creditorAmount]} weight="700">
-            {formatCurrencyExact(amount)}
+          <SproutText style={styles.amountEyebrow} weight="800">
+            {isRefunded ? 'REFUND DISBURSED' : 'YOU ARE OWED A REFUND'}
+          </SproutText>
+          <SproutText style={[styles.amountValue, { color: '#D8E8CB' }]} weight="800">
+            +{formatCurrencyExact(amount)}
           </SproutText>
           <SproutText style={styles.recipientText}>
-            from <SproutText weight="700">{coordinator_name || 'Coordinator'}</SproutText>
-          </SproutText>
-        </View>
-
-        <View style={styles.creditorNoteBox}>
-          <Sparkles size={16} color={colors.accent} style={{ marginRight: 6 }} />
-          <SproutText style={styles.creditorNoteText}>
             {isRefunded
-              ? 'Your refund has been disbursed by the coordinator.'
-              : `You fronted expenses for the flat! ${coordinator_name || 'Coordinator'} will reimburse you once collections complete.`}
+              ? 'Disbursed by coordinator'
+              : `from ${coordinator_name || 'Coordinator'}`}
           </SproutText>
         </View>
 
         {showBreakdown && breakdown && (
-          <View style={[styles.breakdownContainer, isDark && styles.breakdownContainerDark]}>
+          <View style={styles.breakdownBox}>
             <View style={styles.breakdownRow}>
               <SproutText style={styles.breakdownLabel}>Rent share (ceil rounded):</SproutText>
               <SproutText style={styles.breakdownValue}>
@@ -257,30 +407,33 @@ export const HeroActionSlipCard: React.FC<HeroActionSlipCardProps> = ({
             </View>
             <View style={styles.breakdownRow}>
               <SproutText style={styles.breakdownLabel}>Total fronted by you:</SproutText>
-              <SproutText style={[styles.breakdownValue, { color: colors.positive }]}>
+              <SproutText style={[styles.breakdownValue, { color: '#D8E8CB' }]}>
                 {formatCurrencyExact(breakdown.already_paid)}
               </SproutText>
             </View>
             <View style={[styles.breakdownRow, styles.breakdownTotalRow]}>
               <SproutText style={styles.breakdownTotalLabel} weight="700">
-                Overpayment / Refund:
+                Refund amount:
               </SproutText>
-              <SproutText style={[styles.breakdownTotalValue, { color: colors.positive }]} weight="700">
+              <SproutText style={[styles.breakdownTotalValue, { color: '#D8E8CB' }]} weight="800">
                 {formatCurrencyExact(amount)}
               </SproutText>
             </View>
           </View>
         )}
+
+        {/* Merged Progress Strip */}
+        {renderProgressStrip()}
       </View>
     );
   }
 
   // 3. SETTLED STATE: All squared away
   return (
-    <View style={[styles.card, styles.settledCard, isDark && styles.cardDark, shadows.card]}>
+    <View style={[styles.card, shadows.card]}>
       <View style={styles.settledRow}>
         <View style={styles.settledIconCircle}>
-          <CheckCircle2 size={22} color={colors.accent} />
+          <CheckCircle2 size={24} color="#D8E8CB" />
         </View>
         <View style={{ flex: 1 }}>
           <SproutText style={styles.settledTitle} weight="700">
@@ -291,217 +444,281 @@ export const HeroActionSlipCard: React.FC<HeroActionSlipCardProps> = ({
           </SproutText>
         </View>
       </View>
+
+      {/* Merged Progress Strip */}
+      {renderProgressStrip()}
     </View>
   );
 };
 
+/* ---------- Progress strip styles ---------- */
+const progressStyles = StyleSheet.create({
+  container: {
+    backgroundColor: '#132820', // Inset deep forest matching breakdown box
+    borderRadius: 12,
+    paddingVertical: 7,
+    paddingHorizontal: 9,
+    marginTop: 6,
+  },
+  row: {
+    marginVertical: 0,
+  },
+  labelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 3,
+  },
+  iconTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  label: {
+    fontSize: 10,
+    fontFamily: fontFamilies.medium,
+    color: '#BDCABF',
+  },
+  pct: {
+    fontSize: 10,
+    fontFamily: fontFamilies.bold,
+    color: '#F6F7ED',
+  },
+  barTrack: {
+    height: 4,
+    borderRadius: radii.full,
+    backgroundColor: '#476056', // Ring base from MonthlyPaceCard
+    overflow: 'hidden',
+  },
+  barFill: {
+    height: '100%',
+    borderRadius: radii.full,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 2,
+  },
+  metaLeft: {
+    fontSize: 9,
+    fontFamily: fontFamilies.medium,
+    color: '#BDCABF',
+  },
+  metaMuted: {
+    color: 'rgba(189, 202, 191, 0.7)',
+  },
+  metaRight: {
+    fontSize: 9,
+    fontFamily: fontFamilies.bold,
+    color: '#F6F7ED',
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: 'rgba(203, 215, 204, 0.18)',
+    marginVertical: 4,
+  },
+  rentBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    paddingVertical: 1.5,
+    borderRadius: radii.full,
+  },
+  rentBadgeCleared: {
+    backgroundColor: 'rgba(216, 232, 203, 0.2)',
+  },
+  rentBadgePending: {
+    backgroundColor: colors.clay,
+  },
+  rentBadgeText: {
+    fontSize: 8.5,
+    fontFamily: fontFamilies.bold,
+  },
+});
+
+/* ---------- Card styles ---------- */
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.surface,
-    borderRadius: radii.xl,
-    padding: spacing.md,
+    backgroundColor: colors.text, // Signature Deep forest green #183228
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 8,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    padding: 13,
     marginHorizontal: spacing.md,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.line,
-  },
-  cardDark: {
-    backgroundColor: '#1E2C24',
-    borderColor: '#2D3F34',
-  },
-  debtorCard: {
-    backgroundColor: '#FDFCF7',
-    borderColor: '#E7DFCA',
-  },
-  creditorCard: {
-    backgroundColor: '#F6FBF6',
-    borderColor: '#D4EAD6',
-  },
-  settledCard: {
-    backgroundColor: colors.surface,
-    borderColor: colors.line,
+    marginBottom: 6,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.sm,
+    marginBottom: 2,
   },
-  badgeWrapper: {
-    flexDirection: 'row',
+  headerBadge: {
+    paddingVertical: 1,
   },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: radii.sm,
-  },
-  debtorBadge: {
-    backgroundColor: '#F5E6CE',
-  },
-  creditorBadge: {
-    backgroundColor: colors.soft,
-  },
-  statusBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    fontFamily: fontFamilies.numeric,
-    letterSpacing: 0.5,
-    color: colors.text,
+  headerBadgeText: {
+    fontSize: 7.5,
+    letterSpacing: 1.2,
+    fontFamily: fontFamilies.extraBold,
+    textTransform: 'uppercase',
+    color: '#BDCABF',
   },
   breakdownToggle: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingVertical: 1,
+    paddingHorizontal: 4,
   },
   breakdownToggleText: {
-    fontSize: 12,
-    color: colors.accent,
+    fontSize: 10.5,
+    fontFamily: fontFamilies.bold,
+    color: '#BDCABF',
     marginRight: 2,
-    fontWeight: '600',
   },
   amountSection: {
     alignItems: 'center',
-    marginVertical: spacing.sm,
+    marginVertical: 2,
   },
-  amountLabel: {
-    fontSize: 12,
-    color: colors.muted,
+  amountEyebrow: {
+    fontSize: 7.5,
+    lineHeight: 11,
+    letterSpacing: 1.2,
+    fontFamily: fontFamilies.extraBold,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    color: '#BDCABF',
     marginBottom: 2,
+    includeFontPadding: false,
   },
-  amountText: {
-    fontSize: 34,
-    fontFamily: fontFamilies.numeric,
-    letterSpacing: -0.5,
-  },
-  debtorAmount: {
-    color: colors.negative,
-  },
-  creditorAmount: {
-    color: colors.accent,
+  amountValue: {
+    fontSize: 26,
+    lineHeight: 32,
+    fontFamily: fontFamilies.extraBold,
+    color: colors.sun, // Warm gold #F0BF67 — matches MonthlyPaceCard ring accent
+    letterSpacing: -0.8,
+    includeFontPadding: false,
+    textAlign: 'center',
   },
   recipientText: {
-    fontSize: 14,
-    color: colors.muted,
+    fontSize: 11,
+    lineHeight: 15,
+    fontFamily: fontFamilies.medium,
+    color: '#BDCABF',
     marginTop: 2,
+    includeFontPadding: false,
   },
-  breakdownContainer: {
-    backgroundColor: '#F3F6F1',
-    borderRadius: radii.md,
-    padding: spacing.sm,
-    marginVertical: spacing.sm,
+  recipientName: {
+    fontFamily: fontFamilies.bold,
+    color: '#F6F7ED',
   },
-  breakdownContainerDark: {
-    backgroundColor: '#16231B',
+  breakdownBox: {
+    backgroundColor: '#132820',
+    borderRadius: 12,
+    padding: 8,
+    marginVertical: 4,
   },
   breakdownRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 3,
+    paddingVertical: 2,
   },
   breakdownLabel: {
-    fontSize: 12,
-    color: colors.muted,
+    fontSize: 10.5,
+    fontFamily: fontFamilies.medium,
+    color: '#BDCABF',
   },
   breakdownValue: {
-    fontSize: 12,
-    fontFamily: fontFamilies.numeric,
-    color: colors.text,
+    fontSize: 10.5,
+    fontFamily: fontFamilies.bold,
+    color: '#F6F7ED',
   },
   breakdownTotalRow: {
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.line,
-    marginTop: 4,
-    paddingTop: 6,
+    borderTopColor: 'rgba(203, 215, 204, 0.2)',
+    marginTop: 3,
+    paddingTop: 3,
   },
   breakdownTotalLabel: {
-    fontSize: 12,
-    color: colors.text,
+    fontSize: 11,
+    fontFamily: fontFamilies.bold,
+    color: '#F6F7ED',
   },
   breakdownTotalValue: {
-    fontSize: 13,
-    fontFamily: fontFamilies.numeric,
-    color: colors.text,
+    fontSize: 11,
+    fontFamily: fontFamilies.extraBold,
+    color: colors.sun,
   },
   actionsRow: {
     flexDirection: 'row',
-    marginTop: spacing.sm,
-    gap: spacing.sm,
+    gap: 6,
+    marginTop: 5,
+    marginBottom: 2,
   },
-  actionBtn: {
+  upiBtn: {
     flex: 1,
-    height: 44,
-    borderRadius: radii.full,
+    backgroundColor: colors.sun, // Warm gold matching Rhythm chart/accent
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  upiBtn: {
-    backgroundColor: colors.accent,
+    paddingVertical: 8,
+    borderRadius: 10,
   },
   upiBtnText: {
-    fontSize: 14,
-    color: '#FFFFFF',
-    fontWeight: '700',
+    fontFamily: fontFamilies.bold,
+    fontSize: 11.5,
+    color: '#183228',
   },
   paidBtn: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.line,
+    flex: 1,
+    backgroundColor: 'rgba(246, 247, 237, 0.12)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    borderRadius: 10,
   },
   paidBtnText: {
-    fontSize: 14,
-    color: colors.accent,
-    fontWeight: '700',
+    fontFamily: fontFamilies.bold,
+    fontSize: 11.5,
+    color: '#F6F7ED',
   },
   submittedStatusBox: {
     flex: 1,
+    backgroundColor: 'rgba(216, 232, 203, 0.18)',
+    borderRadius: 10,
+    paddingVertical: 7,
+    paddingHorizontal: 10,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.accentSoft,
-    borderRadius: radii.full,
-    height: 44,
   },
   submittedStatusText: {
-    fontSize: 12,
-    color: colors.accent,
-    fontWeight: '600',
-  },
-  creditorNoteBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.accentSoft,
-    borderRadius: radii.md,
-    padding: spacing.sm,
-    marginVertical: spacing.xs,
-  },
-  creditorNoteText: {
-    flex: 1,
-    fontSize: 12,
-    color: colors.text,
-    lineHeight: 16,
+    fontFamily: fontFamilies.bold,
+    fontSize: 10.5,
+    color: '#D8E8CB',
   },
   settledRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: 6,
   },
   settledIconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.accentSoft,
+    width: 42,
+    height: 42,
+    borderRadius: radii.full,
+    backgroundColor: 'rgba(216, 232, 203, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.sm,
   },
   settledTitle: {
     fontSize: 15,
-    color: colors.text,
+    fontFamily: fontFamilies.bold,
+    color: '#F6F7ED',
   },
   settledSubtitle: {
     fontSize: 12,
-    color: colors.muted,
+    fontFamily: fontFamilies.medium,
+    color: '#BDCABF',
     marginTop: 2,
   },
 });
