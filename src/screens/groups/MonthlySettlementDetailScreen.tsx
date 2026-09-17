@@ -20,6 +20,7 @@ import {
   HeroActionSlipCard,
   MonthlyLedgerTable,
   CoordinatorClearingSection,
+  MonthlyHouseholdLedgerSkeleton,
 } from '../../components';
 import { groupsApi } from '../../api/groups';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -106,6 +107,7 @@ export const MonthlySettlementDetailScreen: React.FC<Props> = ({ route, navigati
   }, [loadData]);
 
   const handlePrevMonth = () => {
+    setLedger(null);
     if (month === 1) {
       setMonth(12);
       setYear((y) => y - 1);
@@ -115,6 +117,7 @@ export const MonthlySettlementDetailScreen: React.FC<Props> = ({ route, navigati
   };
 
   const handleNextMonth = () => {
+    setLedger(null);
     if (month === 12) {
       setMonth(1);
       setYear((y) => y + 1);
@@ -317,9 +320,11 @@ export const MonthlySettlementDetailScreen: React.FC<Props> = ({ route, navigati
       />
 
       {/* ========================================================================= */}
-      {/* 1. SHARED LIVING EXPERIENCE (When Monthly Ledger Data is Available)       */}
+      {/* 1. SKELETON LOADING STATE (Mirrors HeroActionSlipCard & Ledger Table)     */}
       {/* ========================================================================= */}
-      {ledger ? (
+      {isLoading && !ledger ? (
+        <MonthlyHouseholdLedgerSkeleton />
+      ) : ledger ? (
         <>
           {/* Hero Action Slip Card (with merged progress gauges) */}
           <HeroActionSlipCard
@@ -357,7 +362,7 @@ export const MonthlySettlementDetailScreen: React.FC<Props> = ({ route, navigati
         </>
       ) : (
         /* ========================================================================= */
-        /* 2. LEGACY FALLBACK (For non-shared living groups or uninitialized ledger)   */
+        /* 2. LEGACY FALLBACK (Only when loaded and no ledger data available)        */
         /* ========================================================================= */
         <>
           <View style={styles.card}>
