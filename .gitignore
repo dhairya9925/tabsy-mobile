@@ -1,20 +1,11 @@
 # ==============================================================================
-# Mobile .gitignore
+# Tabsy Mobile — .gitignore
 # ==============================================================================
 
-# Design exploration temporary files
-design/.cache/
-design/.browser-profile/
-design/.tmp/
-
-# Netlify deployment config (environment-specific)
-design/netlify/
-design/netlify.toml
-
-# Node modules (if any future framework is added)
+# Node modules
 node_modules/
 
-# Build outputs & Expo
+# Expo and Build outputs
 dist/
 build/
 .output/
@@ -23,11 +14,26 @@ android/
 ios/
 *.orig.*
 
-# Environment
+# Environment & secrets
 .env
 .env.*
 !.env.example
 
-# OS files
+# Design exploration temporary files
+design/.cache/
+design/.browser-profile/
+design/.tmp/
+design/netlify/
+design/netlify.toml
+
+# IDE & OS
+.vscode/
+.idea/
 .DS_Store
 Thumbs.db
+*.swp
+*~
+.agents/
+.gemini/
+.codex/
+.cursor/
