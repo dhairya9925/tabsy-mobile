@@ -2,7 +2,7 @@ import { LinkingOptions } from '@react-navigation/native';
 import { RootStackParamList } from './types';
 
 export const linking: LinkingOptions<RootStackParamList> = {
-  prefixes: ['tabsy://', 'splittrack://', 'https://tabsy.app', 'https://splittrack.app'],
+  prefixes: ['tabsy://', 'https://tabsy.app'],
   config: {
     screens: {
       JoinGroupModal: 'join/:groupId',

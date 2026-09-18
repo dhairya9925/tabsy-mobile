@@ -4,14 +4,14 @@ export interface ParsedDeepLink {
 }
 
 /**
- * Parses splittrack deep links into route targets and parameters.
+ * Parses Tabsy deep links into route targets and parameters.
  */
 export function parseDeepLink(url: string): ParsedDeepLink | null {
   if (!url) return null;
 
   // Normalize: remove scheme and leading slashes
   const clean = url
-    .replace(/^(tabsy|splittrack):\/\//i, '')
+    .replace(/^tabsy:\/\//i, '')
     .replace(/^https?:\/\/[^/]+\//i, '')
     .replace(/^\/+/, '');
 

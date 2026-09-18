@@ -1,4 +1,4 @@
-# Expense Manager — mobile design exploration
+# Tabsy — Mobile Design Exploration
 
 Thirteen visual directions with three mobile screens each (39 total). Directions 06–13 use a 393 × 852 pt iPhone canvas. The two supplied HTML references are included as full-size gallery concepts, followed by Sprout and its three low-light variants.
 
@@ -27,7 +27,7 @@ Cashcoded and Duo Streak preserve the character of the supplied references. Spro
 ## Files
 
 - `index.html`, `styles.css`, `designs.js`: editable local gallery and reusable screen-building functions.
-- `splittrack_concept_tab_cashcoded.html`, `splittrack_concept_streak_duocoded.html`: supplied source references, preserved unchanged.
+- `tabsy_concept_tab_cashcoded.html`, `tabsy_concept_streak_duocoded.html`: supplied source references, preserved unchanged.
 - `concept-briefs-07-10.md`: rationale and token notes for the supplied and new directions.
 - `exports/*-board.png`: one comparison board per direction, three screens per board. The latest boards are `cashcoded-board.png`, `duostreak-board.png`, `sprout-board.png`, and `stack-board.png`.
 - `exports/<direction>-1.png`: overview.

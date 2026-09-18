@@ -32,8 +32,8 @@ async function run() {
 
   await page.goto(APP_URL, { waitUntil: 'networkidle2' });
   await page.evaluate((t, u) => {
-    localStorage.setItem('splittrack_access_token', t);
-    localStorage.setItem('splittrack_cached_user', JSON.stringify(u));
+    localStorage.setItem('tabsy_access_token', t);
+    localStorage.setItem('tabsy_cached_user', JSON.stringify(u));
   }, token, user);
 
   await page.goto(APP_URL, { waitUntil: 'networkidle2' });

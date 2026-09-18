@@ -16,8 +16,8 @@ try {
   SecureStore = null;
 }
 
-const TOKEN_KEY = 'splittrack_access_token';
-const USER_KEY = 'splittrack_cached_user';
+const TOKEN_KEY = 'tabsy_access_token';
+const USER_KEY = 'tabsy_cached_user';
 
 let inMemoryToken: string | null = null;
 let inMemoryUser: UserProfile | null = null;
