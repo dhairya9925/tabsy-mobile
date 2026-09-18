@@ -32,17 +32,21 @@ export interface HeroActionSlipCardProps {
   summary?: MonthlyLedgerSummary | null;
   coordinatorSummary?: CoordinatorChecklist | null;
   totalMembers?: number;
+  onFinalizePress?: () => void;
+  isFinalizing?: boolean;
+  canFinalize?: boolean;
+  isFinalized?: boolean;
 }
 
 /** Elegant SVG Donut Progress Dial (Echoes Rhythm MonthlyPaceCard) */
-interface CircularProgressDialProps {
+export interface CircularProgressDialProps {
   percentage: number;
   size?: number;
   label?: string;
   fillColor?: string;
 }
 
-const CircularProgressDial: React.FC<CircularProgressDialProps> = ({
+export const CircularProgressDial: React.FC<CircularProgressDialProps> = ({
   percentage,
   size = 50,
   label = 'COLLECTED',
@@ -109,6 +113,10 @@ export const HeroActionSlipCard: React.FC<HeroActionSlipCardProps> = ({
   summary,
   coordinatorSummary,
   totalMembers = 0,
+  onFinalizePress,
+  isFinalizing = false,
+  canFinalize = false,
+  isFinalized = false,
 }) => {
   const [showBreakdown, setShowBreakdown] = useState(false);
 
@@ -176,23 +184,34 @@ export const HeroActionSlipCard: React.FC<HeroActionSlipCardProps> = ({
         </View>
 
         <View style={styles.statusItemRight}>
-          <Building2 size={11} color="#BDCABF" style={{ marginRight: 4 }} />
-          <SproutText style={styles.statusLabelRight}>Rent:</SproutText>
-          <View
-            style={[
-              styles.rentPill,
-              isRentCleared ? styles.rentPillCleared : styles.rentPillPending,
-            ]}
-          >
-            {isRentCleared ? (
-              <CheckCircle2 size={9} color="#183228" style={{ marginRight: 2 }} />
-            ) : (
-              <AlertCircle size={9} color="#183228" style={{ marginRight: 2 }} />
-            )}
-            <SproutText style={styles.rentPillText} weight="700">
-              {isRentCleared ? 'Paid' : 'Pending'}
-            </SproutText>
-          </View>
+          {isFinalized ? (
+            <View style={styles.finalizedPill}>
+              <CheckCircle2 size={9} color="#183228" style={{ marginRight: 3 }} />
+              <SproutText style={styles.finalizedPillText} weight="700">
+                Finalized
+              </SproutText>
+            </View>
+          ) : (
+            <>
+              <Building2 size={11} color="#BDCABF" style={{ marginRight: 4 }} />
+              <SproutText style={styles.statusLabelRight}>Rent:</SproutText>
+              <View
+                style={[
+                  styles.rentPill,
+                  isRentCleared ? styles.rentPillCleared : styles.rentPillPending,
+                ]}
+              >
+                {isRentCleared ? (
+                  <CheckCircle2 size={9} color="#183228" style={{ marginRight: 2 }} />
+                ) : (
+                  <AlertCircle size={9} color="#183228" style={{ marginRight: 2 }} />
+                )}
+                <SproutText style={styles.rentPillText} weight="700">
+                  {isRentCleared ? 'Paid' : 'Pending'}
+                </SproutText>
+              </View>
+            </>
+          )}
         </View>
       </View>
     );
@@ -328,6 +347,28 @@ export const HeroActionSlipCard: React.FC<HeroActionSlipCardProps> = ({
           )}
         </View>
 
+        {canFinalize && !isFinalized && onFinalizePress && (
+          <View style={styles.finalizeBtnWrap}>
+            <TouchableOpacity
+              style={styles.finalizeBtn}
+              onPress={onFinalizePress}
+              disabled={isFinalizing}
+              activeOpacity={0.85}
+            >
+              {isFinalizing ? (
+                <ActivityIndicator size="small" color="#183228" />
+              ) : (
+                <>
+                  <CheckCircle2 size={15} color="#183228" style={{ marginRight: 6 }} />
+                  <SproutText style={styles.finalizeBtnText} weight="800">
+                    Finalize My Expenses
+                  </SproutText>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Unified Bottom Status Bar */}
         {renderStatusBar()}
       </View>
@@ -419,6 +460,28 @@ export const HeroActionSlipCard: React.FC<HeroActionSlipCardProps> = ({
           </View>
         )}
 
+        {canFinalize && !isFinalized && onFinalizePress && (
+          <View style={styles.finalizeBtnWrap}>
+            <TouchableOpacity
+              style={styles.finalizeBtn}
+              onPress={onFinalizePress}
+              disabled={isFinalizing}
+              activeOpacity={0.85}
+            >
+              {isFinalizing ? (
+                <ActivityIndicator size="small" color="#183228" />
+              ) : (
+                <>
+                  <CheckCircle2 size={15} color="#183228" style={{ marginRight: 6 }} />
+                  <SproutText style={styles.finalizeBtnText} weight="800">
+                    Finalize My Expenses
+                  </SproutText>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Unified Bottom Status Bar */}
         {renderStatusBar()}
       </View>
@@ -428,30 +491,66 @@ export const HeroActionSlipCard: React.FC<HeroActionSlipCardProps> = ({
   // 3. SETTLED STATE: All squared away
   return (
     <View style={[styles.card, shadows.card]}>
+      {/* Header Eyebrow Row */}
+      <View style={styles.cardHeader}>
+        <SproutText style={styles.headerBadgeText} weight="800">
+          {monthName.toUpperCase()} {year} · SETTLEMENT
+        </SproutText>
+        <View style={styles.settledPill}>
+          <CheckCircle2 size={10} color="#183228" style={{ marginRight: 3 }} />
+          <SproutText style={styles.settledPillText} weight="700">
+            {isFinalized ? 'LOCKED' : 'BALANCED'}
+          </SproutText>
+        </View>
+      </View>
+
+      {/* Hero Body Row */}
       <View style={styles.heroBodyRow}>
-        <View style={styles.settledRow}>
-          <View style={styles.settledIconCircle}>
-            <CheckCircle2 size={20} color="#D8E8CB" />
-          </View>
-          <View style={{ flex: 1, paddingRight: 8 }}>
-            <SproutText style={styles.settledTitle} weight="800">
-              {monthName} {year} All Squared Away
-            </SproutText>
-            <SproutText style={styles.settledSubtitle}>
-              Your share of rent and expenses is completely cleared.
-            </SproutText>
-          </View>
+        <View style={styles.heroLeftCol}>
+          <SproutText style={styles.amountEyebrow} weight="800">
+            {isFinalized ? 'CYCLE RESOLVED' : 'CURRENT STATUS'}
+          </SproutText>
+          <SproutText style={styles.settledHeroTitle} weight="800">
+            All Squared Away
+          </SproutText>
+          <SproutText style={styles.settledHeroSubtitle}>
+            {isFinalized
+              ? 'Your share of rent and expenses is completely cleared.'
+              : 'Your balance is cleared. Finalize below to lock this cycle.'}
+          </SproutText>
         </View>
 
         {summary && (
           <CircularProgressDial
             percentage={summary.collection_progress_pct || 100}
-            size={50}
+            size={52}
             label="COLLECTED"
-            fillColor="#D8E8CB"
+            fillColor="#86C49A"
           />
         )}
       </View>
+
+      {canFinalize && !isFinalized && onFinalizePress && (
+        <View style={styles.finalizeBtnWrap}>
+          <TouchableOpacity
+            style={styles.finalizeBtn}
+            onPress={onFinalizePress}
+            disabled={isFinalizing}
+            activeOpacity={0.85}
+          >
+            {isFinalizing ? (
+              <ActivityIndicator size="small" color="#183228" />
+            ) : (
+              <>
+                <CheckCircle2 size={15} color="#183228" style={{ marginRight: 6 }} />
+                <SproutText style={styles.finalizeBtnText} weight="800">
+                  Finalize My Expenses
+                </SproutText>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Unified Bottom Status Bar */}
       {renderStatusBar()}
@@ -508,15 +607,15 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 8,
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
-    padding: 13,
+    padding: 16,
     marginHorizontal: 0,
-    marginBottom: 6,
+    marginBottom: 8,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 2,
+    marginBottom: 6,
   },
   headerBadgeText: {
     fontSize: 7.5,
@@ -542,11 +641,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginTop: 2,
-    marginBottom: 6,
+    marginBottom: 8,
   },
   heroLeftCol: {
     flex: 1,
-    paddingRight: 6,
+    paddingRight: 10,
   },
   amountEyebrow: {
     fontSize: 7.5,
@@ -617,8 +716,71 @@ const styles = StyleSheet.create({
   },
   actionsRow: {
     flexDirection: 'row',
-    gap: 6,
-    marginBottom: 3,
+    gap: 8,
+    marginBottom: 4,
+  },
+  finalizeBtnWrap: {
+    marginTop: 6,
+    marginBottom: 8,
+  },
+  finalizeBtn: {
+    backgroundColor: '#86C49A',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 44,
+    borderRadius: 12,
+    width: '100%',
+  },
+  finalizeBtnText: {
+    fontFamily: fontFamilies.extraBold,
+    fontSize: 13,
+    color: '#183228',
+    letterSpacing: -0.2,
+  },
+  settledPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#D8E8CB', // Tender leaf / beige used for Paid
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: radii.full,
+  },
+  settledPillText: {
+    fontSize: 8.5,
+    letterSpacing: 0.8,
+    fontFamily: fontFamilies.bold,
+    color: '#183228',
+  },
+  settledHeroTitle: {
+    fontSize: 22,
+    lineHeight: 28,
+    fontFamily: fontFamilies.extraBold,
+    color: '#F6F7ED',
+    letterSpacing: -0.6,
+    marginTop: 1,
+    includeFontPadding: false,
+  },
+  settledHeroSubtitle: {
+    fontSize: 11.5,
+    lineHeight: 16,
+    fontFamily: fontFamilies.medium,
+    color: '#BDCABF',
+    marginTop: 3,
+    includeFontPadding: false,
+  },
+  finalizedPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#D8E8CB',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  finalizedPillText: {
+    fontSize: 9,
+    fontFamily: fontFamilies.bold,
+    color: '#183228',
   },
   upiBtn: {
     flex: 1,

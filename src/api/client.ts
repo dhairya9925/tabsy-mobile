@@ -44,7 +44,19 @@ export function getDevHost(): string {
   return 'localhost';
 }
 
-function resolveApiBaseUrl(): string {
+export function resolveApiBaseUrl(): string {
+  const envUrl = process.env.EXPO_PUBLIC_API_URL?.replace(/^["']|["']$/g, '').trim();
+  if (envUrl) {
+    // If explicitly pointing to localhost on native mobile, convert to dev workstation IP
+    if (isReactNative && (envUrl.includes('localhost') || envUrl.includes('127.0.0.1'))) {
+      const devHost = getDevHost();
+      if (devHost && devHost !== 'localhost' && devHost !== '127.0.0.1') {
+        return envUrl.replace(/localhost|127\.0\.0\.1/, devHost);
+      }
+    }
+    return envUrl;
+  }
+
   if (isDev) {
     if (isWebLocalhost) {
       return 'http://localhost:8000';
@@ -52,11 +64,13 @@ function resolveApiBaseUrl(): string {
     const host = getDevHost();
     return `http://${host}:8000`;
   }
-  return process.env.EXPO_PUBLIC_API_URL || 'https://65.1.93.155.sslip.io';
+  return 'https://65.1.93.155.sslip.io';
 }
 
 const rawBaseUrl = resolveApiBaseUrl();
 const API_BASE_URL = rawBaseUrl.replace(/\/+$/, '');
+
+console.log(`[Tabsy API] Base URL resolved to: ${API_BASE_URL}`);
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -94,32 +108,35 @@ apiClient.interceptors.response.use(
   async (error: AxiosError<any>) => {
     const config = error.config as any;
 
-    // In development mode on physical devices, if a request fails with a network error
-    // (e.g. adb reverse dropped or Wi-Fi route changed), attempt a 1-time fallback
-    // between localhost:8000 and the detected dev host IP on port 8000.
+    // In development mode on physical devices, ONLY if using local dev server (port 8000/localhost)
+    // attempt a 1-time fallback between localhost:8000 and the detected dev host IP on port 8000.
     if (isDev && config && !config._isRetry && (!error.response || error.message === 'Network Error')) {
-      config._isRetry = true;
       const currentBase = config.baseURL || API_BASE_URL;
-      const devHost = getDevHost();
-      let fallbackBase = '';
+      const isLocalHost = currentBase.includes(':8000') || currentBase.includes('localhost') || currentBase.includes('127.0.0.1');
 
-      if (currentBase.includes('localhost') || currentBase.includes('127.0.0.1')) {
-        if (devHost && devHost !== 'localhost' && devHost !== '127.0.0.1') {
-          fallbackBase = `http://${devHost}:8000`;
+      if (isLocalHost) {
+        config._isRetry = true;
+        const devHost = getDevHost();
+        let fallbackBase = '';
+
+        if (currentBase.includes('localhost') || currentBase.includes('127.0.0.1')) {
+          if (devHost && devHost !== 'localhost' && devHost !== '127.0.0.1') {
+            fallbackBase = `http://${devHost}:8000`;
+          } else {
+            fallbackBase = 'http://10.254.155.231:8000';
+          }
         } else {
-          fallbackBase = 'http://10.254.155.231:8000';
+          fallbackBase = 'http://localhost:8000';
         }
-      } else {
-        fallbackBase = 'http://localhost:8000';
-      }
 
-      if (fallbackBase && fallbackBase !== currentBase) {
-        config.baseURL = fallbackBase;
-        apiClient.defaults.baseURL = fallbackBase;
-        try {
-          return await apiClient.request(config);
-        } catch {
-          // Continue to standard error extraction below
+        if (fallbackBase && fallbackBase !== currentBase) {
+          config.baseURL = fallbackBase;
+          apiClient.defaults.baseURL = fallbackBase;
+          try {
+            return await apiClient.request(config);
+          } catch {
+            // Continue to standard error extraction below
+          }
         }
       }
     }
