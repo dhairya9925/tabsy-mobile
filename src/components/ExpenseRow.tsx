@@ -11,6 +11,7 @@ import {
   ShoppingBag,
   ReceiptText,
   Sparkles,
+  Clock,
 } from 'lucide-react-native';
 
 export interface ExpenseRowProps {
@@ -84,6 +85,14 @@ export const ExpenseRow: React.FC<ExpenseRowProps> = ({ expense, onPress }) => {
         <SproutText style={styles.amount}>
           {formatCurrency(expense.amount)}
         </SproutText>
+        {expense.is_pending_sync && (
+          <View style={styles.pendingBadge}>
+            <Clock size={8.5} color="#7A3E2D" strokeWidth={2.4} style={{ marginRight: 2 }} />
+            <SproutText style={styles.pendingText} weight="700">
+              Pending
+            </SproutText>
+          </View>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -130,4 +139,18 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#183228',
   },
+  pendingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F4DACD', // Soft clay/peach
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 4,
+    marginTop: 2,
+  },
+  pendingText: {
+    fontSize: 8.5,
+    color: '#7A3E2D',
+  },
 });
+

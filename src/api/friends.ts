@@ -11,11 +11,29 @@ import {
   CreateShadowProfileResponse,
 } from '../types';
 import { toLocalDateString } from '../utils/formatters';
+import { cacheService, CACHE_KEYS } from '../services/offline/cacheService';
+import { outboxService } from '../services/offline/outboxService';
+import { networkService } from '../services/offline/networkService';
 
 export const friendsApi = {
   getFriends: async (): Promise<FriendRecord[]> => {
-    const res: any = await apiClient.get('/api/v1/friends/?status=accepted');
-    return Array.isArray(res) ? res : [];
+    if (!networkService.isOnline()) {
+      const cached = await cacheService.get<FriendRecord[]>(CACHE_KEYS.FRIENDS_LIST);
+      if (Array.isArray(cached) && cached.length > 0) return cached;
+    }
+
+    try {
+      const res: any = await apiClient.get('/api/v1/friends/?status=accepted');
+      const friends = Array.isArray(res) ? res : [];
+      if (friends.length > 0) {
+        await cacheService.set(CACHE_KEYS.FRIENDS_LIST, friends);
+      }
+      return friends;
+    } catch (err) {
+      const cached = await cacheService.get<FriendRecord[]>(CACHE_KEYS.FRIENDS_LIST);
+      if (Array.isArray(cached) && cached.length > 0) return cached;
+      return [];
+    }
   },
 
   getPendingRequests: async (): Promise<FriendRecord[]> => {
@@ -29,8 +47,23 @@ export const friendsApi = {
   },
 
   getFriendBalances: async (): Promise<FriendBalance[]> => {
-    const res: any = await apiClient.get('/api/v1/friends/balances');
-    return Array.isArray(res) ? res : [];
+    if (!networkService.isOnline()) {
+      const cached = await cacheService.get<FriendBalance[]>(CACHE_KEYS.FRIEND_BALANCES);
+      if (Array.isArray(cached) && cached.length > 0) return cached;
+    }
+
+    try {
+      const res: any = await apiClient.get('/api/v1/friends/balances');
+      const balances = Array.isArray(res) ? res : [];
+      if (balances.length > 0) {
+        await cacheService.set(CACHE_KEYS.FRIEND_BALANCES, balances);
+      }
+      return balances;
+    } catch (err) {
+      const cached = await cacheService.get<FriendBalance[]>(CACHE_KEYS.FRIEND_BALANCES);
+      if (Array.isArray(cached) && cached.length > 0) return cached;
+      return [];
+    }
   },
 
   searchUserByEmail: async (email: string): Promise<ProfileSearchResult | null> => {
@@ -85,8 +118,47 @@ export const friendsApi = {
     friendId: string,
     data: FriendExpenseCreate
   ): Promise<any> => {
-    const res: any = await apiClient.post(`/api/v1/friends/${friendId}/expenses`, data);
-    return res;
+    if (!networkService.isOnline()) {
+      const tempId = outboxService.generateTempId('temp-frd-exp');
+      await outboxService.enqueue('create_friend_expense', { friendId, payload: data }, tempId);
+      await cacheService.invalidate(CACHE_KEYS.FRIENDS_LIST);
+      await cacheService.invalidate(CACHE_KEYS.FRIEND_BALANCES);
+      return {
+        id: tempId,
+        friend_id: friendId,
+        amount: data.amount,
+        category: data.category,
+        note: data.note,
+        expense_date: data.expense_date,
+        paid_by: data.paid_by,
+        split_type: data.split_type,
+        created_at: new Date().toISOString(),
+      };
+    }
+
+    try {
+      const res: any = await apiClient.post(`/api/v1/friends/${friendId}/expenses`, data);
+      await cacheService.invalidate(CACHE_KEYS.FRIENDS_LIST);
+      await cacheService.invalidate(CACHE_KEYS.FRIEND_BALANCES);
+      return res;
+    } catch (err: any) {
+      if (err.message === 'Network Error' || !err.response) {
+        const tempId = outboxService.generateTempId('temp-frd-exp');
+        await outboxService.enqueue('create_friend_expense', { friendId, payload: data }, tempId);
+        return {
+          id: tempId,
+          friend_id: friendId,
+          amount: data.amount,
+          category: data.category,
+          note: data.note,
+          expense_date: data.expense_date,
+          paid_by: data.paid_by,
+          split_type: data.split_type,
+          created_at: new Date().toISOString(),
+        };
+      }
+      throw err;
+    }
   },
 
   updateFriendExpense: async (

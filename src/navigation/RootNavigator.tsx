@@ -20,7 +20,7 @@ import { EditProfileModal } from '../screens/profile/EditProfileModal';
 import { SplashScreen } from '../screens/auth/SplashScreen';
 import { useAuthStore } from '../store/useAuthStore';
 import { linking } from './linking';
-import { ErrorBoundary } from '../components';
+import { ErrorBoundary, OfflineSyncBanner } from '../components';
 import { colors } from '../theme';
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
@@ -36,6 +36,7 @@ export const RootNavigator: React.FC = () => {
   return (
     <ErrorBoundary>
       <NavigationContainer linking={linking}>
+        {isAuthenticated && <OfflineSyncBanner />}
         <RootStack.Navigator
           screenOptions={{
             headerShown: false,

@@ -53,6 +53,8 @@ export interface PersonalExpense {
   date?: string; // UI helper alias for expense_date
   created_at: string;
   updated_at: string;
+  is_pending_sync?: boolean;
+  sync_error?: string | null;
 }
 
 export interface PersonalExpenseCreate {
@@ -572,3 +574,5 @@ export interface MonthlyLedgerLockPayload {
   rollover_unclaimed_refunds: boolean;
   note?: string | null;
 }
+
+export * from './offline';

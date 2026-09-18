@@ -28,6 +28,7 @@ import { friendsApi } from '../../api/friends';
 import { groupsApi } from '../../api/groups';
 import { useAuthStore } from '../../store/useAuthStore';
 import { Category, FriendRecord, Group, GroupMember } from '../../types';
+import { networkService } from '../../services/offline/networkService';
 import { toLocalDateString, formatCurrencyExact, getInitials } from '../../utils/formatters';
 import { splitEqual } from '../../utils/money';
 import { RootStackParamList } from '../../navigation/types';
@@ -248,13 +249,15 @@ export const AddExpenseModal: React.FC = () => {
       const catSlug = selectedCat?.id || 'other';
 
       if (mode === 'personal') {
-        await expensesApi.createPersonalExpense({
+        const created = await expensesApi.createPersonalExpense({
           amount: numericAmount,
           category: catSlug,
           note: description.trim() || undefined,
           expense_date: dateStr,
         });
-        setSuccessMessage('Entry saved to journal');
+        setSuccessMessage(
+          created.is_pending_sync ? 'Saved offline · Will sync when online' : 'Entry saved to journal'
+        );
         setTimeout(() => navigation.goBack(), 450);
       } else if (mode === 'friend') {
         if (!selectedFriendId) {
@@ -276,7 +279,9 @@ export const AddExpenseModal: React.FC = () => {
           paid_by: payerId,
           split_type: splitType,
         });
-        setSuccessMessage('1-on-1 expense recorded');
+        setSuccessMessage(
+          !networkService.isOnline() ? 'Saved offline · Will sync when online' : '1-on-1 expense recorded'
+        );
         setTimeout(() => navigation.goBack(), 450);
       } else if (mode === 'group') {
         if (!selectedGroupId) {
@@ -304,7 +309,9 @@ export const AddExpenseModal: React.FC = () => {
           paid_by: groupPaidByUserId || (currentUser?.user_id || currentUser?.id),
           splits,
         });
-        setSuccessMessage('Group expense recorded');
+        setSuccessMessage(
+          !networkService.isOnline() ? 'Saved offline · Will sync when online' : 'Group expense recorded'
+        );
         setTimeout(() => navigation.goBack(), 450);
       }
     } catch (err: any) {

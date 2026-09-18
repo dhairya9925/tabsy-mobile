@@ -17,6 +17,7 @@ import {
   MonthPickerSheet,
 } from '../../components';
 import { expensesApi } from '../../api/expenses';
+import { cacheService, CACHE_KEYS, outboxService } from '../../services/offline';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useThemeStore } from '../../store/useThemeStore';
 import { PersonalExpense, Category } from '../../types';
@@ -61,7 +62,10 @@ export const JournalScreen: React.FC<Props> = ({ navigation }) => {
   const [errorMessage, setErrorMessage] = useState('');
 
   const loadData = useCallback(async () => {
-    setIsLoading(true);
+    // Only show skeleton on cold boot if no cached expenses exist
+    if (expenses.length === 0) {
+      setIsLoading(true);
+    }
     setErrorMessage('');
     try {
       const [expData, catData] = await Promise.all([
@@ -75,6 +79,26 @@ export const JournalScreen: React.FC<Props> = ({ navigation }) => {
     } finally {
       setIsLoading(false);
     }
+  }, [expenses.length]);
+
+  // Fast-path: Instant 0ms cache hydration on initial mount
+  useEffect(() => {
+    cacheService.get<PersonalExpense[]>(CACHE_KEYS.PERSONAL_EXPENSES).then((cached) => {
+      if (Array.isArray(cached) && cached.length > 0) {
+        setExpenses(cached);
+      }
+    });
+
+    // Reactively update when outbox items are enqueued or synced
+    const unsub = outboxService.subscribe(() => {
+      cacheService.get<PersonalExpense[]>(CACHE_KEYS.PERSONAL_EXPENSES).then((cached) => {
+        if (Array.isArray(cached)) {
+          setExpenses(cached);
+        }
+      });
+    });
+
+    return unsub;
   }, []);
 
   useEffect(() => {

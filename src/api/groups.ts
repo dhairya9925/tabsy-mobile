@@ -19,12 +19,30 @@ import {
   MonthlyLedgerDisbursement,
   MonthlyLedgerLockPayload,
 } from '../types';
+import { cacheService, CACHE_KEYS } from '../services/offline/cacheService';
+import { outboxService } from '../services/offline/outboxService';
+import { networkService } from '../services/offline/networkService';
 
 export const groupsApi = {
   /** List all groups the authenticated user belongs to */
   async getGroups(): Promise<Group[]> {
-    const res: any = await apiClient.get('/api/v1/groups/');
-    return Array.isArray(res) ? res : [];
+    if (!networkService.isOnline()) {
+      const cached = await cacheService.get<Group[]>(CACHE_KEYS.GROUPS_LIST);
+      if (Array.isArray(cached) && cached.length > 0) return cached;
+    }
+
+    try {
+      const res: any = await apiClient.get('/api/v1/groups/');
+      const groups = Array.isArray(res) ? res : [];
+      if (groups.length > 0) {
+        await cacheService.set(CACHE_KEYS.GROUPS_LIST, groups);
+      }
+      return groups;
+    } catch (err) {
+      const cached = await cacheService.get<Group[]>(CACHE_KEYS.GROUPS_LIST);
+      if (Array.isArray(cached) && cached.length > 0) return cached;
+      return [];
+    }
   },
 
   /** Get single group details */
@@ -88,8 +106,49 @@ export const groupsApi = {
 
   /** Create a group expense with splits */
   async createGroupExpense(id: string, payload: GroupExpenseCreate): Promise<GroupExpense> {
-    const res: any = await apiClient.post(`/api/v1/groups/${id}/expenses`, payload);
-    return res;
+    if (!networkService.isOnline()) {
+      const tempId = outboxService.generateTempId('temp-grp-exp');
+      await outboxService.enqueue('create_group_expense', { groupId: id, payload }, tempId);
+      await cacheService.invalidate(CACHE_KEYS.GROUPS_LIST);
+      await cacheService.invalidatePattern(`cache:monthly_ledger:${id}`);
+      return {
+        id: tempId,
+        group_id: id,
+        paid_by: payload.paid_by,
+        amount: payload.amount,
+        category: payload.category,
+        note: payload.note,
+        expense_date: payload.expense_date,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        splits: payload.splits || [],
+      } as any;
+    }
+
+    try {
+      const res: any = await apiClient.post(`/api/v1/groups/${id}/expenses`, payload);
+      await cacheService.invalidate(CACHE_KEYS.GROUPS_LIST);
+      await cacheService.invalidatePattern(`cache:monthly_ledger:${id}`);
+      return res;
+    } catch (err: any) {
+      if (err.message === 'Network Error' || !err.response) {
+        const tempId = outboxService.generateTempId('temp-grp-exp');
+        await outboxService.enqueue('create_group_expense', { groupId: id, payload }, tempId);
+        return {
+          id: tempId,
+          group_id: id,
+          paid_by: payload.paid_by,
+          amount: payload.amount,
+          category: payload.category,
+          note: payload.note,
+          expense_date: payload.expense_date,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          splits: payload.splits || [],
+        } as any;
+      }
+      throw err;
+    }
   },
 
   /** Update a group expense */
@@ -109,8 +168,24 @@ export const groupsApi = {
 
   /** Get simplified peer-to-peer group balances */
   async getGroupBalances(id: string): Promise<GroupBalance[]> {
-    const res: any = await apiClient.get(`/api/v1/groups/${id}/balances`);
-    return Array.isArray(res) ? res : [];
+    const cacheKey = `cache:group_balances:${id}`;
+    if (!networkService.isOnline()) {
+      const cached = await cacheService.get<GroupBalance[]>(cacheKey);
+      if (Array.isArray(cached) && cached.length > 0) return cached;
+    }
+
+    try {
+      const res: any = await apiClient.get(`/api/v1/groups/${id}/balances`);
+      const balances = Array.isArray(res) ? res : [];
+      if (balances.length > 0) {
+        await cacheService.set(cacheKey, balances);
+      }
+      return balances;
+    } catch (err) {
+      const cached = await cacheService.get<GroupBalance[]>(cacheKey);
+      if (Array.isArray(cached) && cached.length > 0) return cached;
+      return [];
+    }
   },
 
   /** Settle balances between two members */
@@ -158,10 +233,22 @@ export const groupsApi = {
 
   /** Shared Living: Get complete Monthly Household Ledger */
   async getMonthlyLedger(groupId: string, month: number, year: number): Promise<MonthlyLedgerResponse | null> {
+    const cacheKey = CACHE_KEYS.MONTHLY_LEDGER(groupId, year, month);
+
+    if (!networkService.isOnline()) {
+      const cached = await cacheService.get<MonthlyLedgerResponse>(cacheKey);
+      if (cached) return cached;
+    }
+
     try {
       const res: any = await apiClient.get(`/api/v1/groups/${groupId}/monthly-ledger?month=${month}&year=${year}`);
+      if (res) {
+        await cacheService.set(cacheKey, res);
+      }
       return res || null;
     } catch (err: any) {
+      const cached = await cacheService.get<MonthlyLedgerResponse>(cacheKey);
+      if (cached) return cached;
       console.log('[groupsApi.getMonthlyLedger] non-fatal:', err?.message || err);
       return null;
     }

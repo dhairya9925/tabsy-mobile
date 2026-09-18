@@ -36,3 +36,4 @@ export * from './CoordinatorClearingSection';
 export * from './WhoOwesWhomSection';
 export * from './JoinGroupPopup';
 export * from './ShareGroupSheet';
+export * from './OfflineSyncBanner';
