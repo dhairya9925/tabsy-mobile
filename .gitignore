@@ -37,3 +37,11 @@ Thumbs.db
 .gemini/
 .codex/
 .cursor/
+
+# Agent & Planning Documents (local only)
+Decision.md
+AGENTS.md
+FUTURE_SCOPE.md
+design/concept-briefs-07-10.md
+design/GOOGLE_SHEETS_SETUP.md
+design/Mobile app Aesthetics description.md
