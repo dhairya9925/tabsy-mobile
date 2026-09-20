@@ -26,6 +26,12 @@ export type AuthStackParamList = {
   Welcome: undefined;
   Login: undefined;
   Signup: undefined;
+  AvatarSelect: {
+    email: string;
+    password: string;
+    displayName?: string;
+    phone?: string;
+  };
 };
 
 export type RootStackParamList = {

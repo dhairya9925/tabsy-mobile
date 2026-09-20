@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
+  Image,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { colors, radii, spacing, shadows } from '../../theme';
@@ -19,7 +21,8 @@ import {
 } from '../../components';
 import { useAuthStore } from '../../store/useAuthStore';
 import { authApi } from '../../api/auth';
-import { ArrowLeft, X, User, Image as ImageIcon } from 'lucide-react-native';
+import { ArrowLeft, X, User, Image as ImageIcon, Check } from 'lucide-react-native';
+import { AVATAR_OPTIONS } from '../auth/AvatarSelectionScreen';
 
 export const EditProfileModal: React.FC = () => {
   const navigation = useNavigation();
@@ -89,10 +92,44 @@ export const EditProfileModal: React.FC = () => {
 
       {/* Avatar Preview */}
       <View style={styles.previewSection}>
-        <AvatarCircle name={previewName} size={76} />
+        <AvatarCircle avatarUrl={avatarUrl} name={previewName} size={80} />
         <SproutText variant="caption" color={colors.muted} style={styles.previewHint}>
-          Initials are generated automatically from your display name
+          {avatarUrl ? 'Custom avatar selected' : 'Initials are generated automatically from your name'}
         </SproutText>
+      </View>
+
+      {/* Quick Avatar Presets */}
+      <View style={styles.presetContainer}>
+        <SproutText variant="eyebrow" color={colors.accent} style={styles.presetTitle}>
+          CHOOSE AN AVATAR PRESET
+        </SproutText>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.presetScroll}
+        >
+          {AVATAR_OPTIONS.map((item) => {
+            const isSelected = avatarUrl === item.url;
+            return (
+              <TouchableOpacity
+                key={item.id}
+                activeOpacity={0.8}
+                onPress={() => setAvatarUrl(item.url)}
+                style={[
+                  styles.presetItem,
+                  isSelected && styles.presetItemSelected,
+                ]}
+              >
+                <Image source={{ uri: item.url }} style={styles.presetImage} />
+                {isSelected && (
+                  <View style={styles.presetCheck}>
+                    <Check size={10} color={colors.surface} strokeWidth={3} />
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
       </View>
 
       {/* Form Fields */}
@@ -168,6 +205,48 @@ const styles = StyleSheet.create({
   previewHint: {
     marginTop: spacing.sm,
     textAlign: 'center',
+  },
+  presetContainer: {
+    marginBottom: spacing.lg,
+  },
+  presetTitle: {
+    fontSize: 10,
+    letterSpacing: 0.8,
+    marginBottom: spacing.xs + 2,
+  },
+  presetScroll: {
+    gap: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  presetItem: {
+    position: 'relative',
+    padding: 2,
+    borderRadius: 26,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  presetItemSelected: {
+    borderColor: colors.accent,
+    transform: [{ scale: 1.05 }],
+  },
+  presetImage: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: colors.surface,
+  },
+  presetCheck: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: colors.surface,
   },
   formCard: {
     backgroundColor: colors.surface,
