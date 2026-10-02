@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Image, StyleSheet, ViewStyle, TouchableOpacity } from 'react-native';
 import { colors, radii } from '../theme';
 import { SproutText } from './SproutText';
@@ -21,13 +21,29 @@ export const AvatarCircle: React.FC<AvatarCircleProps> = ({
   onPress,
   style,
 }) => {
+  const [imageError, setImageError] = useState(false);
   const initials = getInitials(name, email);
 
+  useEffect(() => {
+    setImageError(false);
+  }, [avatarUrl]);
+
+  const hasValidUrl = Boolean(
+    avatarUrl &&
+    typeof avatarUrl === 'string' &&
+    avatarUrl.trim().length > 0 &&
+    (avatarUrl.startsWith('http://') ||
+      avatarUrl.startsWith('https://') ||
+      avatarUrl.startsWith('data:') ||
+      avatarUrl.startsWith('file://'))
+  );
+
   const renderCircle = () => {
-    if (avatarUrl) {
+    if (hasValidUrl && !imageError) {
       return (
         <Image
-          source={{ uri: avatarUrl }}
+          source={{ uri: avatarUrl!.trim() }}
+          onError={() => setImageError(true)}
           style={[
             styles.image,
             { width: size, height: size, borderRadius: size / 2 },
@@ -51,7 +67,12 @@ export const AvatarCircle: React.FC<AvatarCircleProps> = ({
           variant="subtitle"
           color={colors.text}
           weight="800"
-          style={{ fontSize: size * 0.38 }}
+          style={{
+            fontSize: Math.round(size * 0.38),
+            lineHeight: Math.round(size * 0.44),
+            textAlign: 'center',
+            includeFontPadding: false,
+          }}
         >
           {initials}
         </SproutText>
@@ -81,8 +102,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.sun,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#E6D3A3',
+    overflow: 'hidden',
   },
   image: {
     backgroundColor: colors.sun,
+    borderWidth: 1.5,
+    borderColor: '#E6D3A3',
+    overflow: 'hidden',
   },
 });
+
