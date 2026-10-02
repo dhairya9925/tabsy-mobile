@@ -19,7 +19,7 @@ import { useBudgetStore } from '../../store/useBudgetStore';
 import { expensesApi } from '../../api/expenses';
 import { DashboardSummary, PersonalExpense } from '../../types';
 import { getCurrentWeekDays, formatMonthYear } from '../../utils/formatters';
-import { PlusCircle } from 'lucide-react-native';
+import { PlusCircle, Sparkles } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
@@ -98,6 +98,14 @@ export const RhythmScreen: React.FC = () => {
         </View>
 
         <View style={styles.headerRight}>
+          <TouchableOpacity
+            style={styles.aiButton}
+            onPress={() => navigation.navigate('AIAgent')}
+            accessibilityLabel="Open Tabsy AI Assistant"
+            activeOpacity={0.75}
+          >
+            <Sparkles size={17} color={colors.accent} strokeWidth={2.2} />
+          </TouchableOpacity>
           <AvatarCircle
             name={user?.display_name}
             email={user?.email}
@@ -214,7 +222,19 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   headerRight: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.xs + 2,
+  },
+  aiButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FDF6E2',
+    borderColor: '#E6D3A3',
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   sectionHeader: {
     flexDirection: 'row',

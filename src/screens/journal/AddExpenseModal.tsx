@@ -38,6 +38,8 @@ import {
   CheckCheck,
   Users,
   UserCheck,
+  Sparkles,
+  ChevronRight,
 } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -334,6 +336,26 @@ export const AddExpenseModal: React.FC = () => {
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={styles.scrollContent}
         >
+          {/* AI Assistant Quick Entry Banner */}
+          <TouchableOpacity
+            style={styles.aiQuickBanner}
+            onPress={() => {
+              navigation.goBack();
+              rootNavigation.navigate('AIAgent');
+            }}
+            activeOpacity={0.8}
+          >
+            <View style={styles.aiQuickLeft}>
+              <View style={styles.aiQuickIcon}>
+                <Sparkles size={14} color={colors.accent} strokeWidth={2.4} />
+              </View>
+              <SproutText variant="caption" style={styles.aiQuickText}>
+                Speak or type naturally with Tabsy AI
+              </SproutText>
+            </View>
+            <ChevronRight size={15} color={colors.accent} />
+          </TouchableOpacity>
+
           {/* Amount Card matching Sprout Screen 02 */}
           <View style={styles.sproutAmountCard}>
             <SproutText variant="caption" color={colors.muted} style={styles.howMuchLabel}>
@@ -800,6 +822,37 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xs,
     paddingBottom: spacing.xl,
+  },
+  aiQuickBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FDF6E2',
+    borderColor: '#E6D3A3',
+    borderWidth: 1,
+    borderRadius: radii.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  aiQuickLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs + 2,
+    flex: 1,
+  },
+  aiQuickIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#F5E6BF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  aiQuickText: {
+    color: '#8A6820',
+    fontFamily: fontFamilies.bold,
+    fontSize: 12,
   },
   sproutAmountCard: {
     backgroundColor: colors.surface,

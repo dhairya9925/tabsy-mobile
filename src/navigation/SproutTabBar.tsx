@@ -8,6 +8,7 @@ import { SproutText } from '../components/SproutText';
 
 interface SproutTabBarProps extends BottomTabBarProps {
   onAddPress: () => void;
+  onAIPress?: () => void;
 }
 
 /** Direction 09 uses four destinations and a trailing Add Expense action. */
@@ -16,6 +17,7 @@ export const SproutTabBar: React.FC<SproutTabBarProps> = ({
   descriptors,
   navigation,
   onAddPress,
+  onAIPress,
 }) => {
   const insets = useSafeAreaInsets();
 
@@ -65,8 +67,10 @@ export const SproutTabBar: React.FC<SproutTabBarProps> = ({
 
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Add Expense"
+        accessibilityLabel="Add Expense (Hold for AI Assistant)"
         onPress={onAddPress}
+        onLongPress={onAIPress}
+        delayLongPress={350}
         style={[styles.addButton, { bottom: insets.bottom + 8 }]}
       >
         <Plus size={24} color={colors.onAccent} strokeWidth={2.25} />

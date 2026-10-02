@@ -50,4 +50,5 @@ export type RootStackParamList = {
   AddFriendModal: undefined;
   AddFriendExpenseModal: { friendId?: string; friendName?: string } | undefined;
   FriendSettleUpModal: { friendId: string; friendName: string; netBalance: number };
+  AIAgent: undefined;
 };
