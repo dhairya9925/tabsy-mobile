@@ -21,18 +21,23 @@ import {
   ClarificationBubble,
   ConfirmationCard,
   VoiceRecordButton,
+  TypingIndicator,
 } from '../../components/ai';
 import { useAIStore, ChatMessage } from '../../store/useAIStore';
 import { useAudioRecorder } from '../../hooks/useAudioRecorder';
 import { AIParseResponse } from '../../api/ai';
+import { haptics } from '../../utils/haptics';
+import { analytics } from '../../utils/analytics';
+import { offlineQueue } from '../../utils/offlineQueue';
 import {
   ArrowLeft,
   Send,
   Sparkles,
   RotateCcw,
-  Bot,
   AlertCircle,
+  PlusCircle,
 } from 'lucide-react-native';
+
 
 export const AIAgentScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -72,6 +77,15 @@ export const AIAgentScreen: React.FC = () => {
     return () => clearTimeout(timer);
   }, [messages.length, isLoading]);
 
+  // Sync offline queued expenses on screen mount
+  useEffect(() => {
+    offlineQueue.processQueue(queryClient).then(({ succeeded }) => {
+      if (succeeded > 0) {
+        setSuccessToast(`Synced ${succeeded} offline expense${succeeded > 1 ? 's' : ''}!`);
+      }
+    });
+  }, [queryClient]);
+
   const handleSendText = async () => {
     const textToSend = inputText.trim();
     if (!textToSend || isLoading) return;
@@ -83,17 +97,22 @@ export const AIAgentScreen: React.FC = () => {
   const handleStartRecord = async () => {
     if (isLoading) return;
     setError(null);
+    await haptics.impact('medium');
+    analytics.track('ai_recording_started');
     await startRecording();
   };
 
   const handleStopRecord = async () => {
+    await haptics.impact('light');
     const uri = await stopRecording();
     if (uri) {
+      analytics.track('ai_recording_completed', { durationSeconds });
       await sendMessage({ audioUri: uri });
     }
   };
 
   const handleClearChat = () => {
+    haptics.selection();
     Alert.alert(
       'Reset Conversation',
       'Are you sure you want to clear this conversation?',
@@ -107,6 +126,7 @@ export const AIAgentScreen: React.FC = () => {
       ]
     );
   };
+
 
   const handleConfirmExpense = async (expense: AIParseResponse) => {
     await confirmExpense(expense, () => {
@@ -239,11 +259,26 @@ export const AIAgentScreen: React.FC = () => {
 
         {/* Error Alert Bar */}
         {displayError ? (
-          <View style={styles.errorBanner}>
+          <View style={styles.errorBanner} accessible={true} accessibilityRole="alert">
             <AlertCircle size={16} color={colors.negative} />
             <SproutText variant="caption" style={styles.errorBannerText} numberOfLines={2}>
               {displayError}
             </SproutText>
+            <TouchableOpacity
+              style={styles.manualFallbackBtn}
+              onPress={() => {
+                analytics.track('ai_fallback_triggered', { source: 'error_banner' });
+                (navigation as any).navigate('AddExpenseModal');
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Open manual expense form"
+              activeOpacity={0.7}
+            >
+              <PlusCircle size={13} color={colors.accent} style={{ marginRight: 4 }} />
+              <SproutText variant="caption" color={colors.accent} weight="700">
+                Manual Add
+              </SproutText>
+            </TouchableOpacity>
           </View>
         ) : null}
 
@@ -255,22 +290,9 @@ export const AIAgentScreen: React.FC = () => {
           renderItem={renderMessageItem}
           contentContainerStyle={styles.messageList}
           showsVerticalScrollIndicator={false}
-          ListFooterComponent={
-            isLoading ? (
-              <View style={styles.typingIndicator}>
-                <View style={styles.typingAvatar}>
-                  <Bot size={14} color={colors.accent} />
-                </View>
-                <View style={styles.typingBubble}>
-                  <ActivityIndicator size="small" color={colors.accent} />
-                  <SproutText variant="caption" style={styles.typingText}>
-                    Understanding expense...
-                  </SproutText>
-                </View>
-              </View>
-            ) : null
-          }
+          ListFooterComponent={isLoading ? <TypingIndicator /> : null}
         />
+
 
         {/* Bottom Input Area */}
         <View style={styles.inputBarContainer}>
@@ -380,6 +402,17 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilies.medium,
     fontSize: 12,
   },
+  manualFallbackBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: radii.sm,
+    borderColor: colors.line,
+    borderWidth: 1,
+  },
+
   messageList: {
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.xs,

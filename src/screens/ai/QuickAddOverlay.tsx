@@ -18,6 +18,9 @@ import { SproutText } from '../../components';
 import { useAIStore } from '../../store/useAIStore';
 import { useAudioRecorder } from '../../hooks/useAudioRecorder';
 import { formatCurrency } from '../../utils/formatters';
+import { haptics } from '../../utils/haptics';
+import { analytics } from '../../utils/analytics';
+import { offlineQueue } from '../../utils/offlineQueue';
 import {
   Sparkles,
   X,
@@ -30,7 +33,9 @@ import {
   ArrowRight,
   AlertCircle,
   Square,
+  PlusCircle,
 } from 'lucide-react-native';
+
 
 export const QuickAddOverlay: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -100,6 +105,12 @@ export const QuickAddOverlay: React.FC = () => {
     }
   }, [isRecording, pulseAnim]);
 
+  // Sync offline queued expenses and track event on mount
+  useEffect(() => {
+    analytics.track('quick_add_opened', { mode: initialMode });
+    offlineQueue.processQueue(queryClient);
+  }, [initialMode, queryClient]);
+
   // If initialMode was voice, auto-request start if appropriate
   useEffect(() => {
     if (initialMode === 'voice') {
@@ -108,6 +119,7 @@ export const QuickAddOverlay: React.FC = () => {
   }, [initialMode]);
 
   const handleClose = () => {
+    haptics.selection();
     if (isRecording) {
       cancelRecording();
     }
@@ -126,6 +138,7 @@ export const QuickAddOverlay: React.FC = () => {
     try {
       await sendMessage({ text: trimmed });
     } catch (err: any) {
+      haptics.error();
       setSubmitError(err?.message || 'Failed to parse expense');
     }
   };
@@ -133,18 +146,24 @@ export const QuickAddOverlay: React.FC = () => {
   const handleVoiceToggle = async () => {
     setSubmitError(null);
     if (isRecording) {
+      await haptics.impact('light');
       const uri = await stopRecording();
       if (uri) {
+        analytics.track('ai_recording_completed', { durationSeconds });
         try {
           await sendMessage({ audioUri: uri });
         } catch (err: any) {
+          haptics.error();
           setSubmitError(err?.message || 'Failed to process voice note');
         }
       }
     } else {
+      await haptics.impact('medium');
+      analytics.track('ai_recording_started');
       await startRecording();
     }
   };
+
 
   const handleConfirm = async () => {
     if (!pendingConfirmation) return;
@@ -338,15 +357,31 @@ export const QuickAddOverlay: React.FC = () => {
                     </View>
                   )}
 
-                  {/* Error Banner */}
+                  {/* Error Banner with Manual Fallback */}
                   {submitError && (
-                    <View style={styles.errorBanner}>
+                    <View style={styles.errorBanner} accessible={true} accessibilityRole="alert">
                       <AlertCircle size={14} color={colors.negative} />
                       <SproutText variant="caption" color={colors.negative} style={{ flex: 1 }}>
                         {submitError}
                       </SproutText>
+                      <TouchableOpacity
+                        style={styles.manualFallbackBtn}
+                        onPress={() => {
+                          analytics.track('ai_fallback_triggered', { source: 'quick_add_overlay' });
+                          navigation.replace('AddExpenseModal');
+                        }}
+                        accessibilityRole="button"
+                        accessibilityLabel="Open manual expense form"
+                        activeOpacity={0.7}
+                      >
+                        <PlusCircle size={12} color={colors.accent} style={{ marginRight: 3 }} />
+                        <SproutText variant="caption" color={colors.accent} weight="700" style={{ fontSize: 11 }}>
+                          Manual Add
+                        </SproutText>
+                      </TouchableOpacity>
                     </View>
                   )}
+
 
                   {/* Clarification Options Preview */}
                   {isClarification && (
@@ -614,6 +649,17 @@ const styles = StyleSheet.create({
     borderRadius: radii.md,
     marginTop: spacing.xs,
   },
+  manualFallbackBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: radii.sm,
+    borderColor: colors.line,
+    borderWidth: 1,
+  },
+
   clarificationBox: {
     backgroundColor: colors.accentSoft,
     borderRadius: radii.md,

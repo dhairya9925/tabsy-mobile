@@ -5,6 +5,10 @@ import { groupsApi } from '../api/groups';
 import { friendsApi } from '../api/friends';
 import { splitEqual } from '../utils/money';
 import { useAuthStore } from './useAuthStore';
+import { haptics } from '../utils/haptics';
+import { analytics } from '../utils/analytics';
+import { offlineQueue } from '../utils/offlineQueue';
+
 
 export interface ChatMessage {
   id: string;
@@ -112,6 +116,12 @@ export const useAIStore = create<AIState>((set, get) => ({
           parsedExpense: response,
         };
 
+        analytics.track('ai_expense_parsed', {
+          type: response.expense_type,
+          confidence: response.confidence,
+          isVoice: Boolean(audioUri),
+        });
+
         set((state) => ({
           isLoading: false,
           messages: [...state.messages, assistantMsg],
@@ -133,6 +143,10 @@ export const useAIStore = create<AIState>((set, get) => ({
           isClarification: true,
         };
 
+        analytics.track('ai_clarification_shown', {
+          options_count: response.clarification_options?.length || 0,
+        });
+
         set((state) => ({
           isLoading: false,
           messages: [...state.messages, assistantMsg],
@@ -149,6 +163,8 @@ export const useAIStore = create<AIState>((set, get) => ({
           timestamp: Date.now(),
         };
 
+        analytics.track('ai_fallback_triggered', { reason: 'unrecognized_parse' });
+
         set((state) => ({
           isLoading: false,
           messages: [...state.messages, assistantMsg],
@@ -157,6 +173,9 @@ export const useAIStore = create<AIState>((set, get) => ({
       }
     } catch (err: any) {
       const errorText = err.message || 'Unable to connect to AI assistant.';
+      haptics.error();
+      analytics.track('ai_fallback_triggered', { error: errorText });
+
       set((state) => ({
         isLoading: false,
         error: errorText,
@@ -174,8 +193,11 @@ export const useAIStore = create<AIState>((set, get) => ({
   },
 
   selectOption: async (option: string) => {
+    haptics.selection();
+    analytics.track('ai_clarification_answered', { mode: 'chip' });
     await get().sendMessage({ text: option });
   },
+
 
   confirmExpense: async (expense: AIParseResponse, onSuccess?: () => void): Promise<boolean> => {
     set({ isConfirming: true, error: null });
@@ -245,6 +267,13 @@ export const useAIStore = create<AIState>((set, get) => ({
         timestamp: Date.now(),
       };
 
+      haptics.success();
+      analytics.track('ai_expense_confirmed', {
+        amount,
+        expense_type: expenseType,
+        category,
+      });
+
       set((state) => ({
         isConfirming: false,
         pendingConfirmation: null,
@@ -256,7 +285,57 @@ export const useAIStore = create<AIState>((set, get) => ({
       }
       return true;
     } catch (err: any) {
+      // Check if this failure is specifically network/offline related
+      const isNetworkError =
+        err.isOffline === true ||
+        err.code === 'ERR_NETWORK' ||
+        (Boolean(err.isAxiosError) && (!err.response || err.code === 'ECONNABORTED')) ||
+        err.message?.toLowerCase().includes('network error') ||
+        err.message?.toLowerCase().includes('offline') ||
+        err.message?.toLowerCase().includes('failed to fetch');
+
+      if (isNetworkError) {
+        await offlineQueue.queueExpense({
+          expense_type: expenseType,
+          amount,
+          category,
+          note,
+          expense_date,
+          group_id: expense.group_id,
+          friend_id: expense.friend_id,
+          paid_by: expense.paid_by,
+          split_type: expense.split_type,
+        });
+
+        haptics.warning();
+        analytics.track('offline_expense_queued', {
+          amount,
+          expense_type: expenseType,
+        });
+
+        const offlineMsg: ChatMessage = {
+          id: `offline_queued_${Date.now()}`,
+          role: 'assistant',
+          content: `📡 You appear to be offline. I've safely queued this ₹${amount.toFixed(2)} expense on your device. It will automatically sync when connection returns!`,
+          timestamp: Date.now(),
+        };
+
+        set((state) => ({
+          isConfirming: false,
+          pendingConfirmation: null,
+          messages: [...state.messages, offlineMsg],
+        }));
+
+        if (onSuccess) {
+          onSuccess();
+        }
+        return true;
+      }
+
       const errMsg = err.message || 'Failed to save expense. Please retry.';
+      haptics.error();
+      analytics.track('ai_fallback_triggered', { error: errMsg });
+
       set((state) => ({
         isConfirming: false,
         error: errMsg,
@@ -275,6 +354,7 @@ export const useAIStore = create<AIState>((set, get) => ({
   },
 
   cancelConfirmation: () => {
+    haptics.warning();
     set((state) => ({
       pendingConfirmation: null,
       messages: [
@@ -288,6 +368,7 @@ export const useAIStore = create<AIState>((set, get) => ({
       ],
     }));
   },
+
 
   clearChat: () => {
     set({

@@ -5,6 +5,7 @@ import { aiApi, AIParseResponse } from '../api/ai';
 import { expensesApi } from '../api/expenses';
 import { groupsApi } from '../api/groups';
 import { friendsApi } from '../api/friends';
+import { offlineQueue } from '../utils/offlineQueue';
 
 test('useAIStore should initialize with greeting message and idle state', () => {
   const state = useAIStore.getState();
@@ -369,5 +370,51 @@ test('useAIStore user cancels mid-clarification cleanly', () => {
   assert.strictEqual(state.pendingConfirmation, null);
   const lastMsg = state.messages[state.messages.length - 1];
   assert.match(lastMsg.content, /cancelled/i);
+});
+
+test('useAIStore confirmExpense queues to offlineQueue when network error occurs', async () => {
+  const originalCreate = expensesApi.createPersonalExpense;
+  expensesApi.createPersonalExpense = async () => {
+    const netErr: any = new Error('Network Error');
+    netErr.code = 'ERR_NETWORK';
+    throw netErr;
+  };
+
+  await offlineQueue.clearQueue();
+
+  useAIStore.setState({
+    pendingConfirmation: {
+      status: 'confirmed',
+      confidence: 1,
+      expense_type: 'personal',
+      amount: 450,
+      category: 'Food',
+    },
+  });
+
+  try {
+    const success = await useAIStore.getState().confirmExpense({
+      status: 'confirmed',
+      confidence: 1,
+      expense_type: 'personal',
+      amount: 450,
+      category: 'Food',
+    });
+
+    assert.strictEqual(success, true);
+    assert.strictEqual(await offlineQueue.getCount(), 1);
+    const queued = await offlineQueue.getQueue();
+    assert.strictEqual(queued[0].amount, 450);
+    assert.strictEqual(queued[0].category, 'Food');
+
+    const state = useAIStore.getState();
+    assert.strictEqual(state.isConfirming, false);
+    assert.strictEqual(state.pendingConfirmation, null);
+    const lastMsg = state.messages[state.messages.length - 1];
+    assert.match(lastMsg.content, /safely queued/);
+  } finally {
+    expensesApi.createPersonalExpense = originalCreate;
+    await offlineQueue.clearQueue();
+  }
 });
 
