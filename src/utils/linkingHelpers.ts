@@ -15,7 +15,17 @@ export function parseDeepLink(url: string): ParsedDeepLink | null {
     .replace(/^https?:\/\/[^/]+\//i, '')
     .replace(/^\/+/, '');
 
-  const parts = clean.split('/').filter(Boolean);
+  // Separate query parameters
+  const [pathPart, queryPart] = clean.split('?');
+  const queryParams: Record<string, string> = {};
+  if (queryPart) {
+    queryPart.split('&').forEach((pair) => {
+      const [k, v] = pair.split('=');
+      if (k) queryParams[decodeURIComponent(k)] = decodeURIComponent(v || '');
+    });
+  }
+
+  const parts = pathPart.split('/').filter(Boolean);
   if (parts.length === 0) return null;
 
   const [segment1, segment2, segment3, segment4, segment5] = parts;
@@ -64,7 +74,23 @@ export function parseDeepLink(url: string): ParsedDeepLink | null {
     };
   }
 
-  // 6. profile
+  // 6. quick-add
+  if (segment1 === 'quick-add') {
+    return {
+      route: 'QuickAddModal',
+      params: queryParams,
+    };
+  }
+
+  // 7. ai-agent
+  if (segment1 === 'ai-agent') {
+    return {
+      route: 'AIAgent',
+      params: {},
+    };
+  }
+
+  // 8. profile
   if (segment1 === 'profile') {
     return {
       route: 'Profile',
@@ -72,7 +98,7 @@ export function parseDeepLink(url: string): ParsedDeepLink | null {
     };
   }
 
-  // 7. settings
+  // 9. settings
   if (segment1 === 'settings') {
     return {
       route: 'Settings',
@@ -80,7 +106,7 @@ export function parseDeepLink(url: string): ParsedDeepLink | null {
     };
   }
 
-  // 8. categories
+  // 10. categories
   if (segment1 === 'categories') {
     return {
       route: 'CategoryManager',
@@ -90,3 +116,4 @@ export function parseDeepLink(url: string): ParsedDeepLink | null {
 
   return null;
 }
+

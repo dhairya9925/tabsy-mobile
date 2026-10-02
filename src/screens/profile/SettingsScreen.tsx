@@ -18,6 +18,7 @@ import { useThemeStore } from '../../store/useThemeStore';
 import { THEME_PALETTES, PaletteKey } from '../../theme/tokens';
 import { TYPOGRAPHY_PRESETS, TypographyKey } from '../../theme/typography';
 import { formatCurrency } from '../../utils/formatters';
+import { QuickAddToggle } from '../../components/settings/QuickAddToggle';
 import {
   ArrowLeft,
   Coins,
@@ -485,8 +486,12 @@ export const SettingsScreen: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      {/* 4. Appearance */}
+      {/* 4. Quick Add & Persistent Notification */}
+      <QuickAddToggle />
+
+      {/* 5. Appearance */}
       <View style={[styles.sectionCard, shadows.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+
         <View style={styles.sectionHeaderBetween}>
           <View style={styles.sectionHeader}>
             <View style={[styles.headerIconCircle, { backgroundColor: colors.background }]}>

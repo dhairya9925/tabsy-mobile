@@ -51,9 +51,24 @@ test('parseDeepLink resolves standard shortcuts', () => {
   const cats = parseDeepLink('splittrack://categories');
   assert.ok(cats);
   assert.strictEqual(cats!.route, 'CategoryManager');
+
+  const quickAddVoice = parseDeepLink('tabsy://quick-add?mode=voice');
+  assert.ok(quickAddVoice);
+  assert.strictEqual(quickAddVoice!.route, 'QuickAddModal');
+  assert.strictEqual(quickAddVoice!.params.mode, 'voice');
+
+  const quickAddText = parseDeepLink('tabsy://quick-add?mode=text');
+  assert.ok(quickAddText);
+  assert.strictEqual(quickAddText!.route, 'QuickAddModal');
+  assert.strictEqual(quickAddText!.params.mode, 'text');
+
+  const aiAgent = parseDeepLink('tabsy://ai-agent');
+  assert.ok(aiAgent);
+  assert.strictEqual(aiAgent!.route, 'AIAgent');
 });
 
 test('parseDeepLink returns null for invalid or empty URLs', () => {
   assert.strictEqual(parseDeepLink(''), null);
   assert.strictEqual(parseDeepLink('splittrack://unknown-route/123/456'), null);
 });
+

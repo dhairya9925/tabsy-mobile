@@ -15,6 +15,7 @@ import {
 } from '@expo-google-fonts/jetbrains-mono';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { SplashScreen } from './src/screens/auth/SplashScreen';
+import { useQuickAddStore } from './src/store/useQuickAddStore';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -36,7 +37,12 @@ export default function App() {
     JetBrainsMono_700Bold,
   });
 
+  React.useEffect(() => {
+    useQuickAddStore.getState().init();
+  }, []);
+
   if (!fontsLoaded) {
+
     return <SplashScreen />;
   }
 

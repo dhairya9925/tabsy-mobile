@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { authApi, LoginPayload, SignupPayload } from '../api/auth';
 import { UserProfile } from '../types';
 import { secureStorage } from '../utils/secureStorage';
+import { QuickAddModule } from '../native/QuickAddModule';
+
 
 interface AuthState {
   token: string | null;
@@ -101,7 +103,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } catch {
       // Ignore network error on logout
     } finally {
+      try {
+        await QuickAddModule.stopQuickAddService();
+      } catch {
+        // Non-blocking cleanup
+      }
       await secureStorage.clearAll();
+
       set({
         token: null,
         user: null,

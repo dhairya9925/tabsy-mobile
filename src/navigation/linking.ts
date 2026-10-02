@@ -7,9 +7,12 @@ export const linking: LinkingOptions<RootStackParamList> = {
     screens: {
       JoinGroupModal: 'join/:groupId',
       AddExpenseModal: 'add-expense',
+      QuickAddModal: 'quick-add',
+      AIAgent: 'ai-agent',
       Profile: 'profile',
       Settings: 'settings',
       CategoryManager: 'categories',
+
       Main: {
         screens: {
           Rhythm: 'rhythm',
