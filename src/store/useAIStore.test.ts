@@ -277,3 +277,97 @@ test('useAIStore confirmExpense handles failure and allows retry without droppin
     expensesApi.createPersonalExpense = originalCreate;
   }
 });
+
+test('useAIStore multi-turn flow: clarification -> selectOption -> confirmed expense', async () => {
+  useAIStore.getState().clearChat();
+
+  const originalParse = aiApi.parseExpense;
+  let callCount = 0;
+  const historyPassed: any[] = [];
+
+  aiApi.parseExpense = async (params) => {
+    callCount++;
+    historyPassed.push(params.conversationHistory);
+
+    if (callCount === 1) {
+      // Turn 1: User says "Add 500 to group", AI asks which group
+      return {
+        status: 'needs_clarification',
+        confidence: 0.5,
+        clarification_question: 'Which group should I add this to?',
+        clarification_options: ['Roommates', 'Goa Trip'],
+        ai_understanding: 'You want to add ₹500 to a group expense.',
+      };
+    } else {
+      // Turn 2: User selected "Roommates", AI confirms group expense
+      return {
+        status: 'confirmed',
+        confidence: 0.95,
+        expense_type: 'group',
+        group_id: 'g-roommates',
+        group_name: 'Roommates',
+        amount: 500,
+        category: 'other',
+        expense_date: '2026-10-02',
+      };
+    }
+  };
+
+  try {
+    // 1. Initial user request
+    await useAIStore.getState().sendMessage({ text: 'Add 500 to group' });
+
+    let state = useAIStore.getState();
+    assert.strictEqual(state.messages.length, 3); // greeting, userMsg, clarification
+    const clarMsg = state.messages[2];
+    assert.strictEqual(clarMsg.isClarification, true);
+    assert.strictEqual(clarMsg.clarificationQuestion, 'Which group should I add this to?');
+    assert.strictEqual(clarMsg.aiUnderstanding, 'You want to add ₹500 to a group expense.');
+
+    // 2. User taps an option chip
+    await useAIStore.getState().selectOption('Roommates');
+
+    state = useAIStore.getState();
+    assert.strictEqual(callCount, 2);
+    // Verified: history in 2nd call correctly contains the prior turns (initial prompt + AI clarification)
+    assert.strictEqual(historyPassed[1].length, 2);
+    assert.strictEqual(historyPassed[1][0].role, 'user');
+    assert.strictEqual(historyPassed[1][0].content, 'Add 500 to group');
+    assert.strictEqual(historyPassed[1][1].role, 'assistant');
+    assert.strictEqual(historyPassed[1][1].content, 'Which group should I add this to?');
+
+    // And now state has pendingConfirmation set to confirmed group expense
+    assert.notStrictEqual(state.pendingConfirmation, null);
+    assert.strictEqual(state.pendingConfirmation?.group_name, 'Roommates');
+    assert.strictEqual(state.pendingConfirmation?.amount, 500);
+  } finally {
+    aiApi.parseExpense = originalParse;
+  }
+});
+
+test('useAIStore user cancels mid-clarification cleanly', () => {
+  useAIStore.getState().clearChat();
+
+  useAIStore.setState({
+    messages: [
+      { id: 'greeting', role: 'assistant', content: 'Hi', timestamp: 0 },
+      { id: 'u1', role: 'user', content: 'Spent 500', timestamp: 1 },
+      {
+        id: 'a1',
+        role: 'assistant',
+        content: 'What was this expense for?',
+        timestamp: 2,
+        isClarification: true,
+      },
+    ],
+    pendingConfirmation: null,
+  });
+
+  useAIStore.getState().cancelConfirmation();
+
+  const state = useAIStore.getState();
+  assert.strictEqual(state.pendingConfirmation, null);
+  const lastMsg = state.messages[state.messages.length - 1];
+  assert.match(lastMsg.content, /cancelled/i);
+});
+

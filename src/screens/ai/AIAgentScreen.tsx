@@ -134,7 +134,8 @@ export const AIAgentScreen: React.FC = () => {
       return (
         <ClarificationBubble
           key={item.id}
-          content={item.content}
+          question={item.clarificationQuestion || item.content}
+          understanding={item.aiUnderstanding}
           options={item.clarificationOptions}
           onSelectOption={(opt) => selectOption(opt)}
           disabled={isLoading || isConfirming}

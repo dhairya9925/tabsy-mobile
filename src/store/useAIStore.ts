@@ -13,7 +13,9 @@ export interface ChatMessage {
   timestamp: number;
   isVoice?: boolean;
   parsedExpense?: AIParseResponse;
+  clarificationQuestion?: string;
   clarificationOptions?: string[];
+  aiUnderstanding?: string;
   isClarification?: boolean;
 }
 
@@ -56,7 +58,16 @@ export const useAIStore = create<AIState>((set, get) => ({
 
     set({ error: null, isLoading: true });
 
-    // 1. Add user message optimistically
+    // 1. Snapshot previous history before adding current message for clean multi-turn dialogue
+    const priorMessages = get().messages;
+    const history = priorMessages
+      .filter((m) => m.id !== 'greeting')
+      .map((m) => ({
+        role: m.role,
+        content: m.content,
+      }));
+
+    // 2. Add user message optimistically
     const userMsgId = `user_${Date.now()}`;
     const userMessage: ChatMessage = {
       id: userMsgId,
@@ -70,15 +81,6 @@ export const useAIStore = create<AIState>((set, get) => ({
       messages: [...state.messages, userMessage],
       pendingConfirmation: null, // Reset previous pending confirmation on new prompt
     }));
-
-    // 2. Build conversation history for multi-turn context
-    const currentMessages = get().messages;
-    const history = currentMessages
-      .filter((m) => m.id !== 'greeting')
-      .map((m) => ({
-        role: m.role,
-        content: m.content,
-      }));
 
     try {
       const response = await aiApi.parseExpense({
@@ -116,17 +118,18 @@ export const useAIStore = create<AIState>((set, get) => ({
           pendingConfirmation: response,
         }));
       } else if (response.status === 'needs_clarification') {
-        let msgContent = response.clarification_question || 'Could you provide a few more details?';
-        if (response.ai_understanding) {
-          msgContent = `${response.ai_understanding}\n\n${msgContent}`;
-        }
+        const question =
+          response.clarification_question || 'Could you provide a few more details?';
+        const understanding = response.ai_understanding || undefined;
 
         const assistantMsg: ChatMessage = {
           id: assistantMsgId,
           role: 'assistant',
-          content: msgContent,
+          content: question,
           timestamp: Date.now(),
+          clarificationQuestion: question,
           clarificationOptions: response.clarification_options || [],
+          aiUnderstanding: understanding,
           isClarification: true,
         };
 
