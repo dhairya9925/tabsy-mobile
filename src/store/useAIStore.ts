@@ -1,5 +1,10 @@
 import { create } from 'zustand';
 import { aiApi, AIParseResponse } from '../api/ai';
+import { expensesApi } from '../api/expenses';
+import { groupsApi } from '../api/groups';
+import { friendsApi } from '../api/friends';
+import { splitEqual } from '../utils/money';
+import { useAuthStore } from './useAuthStore';
 
 export interface ChatMessage {
   id: string;
@@ -15,12 +20,14 @@ export interface ChatMessage {
 interface AIState {
   messages: ChatMessage[];
   isLoading: boolean;
+  isConfirming: boolean;
   error: string | null;
   pendingConfirmation: AIParseResponse | null;
 
   // Actions
   sendMessage: (params: { text?: string; audioUri?: string }) => Promise<void>;
   selectOption: (option: string) => Promise<void>;
+  confirmExpense: (expense: AIParseResponse, onSuccess?: () => void) => Promise<boolean>;
   cancelConfirmation: () => void;
   clearChat: () => void;
   setError: (err: string | null) => void;
@@ -37,6 +44,7 @@ const INITIAL_GREETING: ChatMessage = {
 export const useAIStore = create<AIState>((set, get) => ({
   messages: [INITIAL_GREETING],
   isLoading: false,
+  isConfirming: false,
   error: null,
   pendingConfirmation: null,
 
@@ -97,7 +105,7 @@ export const useAIStore = create<AIState>((set, get) => ({
         const assistantMsg: ChatMessage = {
           id: assistantMsgId,
           role: 'assistant',
-          content: "Here's what I understood! Review the details below:",
+          content: "Here's what I understood! Review and confirm the details below:",
           timestamp: Date.now(),
           parsedExpense: response,
         };
@@ -166,6 +174,103 @@ export const useAIStore = create<AIState>((set, get) => ({
     await get().sendMessage({ text: option });
   },
 
+  confirmExpense: async (expense: AIParseResponse, onSuccess?: () => void): Promise<boolean> => {
+    set({ isConfirming: true, error: null });
+
+    const expenseType = expense.expense_type || 'personal';
+    const amount = Number(expense.amount) || 0;
+    const category = expense.category || 'other';
+    const note = expense.note?.trim() || undefined;
+    const expense_date = expense.expense_date || new Date().toISOString().split('T')[0];
+
+    try {
+      if (expenseType === 'group' && expense.group_id) {
+        // 1. Group Expense Submission with equal split calculation
+        const members = await groupsApi.getGroupMembers(expense.group_id);
+        const count = members.length > 0 ? members.length : 1;
+        const shares = splitEqual(amount, count);
+        const splits = members.map((m, idx) => ({
+          user_id: m.user_id,
+          amount: shares[idx] || 0,
+        }));
+
+        await groupsApi.createGroupExpense(expense.group_id, {
+          amount,
+          category,
+          note,
+          expense_date,
+          splits,
+        });
+      } else if (expenseType === 'friend' && expense.friend_id) {
+        // 2. Friend Expense Submission
+        const currentUserId =
+          useAuthStore.getState().user?.id ||
+          useAuthStore.getState().user?.user_id ||
+          'self';
+        const payerId = expense.paid_by === 'friend' ? expense.friend_id : currentUserId;
+
+        await friendsApi.createFriendExpense(expense.friend_id, {
+          amount,
+          category,
+          note,
+          expense_date,
+          paid_by: payerId,
+          split_type: expense.split_type === 'full' ? 'full' : 'equal',
+        });
+      } else {
+        // 3. Personal Expense Submission
+        await expensesApi.createPersonalExpense({
+          amount,
+          category,
+          note,
+          expense_date,
+        });
+      }
+
+      // Record success in conversation and clear pending confirmation
+      const targetName =
+        expenseType === 'group'
+          ? ` in ${expense.group_name || 'Group'}`
+          : expenseType === 'friend'
+          ? ` with ${expense.friend_name || 'Friend'}`
+          : ' to your journal';
+
+      const successMsg: ChatMessage = {
+        id: `confirmed_${Date.now()}`,
+        role: 'assistant',
+        content: `✅ Recorded ${expenseType} expense of ₹${amount.toFixed(2)} (${category})${targetName}!`,
+        timestamp: Date.now(),
+      };
+
+      set((state) => ({
+        isConfirming: false,
+        pendingConfirmation: null,
+        messages: [...state.messages, successMsg],
+      }));
+
+      if (onSuccess) {
+        onSuccess();
+      }
+      return true;
+    } catch (err: any) {
+      const errMsg = err.message || 'Failed to save expense. Please retry.';
+      set((state) => ({
+        isConfirming: false,
+        error: errMsg,
+        messages: [
+          ...state.messages,
+          {
+            id: `confirm_err_${Date.now()}`,
+            role: 'assistant',
+            content: `⚠️ Error saving expense: ${errMsg}\nPlease review the details above and tap Confirm & Save again.`,
+            timestamp: Date.now(),
+          },
+        ],
+      }));
+      return false;
+    }
+  },
+
   cancelConfirmation: () => {
     set((state) => ({
       pendingConfirmation: null,
@@ -185,6 +290,7 @@ export const useAIStore = create<AIState>((set, get) => ({
     set({
       messages: [{ ...INITIAL_GREETING, timestamp: Date.now() }],
       isLoading: false,
+      isConfirming: false,
       error: null,
       pendingConfirmation: null,
     });

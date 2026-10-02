@@ -12,8 +12,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import { useQueryClient } from '@tanstack/react-query';
 import { colors, radii, spacing, fontFamilies } from '../../theme';
 import { SproutText } from '../../components/SproutText';
+import { Toast } from '../../components';
 import {
   ChatBubble,
   ClarificationBubble,
@@ -34,16 +36,20 @@ import {
 
 export const AIAgentScreen: React.FC = () => {
   const navigation = useNavigation();
+  const queryClient = useQueryClient();
   const [inputText, setInputText] = useState('');
+  const [successToast, setSuccessToast] = useState<string | null>(null);
   const flatListRef = useRef<FlatList<ChatMessage>>(null);
 
   const {
     messages,
     isLoading,
+    isConfirming,
     error,
     pendingConfirmation,
     sendMessage,
     selectOption,
+    confirmExpense,
     cancelConfirmation,
     clearChat,
     setError,
@@ -102,19 +108,24 @@ export const AIAgentScreen: React.FC = () => {
     );
   };
 
-  const handleConfirmExpense = (expense: AIParseResponse) => {
-    Alert.alert(
-      'Expense Confirmed',
-      `Parsed: ₹${expense.amount} for ${expense.category || 'General'} (${expense.expense_type || 'personal'}).\n\nIn Phase 3, this is committed to your account.`,
-      [
-        {
-          text: 'OK',
-          onPress: () => {
-            cancelConfirmation(); // Clears active card
-          },
-        },
-      ]
-    );
+  const handleConfirmExpense = async (expense: AIParseResponse) => {
+    await confirmExpense(expense, () => {
+      // Invalidate relevant TanStack Query caches so all tabs update immediately
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['groups'] });
+      queryClient.invalidateQueries({ queryKey: ['friends'] });
+      queryClient.invalidateQueries({ queryKey: ['streak'] });
+
+      const amtStr = Number(expense.amount || 0).toFixed(2);
+      const targetStr =
+        expense.expense_type === 'group'
+          ? 'group'
+          : expense.expense_type === 'friend'
+          ? '1-on-1'
+          : 'journal';
+      setSuccessToast(`Saved ₹${amtStr} to ${targetStr}!`);
+    });
   };
 
   const renderMessageItem = ({ item, index }: { item: ChatMessage; index: number }) => {
@@ -126,7 +137,7 @@ export const AIAgentScreen: React.FC = () => {
           content={item.content}
           options={item.clarificationOptions}
           onSelectOption={(opt) => selectOption(opt)}
-          disabled={isLoading}
+          disabled={isLoading || isConfirming}
         />
       );
     }
@@ -149,11 +160,12 @@ export const AIAgentScreen: React.FC = () => {
               expense={item.parsedExpense}
               onConfirm={handleConfirmExpense}
               onCancel={cancelConfirmation}
+              isConfirming={isConfirming}
             />
           ) : (
             <View style={styles.historicalCardPlaceholder}>
               <SproutText variant="caption" style={styles.historicalCardText}>
-                Expense previewed: ₹{item.parsedExpense.amount} ({item.parsedExpense.category || 'General'})
+                Expense recorded: ₹{item.parsedExpense.amount} ({item.parsedExpense.category || 'General'})
               </SproutText>
             </View>
           )}
@@ -181,6 +193,14 @@ export const AIAgentScreen: React.FC = () => {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0}
       >
+        {/* Success Toast */}
+        <Toast
+          visible={!!successToast}
+          message={successToast || ''}
+          type="success"
+          onDismiss={() => setSuccessToast(null)}
+        />
+
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity
