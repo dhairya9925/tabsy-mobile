@@ -34,7 +34,8 @@
         }
       ],
       "expo-secure-store",
-      "./plugins/withQuickAdd"
+      "./plugins/withQuickAdd",
+      "expo-audio"
     ]
   }
 }

@@ -1,5 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Audio } from 'expo-av';
+import {
+  useAudioRecorder as useExpoAudioRecorder,
+  RecordingPresets,
+  requestRecordingPermissionsAsync,
+  getRecordingPermissionsAsync,
+  setAudioModeAsync,
+} from 'expo-audio';
 
 export interface UseAudioRecorderReturn {
   isRecording: boolean;
@@ -18,7 +24,7 @@ export const useAudioRecorder = (): UseAudioRecorderReturn => {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const recordingRef = useRef<Audio.Recording | null>(null);
+  const recorder = useExpoAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<number>(0);
 
@@ -26,28 +32,31 @@ export const useAudioRecorder = (): UseAudioRecorderReturn => {
   useEffect(() => {
     (async () => {
       try {
-        const { status } = await Audio.getPermissionsAsync();
-        setHasPermission(status === 'granted');
-      } catch (err) {
+        const res = await getRecordingPermissionsAsync();
+        setHasPermission(res.granted);
+      } catch {
         setHasPermission(false);
       }
     })();
 
     return () => {
-      // Unmount cleanup
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
-      if (recordingRef.current) {
-        recordingRef.current.stopAndUnloadAsync().catch(() => {});
+      try {
+        if (recorder.isRecording) {
+          recorder.stop().catch(() => {});
+        }
+      } catch {
+        // cleanup ignore
       }
     };
-  }, []);
+  }, [recorder]);
 
   const requestPermission = useCallback(async (): Promise<boolean> => {
     try {
-      const { status } = await Audio.requestPermissionsAsync();
-      const granted = status === 'granted';
+      const res = await requestRecordingPermissionsAsync();
+      const granted = res.granted;
       setHasPermission(granted);
       if (!granted) {
         setErrorMessage('Microphone access is required to use voice input.');
@@ -55,7 +64,7 @@ export const useAudioRecorder = (): UseAudioRecorderReturn => {
         setErrorMessage(null);
       }
       return granted;
-    } catch (err) {
+    } catch {
       setHasPermission(false);
       setErrorMessage('Failed to request microphone permission.');
       return false;
@@ -65,7 +74,6 @@ export const useAudioRecorder = (): UseAudioRecorderReturn => {
   const startRecording = useCallback(async (): Promise<boolean> => {
     setErrorMessage(null);
 
-    // Ensure permission
     let granted = hasPermission;
     if (granted === null || !granted) {
       granted = await requestPermission();
@@ -73,30 +81,23 @@ export const useAudioRecorder = (): UseAudioRecorderReturn => {
     }
 
     try {
-      // Configure audio session for recording
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
+      await setAudioModeAsync({
+        allowsRecording: true,
+        playsInSilentMode: true,
       });
 
-      // Prepare recording object using High Quality preset (M4A / AAC)
-      const recording = new Audio.Recording();
-      await recording.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
-
-      recordingRef.current = recording;
-      await recording.startAsync();
+      await recorder.prepareToRecordAsync();
+      recorder.record();
 
       startTimeRef.current = Date.now();
       setIsRecording(true);
       setDurationSeconds(0);
 
-      // Start duration counter
       if (timerRef.current) clearInterval(timerRef.current);
       timerRef.current = setInterval(() => {
         const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
         setDurationSeconds(elapsed);
 
-        // Auto-stop at 30 seconds
         if (elapsed >= 30) {
           stopRecording();
         }
@@ -108,7 +109,7 @@ export const useAudioRecorder = (): UseAudioRecorderReturn => {
       setErrorMessage(err.message || 'Failed to start audio recording.');
       return false;
     }
-  }, [hasPermission, requestPermission]);
+  }, [hasPermission, requestPermission, recorder]);
 
   const stopRecording = useCallback(async (): Promise<string | null> => {
     if (timerRef.current) {
@@ -119,31 +120,23 @@ export const useAudioRecorder = (): UseAudioRecorderReturn => {
     const elapsedMs = Date.now() - startTimeRef.current;
     setIsRecording(false);
 
-    const recording = recordingRef.current;
-    if (!recording) return null;
-
     try {
-      await recording.stopAndUnloadAsync();
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: false,
+      await recorder.stop();
+      await setAudioModeAsync({
+        allowsRecording: false,
       });
 
-      // Guard: Ignore ultra-short taps (< 500ms)
       if (elapsedMs < 500) {
         setErrorMessage('Hold the mic button longer to record.');
-        recordingRef.current = null;
         return null;
       }
 
-      const uri = recording.getURI();
-      recordingRef.current = null;
-      return uri;
+      return recorder.uri || null;
     } catch (err: any) {
       setErrorMessage(err.message || 'Failed to finish audio recording.');
-      recordingRef.current = null;
       return null;
     }
-  }, []);
+  }, [recorder]);
 
   const cancelRecording = useCallback(async (): Promise<void> => {
     if (timerRef.current) {
@@ -153,19 +146,15 @@ export const useAudioRecorder = (): UseAudioRecorderReturn => {
     setIsRecording(false);
     setDurationSeconds(0);
 
-    const recording = recordingRef.current;
-    if (recording) {
-      try {
-        await recording.stopAndUnloadAsync();
-        await Audio.setAudioModeAsync({
-          allowsRecordingIOS: false,
-        });
-      } catch (err) {
-        // ignore cancellation error
-      }
-      recordingRef.current = null;
+    try {
+      await recorder.stop();
+      await setAudioModeAsync({
+        allowsRecording: false,
+      });
+    } catch {
+      // ignore cancellation error
     }
-  }, []);
+  }, [recorder]);
 
   return {
     isRecording,
