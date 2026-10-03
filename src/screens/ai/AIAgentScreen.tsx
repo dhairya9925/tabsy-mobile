@@ -45,6 +45,7 @@ export const AIAgentScreen: React.FC = () => {
   const [inputText, setInputText] = useState('');
   const [successToast, setSuccessToast] = useState<string | null>(null);
   const flatListRef = useRef<FlatList<ChatMessage>>(null);
+  const textInputRef = useRef<TextInput>(null);
 
   const {
     messages,
@@ -62,6 +63,7 @@ export const AIAgentScreen: React.FC = () => {
 
   const {
     isListening,
+    isSupported,
     interimTranscript,
     durationSeconds,
     errorMessage: sttError,
@@ -98,12 +100,21 @@ export const AIAgentScreen: React.FC = () => {
   const handleStartRecord = async () => {
     if (isLoading) return;
     setError(null);
+
+    if (!isSupported) {
+      await haptics.selection();
+      textInputRef.current?.focus();
+      setSuccessToast('💡 Tap the 🎤 mic on your Google Keyboard to dictate offline!');
+      return;
+    }
+
     await haptics.impact('medium');
     analytics.track('ai_stt_started');
     await startListening();
   };
 
   const handleStopRecord = async () => {
+    if (!isSupported) return;
     await haptics.impact('light');
     const spokenText = await stopListening();
     if (spokenText && spokenText.trim().length > 0) {
@@ -301,6 +312,7 @@ export const AIAgentScreen: React.FC = () => {
         <View style={styles.inputBarContainer}>
           <View style={styles.inputWrapper}>
             <TextInput
+              ref={textInputRef}
               style={styles.textInput}
               placeholder={isListening ? 'Listening...' : 'Type expense (e.g. 250 lunch with Sam)...'}
               placeholderTextColor={colors.muted}

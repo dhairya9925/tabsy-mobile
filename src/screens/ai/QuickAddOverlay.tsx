@@ -65,6 +65,7 @@ export const QuickAddOverlay: React.FC = () => {
   // Speech recognition hook
   const {
     isListening,
+    isSupported,
     interimTranscript,
     durationSeconds,
     startListening,
@@ -146,6 +147,13 @@ export const QuickAddOverlay: React.FC = () => {
 
   const handleVoiceToggle = async () => {
     setSubmitError(null);
+
+    if (!isSupported) {
+      await haptics.selection();
+      setActiveTab('text');
+      return;
+    }
+
     if (isListening) {
       await haptics.impact('light');
       const spokenText = await stopListening();
@@ -345,7 +353,7 @@ export const QuickAddOverlay: React.FC = () => {
                       >
                         {isListening
                           ? (interimTranscript ? `"${interimTranscript}"` : `Listening (00:${String(durationSeconds).padStart(2, '0')}) — Tap to Stop`)
-                          : 'Tap microphone to speak expense'}
+                          : (isSupported ? 'Tap microphone to speak expense' : 'Tap to type or speak with Google Keyboard')}
                       </SproutText>
                     </View>
                   )}

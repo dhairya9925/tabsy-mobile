@@ -1,11 +1,21 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import {
-  ExpoSpeechRecognitionModule,
-  useSpeechRecognitionEvent,
+import { requireOptionalNativeModule } from 'expo';
+import type {
+  ExpoSpeechRecognitionResultEvent,
+  ExpoSpeechRecognitionErrorEvent,
 } from 'expo-speech-recognition';
+
+// Safely probe the native module using Expo's optional module loader.
+// In Expo Go or test runners where the custom native binary is not compiled,
+// this returns null instead of throwing "Cannot find native module 'ExpoSpeechRecognition'".
+const NativeSpeechModule: any = requireOptionalNativeModule('ExpoSpeechRecognition');
+const isNativeSupported = Boolean(
+  NativeSpeechModule && typeof NativeSpeechModule.start === 'function'
+);
 
 export interface UseSpeechRecognitionReturn {
   isListening: boolean;
+  isSupported: boolean;
   transcript: string;
   interimTranscript: string;
   durationSeconds: number;
@@ -32,31 +42,6 @@ export const useSpeechRecognition = (): UseSpeechRecognitionReturn => {
   const startTimeRef = useRef<number>(0);
   const pendingStopResolveRef = useRef<((text: string) => void) | null>(null);
 
-  // Check initial permission status on mount
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await ExpoSpeechRecognitionModule.getPermissionsAsync();
-        setHasPermission(res.granted);
-      } catch {
-        setHasPermission(false);
-      }
-    })();
-
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-      try {
-        if (isListeningRef.current) {
-          ExpoSpeechRecognitionModule.abort();
-        }
-      } catch {
-        // cleanup ignore
-      }
-    };
-  }, []);
-
   const finishPendingStop = useCallback(() => {
     if (pendingStopResolveRef.current) {
       const resolve = pendingStopResolveRef.current;
@@ -65,66 +50,131 @@ export const useSpeechRecognition = (): UseSpeechRecognitionReturn => {
     }
   }, []);
 
-  // Event: recognition starts
-  useSpeechRecognitionEvent('start', () => {
-    isListeningRef.current = true;
-    setIsListening(true);
-    setErrorMessage(null);
-  });
-
-  // Event: recognition ends
-  useSpeechRecognitionEvent('end', () => {
-    isListeningRef.current = false;
-    setIsListening(false);
-    setInterimTranscript('');
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-    finishPendingStop();
-  });
-
-  // Event: speech results (interim & final)
-  useSpeechRecognitionEvent('result', (event) => {
-    const text = event.results[0]?.transcript || '';
-    if (text) {
-      transcriptRef.current = text;
-    }
-    if (event.isFinal) {
-      setTranscript(text);
-      setInterimTranscript('');
-      finishPendingStop();
-    } else {
-      setInterimTranscript(text);
-    }
-  });
-
-  // Event: recognition errors
-  useSpeechRecognitionEvent('error', (event) => {
-    isListeningRef.current = false;
-    setIsListening(false);
-    setInterimTranscript('');
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
+  // Check initial permission status on mount & setup listeners
+  useEffect(() => {
+    if (!isNativeSupported) {
+      setHasPermission(null);
+      return;
     }
 
-    if (event.error !== 'aborted' && event.error !== 'no-speech') {
-      setErrorMessage(event.message || `Speech recognition error: ${event.error}`);
+    (async () => {
+      try {
+        const res = await NativeSpeechModule.getPermissionsAsync();
+        setHasPermission(res?.granted ?? false);
+      } catch {
+        setHasPermission(false);
+      }
+    })();
+
+    // Subscribe to native events safely
+    const subscriptions: Array<{ remove: () => void }> = [];
+
+    try {
+      if (typeof NativeSpeechModule.addListener === 'function') {
+        subscriptions.push(
+          NativeSpeechModule.addListener('start', () => {
+            isListeningRef.current = true;
+            setIsListening(true);
+            setErrorMessage(null);
+          })
+        );
+
+        subscriptions.push(
+          NativeSpeechModule.addListener('end', () => {
+            isListeningRef.current = false;
+            setIsListening(false);
+            setInterimTranscript('');
+            if (timerRef.current) {
+              clearInterval(timerRef.current);
+              timerRef.current = null;
+            }
+            finishPendingStop();
+          })
+        );
+
+        subscriptions.push(
+          NativeSpeechModule.addListener(
+            'result',
+            (event: ExpoSpeechRecognitionResultEvent) => {
+              const text = event.results?.[0]?.transcript || '';
+              if (text) {
+                transcriptRef.current = text;
+              }
+              if (event.isFinal) {
+                setTranscript(text);
+                setInterimTranscript('');
+                finishPendingStop();
+              } else {
+                setInterimTranscript(text);
+              }
+            }
+          )
+        );
+
+        subscriptions.push(
+          NativeSpeechModule.addListener(
+            'error',
+            (event: ExpoSpeechRecognitionErrorEvent) => {
+              isListeningRef.current = false;
+              setIsListening(false);
+              setInterimTranscript('');
+              if (timerRef.current) {
+                clearInterval(timerRef.current);
+                timerRef.current = null;
+              }
+
+              if (event.error !== 'aborted' && event.error !== 'no-speech') {
+                setErrorMessage(
+                  event.message || `Speech recognition error: ${event.error}`
+                );
+              }
+              finishPendingStop();
+            }
+          )
+        );
+      }
+    } catch {
+      // Ignore subscription errors
     }
-    finishPendingStop();
-  });
+
+    return () => {
+      subscriptions.forEach((sub) => {
+        try {
+          sub.remove();
+        } catch {
+          // cleanup ignore
+        }
+      });
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+      try {
+        if (isListeningRef.current && NativeSpeechModule?.abort) {
+          NativeSpeechModule.abort();
+        }
+      } catch {
+        // cleanup ignore
+      }
+    };
+  }, [finishPendingStop]);
 
   const requestPermission = useCallback(async (): Promise<boolean> => {
+    if (!isNativeSupported) {
+      return false;
+    }
+
     try {
-      const res = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
-      setHasPermission(res.granted);
-      if (!res.granted) {
-        setErrorMessage('Microphone and speech recognition permissions are required.');
+      const res = await NativeSpeechModule.requestPermissionsAsync();
+      const granted = Boolean(res?.granted);
+      setHasPermission(granted);
+      if (!granted) {
+        setErrorMessage(
+          'Microphone and speech recognition permissions are required.'
+        );
       } else {
         setErrorMessage(null);
       }
-      return res.granted;
+      return granted;
     } catch {
       setHasPermission(false);
       setErrorMessage('Failed to request speech recognition permissions.');
@@ -139,7 +189,7 @@ export const useSpeechRecognition = (): UseSpeechRecognitionReturn => {
     }
 
     return new Promise((resolve) => {
-      if (!isListeningRef.current) {
+      if (!isNativeSupported || !isListeningRef.current) {
         resolve(transcriptRef.current.trim());
         return;
       }
@@ -157,7 +207,7 @@ export const useSpeechRecognition = (): UseSpeechRecognitionReturn => {
       };
 
       try {
-        ExpoSpeechRecognitionModule.stop();
+        NativeSpeechModule.stop();
       } catch {
         clearTimeout(timeout);
         isListeningRef.current = false;
@@ -184,7 +234,9 @@ export const useSpeechRecognition = (): UseSpeechRecognitionReturn => {
     }
 
     try {
-      ExpoSpeechRecognitionModule.abort();
+      if (NativeSpeechModule?.abort) {
+        NativeSpeechModule.abort();
+      }
     } catch {
       // Ignore error if already stopped
     }
@@ -193,6 +245,13 @@ export const useSpeechRecognition = (): UseSpeechRecognitionReturn => {
   const startListening = useCallback(
     async (options?: { lang?: string }): Promise<boolean> => {
       setErrorMessage(null);
+
+      if (!isNativeSupported) {
+        setErrorMessage(
+          'Speech recognition is not available in Expo Go. Please tap the microphone on your keyboard to speak.'
+        );
+        return false;
+      }
 
       let granted = hasPermission;
       if (granted === null || !granted) {
@@ -207,7 +266,7 @@ export const useSpeechRecognition = (): UseSpeechRecognitionReturn => {
         setDurationSeconds(0);
         startTimeRef.current = Date.now();
 
-        ExpoSpeechRecognitionModule.start({
+        NativeSpeechModule.start({
           lang: options?.lang || 'en-US',
           interimResults: true,
           continuous: false,
@@ -219,7 +278,9 @@ export const useSpeechRecognition = (): UseSpeechRecognitionReturn => {
 
         if (timerRef.current) clearInterval(timerRef.current);
         timerRef.current = setInterval(() => {
-          const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
+          const elapsed = Math.floor(
+            (Date.now() - startTimeRef.current) / 1000
+          );
           setDurationSeconds(elapsed);
 
           if (elapsed >= 30) {
@@ -246,6 +307,7 @@ export const useSpeechRecognition = (): UseSpeechRecognitionReturn => {
 
   return {
     isListening,
+    isSupported: isNativeSupported,
     transcript,
     interimTranscript,
     durationSeconds,
