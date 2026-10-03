@@ -48,6 +48,8 @@ import {
   UserCheck,
   Search,
   User,
+  Sparkles,
+  ChevronRight,
 } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -375,6 +377,26 @@ export const AddExpenseModal: React.FC = () => {
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={styles.scrollContent}
         >
+          {/* AI Assistant Quick Entry Banner */}
+          <TouchableOpacity
+            style={styles.aiQuickBanner}
+            onPress={() => {
+              navigation.goBack();
+              rootNavigation.navigate('AIAgent');
+            }}
+            activeOpacity={0.8}
+          >
+            <View style={styles.aiQuickLeft}>
+              <View style={styles.aiQuickIcon}>
+                <Sparkles size={14} color={colors.accent} strokeWidth={2.4} />
+              </View>
+              <SproutText variant="caption" style={styles.aiQuickText}>
+                Speak or type naturally with Tabsy AI
+              </SproutText>
+            </View>
+            <ChevronRight size={15} color={colors.accent} />
+          </TouchableOpacity>
+
           {/* Amount Card matching Sprout Screen 02 */}
           <SproutAmountInput
             ref={amountInputRef}
@@ -860,6 +882,80 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xs,
     paddingBottom: spacing.xl,
+  },
+  aiQuickBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FDF6E2',
+    borderColor: '#E6D3A3',
+    borderWidth: 1,
+    borderRadius: radii.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  aiQuickLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs + 2,
+    flex: 1,
+  },
+  aiQuickIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#F5E6BF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  aiQuickText: {
+    color: '#8A6820',
+    fontFamily: fontFamilies.bold,
+    fontSize: 12,
+  },
+  sproutAmountCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.line,
+    marginTop: spacing.xs,
+    ...shadows.card,
+  },
+  howMuchLabel: {
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  amountDisplayRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+  },
+  currencySymbol: {
+    fontSize: 28,
+    fontFamily: fontFamilies.bold,
+    marginTop: 8,
+    marginRight: 2,
+  },
+  amountNumberInput: {
+    fontSize: 52,
+    fontFamily: fontFamilies.bold,
+    letterSpacing: -2,
+    color: colors.text,
+    textAlign: 'center',
+    minWidth: 70,
+    padding: 0,
+    margin: 0,
+  },
+  amountDecimal: {
+    fontSize: 18,
+    fontFamily: fontFamilies.bold,
+    marginTop: 10,
+    marginLeft: 1,
   },
   modeContainer: {
     flexDirection: 'row',

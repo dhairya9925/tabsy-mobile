@@ -4,6 +4,10 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Image,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { colors, radii, spacing } from '../../theme';
@@ -19,7 +23,8 @@ import {
 import { useAuthStore } from '../../store/useAuthStore';
 import { authApi } from '../../api/auth';
 import { avatarKeyToUrl } from '../../utils/avatarRegistry';
-import { ArrowLeft, X, User, Pencil } from 'lucide-react-native';
+import { ArrowLeft, X, User, Pencil, Image as ImageIcon, Check } from 'lucide-react-native';
+import { AVATAR_OPTIONS } from '../auth/AvatarSelectionScreen';
 
 export const EditProfileModal: React.FC = () => {
   const navigation = useNavigation();
@@ -124,6 +129,8 @@ export const EditProfileModal: React.FC = () => {
         </SproutText>
       </View>
 
+
+
       {/* Form Fields */}
       <View style={styles.formCard}>
         <View style={styles.fieldGroup}>
@@ -210,6 +217,48 @@ const styles = StyleSheet.create({
     marginTop: 2,
     textAlign: 'center',
     paddingHorizontal: spacing.xl,
+  },
+  presetContainer: {
+    marginBottom: spacing.lg,
+  },
+  presetTitle: {
+    fontSize: 10,
+    letterSpacing: 0.8,
+    marginBottom: spacing.xs + 2,
+  },
+  presetScroll: {
+    gap: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  presetItem: {
+    position: 'relative',
+    padding: 2,
+    borderRadius: 26,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  presetItemSelected: {
+    borderColor: colors.accent,
+    transform: [{ scale: 1.05 }],
+  },
+  presetImage: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: colors.surface,
+  },
+  presetCheck: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: colors.surface,
   },
   formCard: {
     backgroundColor: colors.surface,

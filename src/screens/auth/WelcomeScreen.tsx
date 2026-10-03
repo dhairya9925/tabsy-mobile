@@ -3,37 +3,51 @@ import { View, StyleSheet } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../navigation/types';
 import { colors, radii, spacing, shadows } from '../../theme';
-import { SproutText, SproutButton, ScreenShell } from '../../components';
-import { Wallet, ShieldCheck } from 'lucide-react-native';
+import { SproutText, SproutButton, ScreenShell, TabsyLogo } from '../../components';
+import { Zap, RefreshCw, ShieldCheck } from 'lucide-react-native';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Welcome'>;
+
+const FEATURES = [
+  { icon: Zap, label: 'Smart Splitting' },
+  { icon: RefreshCw, label: 'Real-time Sync' },
+  { icon: ShieldCheck, label: 'Debt Simplification' },
+] as const;
 
 export const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <ScreenShell scrollable={false} contentContainerStyle={styles.container}>
-      <View style={styles.topSection}>
+      {/* ---- Hero section ---- */}
+      <View style={styles.heroSection}>
         <View style={styles.iconCircle}>
-          <Wallet size={40} color={colors.accent} strokeWidth={2.2} />
+          <TabsyLogo size={40} color={colors.text} />
         </View>
+
         <SproutText variant="eyebrow" color={colors.accent} style={styles.eyebrow}>
           SMART EXPENSE TRACKING
         </SproutText>
-        <SproutText variant="hero" style={styles.hero}>
+        <SproutText variant="hero" style={styles.heroText}>
           Split expenses,{'\n'}not friendships.
         </SproutText>
         <SproutText variant="bodyMuted" style={styles.description}>
           Track personal spending, split group bills, and settle debts — all in one simple app.
         </SproutText>
+
+        {/* ---- Feature pills ---- */}
+        <View style={styles.featureRow}>
+          {FEATURES.map(({ icon: Icon, label }) => (
+            <View key={label} style={styles.featurePill}>
+              <Icon size={14} color={colors.accent} strokeWidth={2.4} />
+              <SproutText variant="caption" color={colors.text} weight="600" style={styles.featureLabel}>
+                {label}
+              </SproutText>
+            </View>
+          ))}
+        </View>
       </View>
 
-      <View style={styles.cardPreview}>
-        <ShieldCheck size={20} color={colors.accent} style={{ marginRight: spacing.sm }} />
-        <SproutText variant="caption" color={colors.text} weight="700">
-          Automatic debt simplification & instant sync.
-        </SproutText>
-      </View>
-
-      <View style={styles.bottomSection}>
+      {/* ---- CTA section ---- */}
+      <View style={styles.ctaSection}>
         <SproutButton
           label="Get Started Free"
           onPress={() => navigation.navigate('Signup')}
@@ -44,6 +58,9 @@ export const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
           variant="outline"
           onPress={() => navigation.navigate('Login')}
         />
+        <SproutText variant="caption" color={colors.muted} style={styles.termsHint}>
+          Free forever · No credit card needed
+        </SproutText>
       </View>
     </ScreenShell>
   );
@@ -52,16 +69,16 @@ export const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'space-between',
-    paddingBottom: spacing.xl,
+    justifyContent: 'center',
+    paddingBottom: spacing.xxl,
   },
-  topSection: {
-    marginTop: spacing.xl,
+  heroSection: {
+    marginBottom: 40,
   },
   iconCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.line,
@@ -73,27 +90,41 @@ const styles = StyleSheet.create({
   eyebrow: {
     marginBottom: spacing.xs,
   },
-  hero: {
+  heroText: {
     marginBottom: spacing.md,
   },
   description: {
     fontSize: 15,
     lineHeight: 22,
+    marginBottom: spacing.xl,
   },
-  cardPreview: {
+  featureRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  featurePill: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surface,
-    borderRadius: radii.md,
+    borderRadius: radii.full,
     borderWidth: 1,
     borderColor: colors.line,
-    padding: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    paddingHorizontal: spacing.md,
     ...shadows.card,
   },
-  bottomSection: {
+  featureLabel: {
+    marginLeft: spacing.xs + 2,
+  },
+  ctaSection: {
     gap: spacing.md,
   },
   primaryButton: {
-    marginBottom: 4,
+    marginBottom: 2,
+  },
+  termsHint: {
+    textAlign: 'center',
+    marginTop: spacing.xs,
   },
 });

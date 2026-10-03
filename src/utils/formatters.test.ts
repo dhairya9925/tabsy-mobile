@@ -24,8 +24,11 @@ test('formatCurrencyExact should format with 2 decimal places', () => {
 test('getInitials should extract uppercase initials correctly', () => {
   assert.strictEqual(getInitials('Dhairya Patel'), 'DP');
   assert.strictEqual(getInitials('Alice'), 'AL');
+  assert.strictEqual(getInitials('tmp'), 'TM');
+  assert.strictEqual(getInitials(null, 'tmp@gmail.com'), 'TM');
   assert.strictEqual(getInitials(null, 'user@example.com'), 'US');
   assert.strictEqual(getInitials(null, null), 'ST');
+  assert.strictEqual(getInitials('', '   '), 'ST');
 });
 
 test('getCurrentWeekDays should return 7 days and correctly flag done days', () => {

@@ -26,6 +26,12 @@ export type AuthStackParamList = {
   Welcome: undefined;
   Login: undefined;
   Signup: undefined;
+  AvatarSelect: {
+    email: string;
+    password: string;
+    displayName?: string;
+    phone?: string;
+  };
 };
 
 export type RootStackParamList = {
@@ -44,4 +50,7 @@ export type RootStackParamList = {
   AddFriendModal: undefined;
   AddFriendExpenseModal: { friendId?: string; friendName?: string } | undefined;
   FriendSettleUpModal: { friendId: string; friendName: string; netBalance: number };
+  AIAgent: undefined;
+  QuickAddModal: { initialMode?: 'voice' | 'text'; mode?: 'voice' | 'text' } | undefined;
 };
+

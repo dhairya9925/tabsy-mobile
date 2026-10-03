@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../navigation/types';
-import { colors, spacing } from '../../theme';
+import { colors, radii, spacing, shadows, fontFamilies } from '../../theme';
 import {
   SproutText,
   SproutButton,
-  FieldRow,
   CircleButton,
   ScreenShell,
   Toast,
+  TabsyLogo,
 } from '../../components';
 import { useAuthStore } from '../../store/useAuthStore';
 import { ArrowLeft, Mail, Lock, Eye, EyeOff } from 'lucide-react-native';
@@ -22,6 +22,7 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
+  const [focusedField, setFocusedField] = useState<'email' | 'password' | null>(null);
 
   const login = useAuthStore((s) => s.login);
   const isLoading = useAuthStore((s) => s.isLoading);
@@ -63,6 +64,7 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
         onDismiss={() => setErrorMessage('')}
       />
 
+      {/* Top Navigation */}
       <View style={styles.topNav}>
         <CircleButton
           icon={<ArrowLeft size={20} color={colors.text} />}
@@ -70,66 +72,137 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
         />
       </View>
 
-      <View style={styles.header}>
-        <SproutText variant="eyebrow" color={colors.accent} style={styles.eyebrow}>
-          LOG IN
-        </SproutText>
-        <SproutText variant="hero" style={styles.title}>
-          Welcome Back
-        </SproutText>
-        <SproutText variant="bodyMuted">
-          Log in to your Tabsy account
-        </SproutText>
+      {/* Main Content Area */}
+      <View style={styles.mainContent}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.logoContainer}>
+            <View style={styles.iconCircle}>
+              <TabsyLogo size={42} color={colors.text} />
+            </View>
+          </View>
+          <SproutText variant="eyebrow" color={colors.accent} style={styles.eyebrow}>
+            WELCOME BACK
+          </SproutText>
+          <SproutText variant="hero" style={styles.title}>
+            Log In
+          </SproutText>
+          <SproutText variant="bodyMuted" style={styles.subtitle}>
+            Sign in to track personal spending, split group bills, and settle debts.
+          </SproutText>
+        </View>
+
+        {/* Form Card */}
+        <View style={styles.card}>
+          {/* Email Field */}
+          <View style={styles.fieldGroup}>
+            <SproutText variant="caption" color={colors.text} weight="700" style={styles.fieldLabel}>
+              EMAIL ADDRESS
+            </SproutText>
+            <View
+              style={[
+                styles.inputRow,
+                focusedField === 'email' && styles.inputRowFocused,
+                !!fieldErrors.email && styles.inputRowError,
+              ]}
+            >
+              <Mail
+                size={18}
+                color={focusedField === 'email' ? colors.accent : colors.muted}
+                style={styles.inputIcon}
+              />
+              <TextInput
+                placeholder="you@example.com"
+                placeholderTextColor={colors.muted}
+                value={email}
+                onChangeText={(val) => {
+                  setEmail(val);
+                  if (fieldErrors.email) setFieldErrors((e) => ({ ...e, email: undefined }));
+                }}
+                onFocus={() => setFocusedField('email')}
+                onBlur={() => setFocusedField(null)}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                autoCorrect={false}
+                style={styles.textInput}
+              />
+            </View>
+            {fieldErrors.email && (
+              <SproutText variant="caption" color={colors.negative} style={styles.errorText}>
+                {fieldErrors.email}
+              </SproutText>
+            )}
+          </View>
+
+          {/* Password Field */}
+          <View style={styles.fieldGroup}>
+            <SproutText variant="caption" color={colors.text} weight="700" style={styles.fieldLabel}>
+              PASSWORD
+            </SproutText>
+            <View
+              style={[
+                styles.inputRow,
+                focusedField === 'password' && styles.inputRowFocused,
+                !!fieldErrors.password && styles.inputRowError,
+              ]}
+            >
+              <Lock
+                size={18}
+                color={focusedField === 'password' ? colors.accent : colors.muted}
+                style={styles.inputIcon}
+              />
+              <TextInput
+                placeholder="••••••••"
+                placeholderTextColor={colors.muted}
+                value={password}
+                onChangeText={(val) => {
+                  setPassword(val);
+                  if (fieldErrors.password) setFieldErrors((e) => ({ ...e, password: undefined }));
+                }}
+                onFocus={() => setFocusedField('password')}
+                onBlur={() => setFocusedField(null)}
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+                autoCorrect={false}
+                style={styles.textInput}
+              />
+              <TouchableOpacity
+                onPress={() => setShowPassword((p) => !p)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                style={styles.eyeButton}
+              >
+                {showPassword ? (
+                  <EyeOff size={18} color={colors.muted} />
+                ) : (
+                  <Eye size={18} color={colors.muted} />
+                )}
+              </TouchableOpacity>
+            </View>
+            {fieldErrors.password && (
+              <SproutText variant="caption" color={colors.negative} style={styles.errorText}>
+                {fieldErrors.password}
+              </SproutText>
+            )}
+          </View>
+
+          {/* Submit Button */}
+          <SproutButton
+            label="Log In"
+            isLoading={isLoading}
+            onPress={handleLogin}
+            style={styles.submitButton}
+          />
+        </View>
       </View>
 
-      <View style={styles.form}>
-        <FieldRow
-          label="Email"
-          placeholder="you@example.com"
-          value={email}
-          onChangeText={(val) => {
-            setEmail(val);
-            if (fieldErrors.email) setFieldErrors((e) => ({ ...e, email: undefined }));
-          }}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          icon={<Mail size={18} color={colors.muted} />}
-          errorMessage={fieldErrors.email}
-        />
-
-        <FieldRow
-          label="Password"
-          placeholder="••••••••"
-          value={password}
-          onChangeText={(val) => {
-            setPassword(val);
-            if (fieldErrors.password) setFieldErrors((e) => ({ ...e, password: undefined }));
-          }}
-          secureTextEntry={!showPassword}
-          icon={<Lock size={18} color={colors.muted} />}
-          rightAction={
-            <TouchableOpacity onPress={() => setShowPassword((p) => !p)}>
-              {showPassword ? (
-                <EyeOff size={18} color={colors.muted} />
-              ) : (
-                <Eye size={18} color={colors.muted} />
-              )}
-            </TouchableOpacity>
-          }
-          errorMessage={fieldErrors.password}
-        />
-
-        <SproutButton
-          label="Log In"
-          isLoading={isLoading}
-          onPress={handleLogin}
-          style={styles.submitButton}
-        />
-      </View>
-
+      {/* Footer Switcher */}
       <View style={styles.footer}>
         <SproutText variant="bodyMuted">Don't have an account? </SproutText>
-        <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => navigation.navigate('Signup')}
+          hitSlop={{ top: 8, bottom: 8, left: 4, right: 8 }}
+        >
           <SproutText variant="subtitle" color={colors.accent} weight="700">
             Sign up
           </SproutText>
@@ -141,13 +214,39 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: {
+    flexGrow: 1,
+    justifyContent: 'space-between',
     paddingBottom: spacing.xxl,
   },
   topNav: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: spacing.lg,
+    paddingTop: spacing.xs,
+  },
+  mainContent: {
+    flex: 1,
+    justifyContent: 'center',
   },
   header: {
+    alignItems: 'flex-start',
     marginBottom: spacing.xl,
+  },
+  logoContainer: {
+    alignItems: 'flex-start',
+    marginBottom: spacing.md,
+  },
+  iconCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.line,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadows.card,
   },
   eyebrow: {
     marginBottom: spacing.xs,
@@ -155,8 +254,61 @@ const styles = StyleSheet.create({
   title: {
     marginBottom: spacing.xs,
   },
-  form: {
-    marginBottom: spacing.xl,
+  subtitle: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: radii.xl,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.line,
+    ...shadows.card,
+  },
+  fieldGroup: {
+    marginBottom: spacing.md,
+  },
+  fieldLabel: {
+    fontSize: 11,
+    letterSpacing: 0.8,
+    marginBottom: spacing.xs + 2,
+  },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.background,
+    borderRadius: radii.md,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+    paddingHorizontal: spacing.md,
+    minHeight: 50,
+  },
+  inputRowFocused: {
+    borderColor: colors.accent,
+    backgroundColor: colors.surfaceElevated,
+  },
+  inputRowError: {
+    borderColor: colors.negative,
+  },
+  inputIcon: {
+    marginRight: spacing.sm,
+  },
+  textInput: {
+    flex: 1,
+    fontSize: 15,
+    fontFamily: fontFamilies.regular,
+    color: colors.text,
+    paddingVertical: 12,
+  },
+  eyeButton: {
+    padding: spacing.xs,
+    marginLeft: spacing.xs,
+  },
+  errorText: {
+    marginTop: 4,
+    marginLeft: 2,
+    fontWeight: '600',
   },
   submitButton: {
     marginTop: spacing.sm,
@@ -165,6 +317,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: spacing.md,
+    paddingTop: spacing.xl,
   },
 });

@@ -28,6 +28,7 @@ export const MainTabsNavigator: React.FC = () => {
         <SproutTabBar
           {...props}
           onAddPress={() => rootNavigation.navigate('AddExpenseModal')}
+          onAIPress={() => rootNavigation.navigate('AIAgent')}
         />
       )}
       screenOptions={{

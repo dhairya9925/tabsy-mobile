@@ -21,6 +21,7 @@ const USER_KEY = 'tabsy_cached_user';
 
 let inMemoryToken: string | null = null;
 let inMemoryUser: UserProfile | null = null;
+const inMemoryStore: Record<string, string | null> = {};
 
 export const secureStorage = {
   async getAuthToken(): Promise<string | null> {
@@ -136,6 +137,42 @@ export const secureStorage = {
     }
   },
 
+  async getItem(key: string): Promise<string | null> {
+    if (inMemoryStore[key] !== undefined) return inMemoryStore[key];
+    if (SecureStore) {
+      try {
+        const val = await SecureStore.getItemAsync(key);
+        inMemoryStore[key] = val;
+        return val;
+      } catch {
+        return inMemoryStore[key] ?? null;
+      }
+    }
+    return inMemoryStore[key] ?? null;
+  },
+
+  async setItem(key: string, value: string): Promise<void> {
+    inMemoryStore[key] = value;
+    if (SecureStore) {
+      try {
+        await SecureStore.setItemAsync(key, value);
+      } catch (err) {
+        console.warn(`SecureStore setItem error for key "${key}"`, err);
+      }
+    }
+  },
+
+  async removeItem(key: string): Promise<void> {
+    delete inMemoryStore[key];
+    if (SecureStore) {
+      try {
+        await SecureStore.deleteItemAsync(key);
+      } catch (err) {
+        console.warn(`SecureStore removeItem error for key "${key}"`, err);
+      }
+    }
+  },
+
   async clearAll(): Promise<void> {
     inMemoryToken = null;
     inMemoryUser = null;
@@ -144,6 +181,9 @@ export const secureStorage = {
         window.localStorage.removeItem(TOKEN_KEY);
         window.localStorage.removeItem(USER_KEY);
       } catch {}
+    }
+    for (const k of Object.keys(inMemoryStore)) {
+      delete inMemoryStore[k];
     }
     if (SecureStore) {
       try {
@@ -155,3 +195,4 @@ export const secureStorage = {
     }
   },
 };
+

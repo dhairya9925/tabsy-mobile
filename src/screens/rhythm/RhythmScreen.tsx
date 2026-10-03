@@ -99,9 +99,10 @@ export const RhythmScreen: React.FC = () => {
 
         <View style={styles.headerRight}>
           <AvatarCircle
-            name={user?.display_name}
+            name={displayName || user?.display_name}
             email={user?.email}
             avatarUrl={user?.avatar_url}
+            size={42}
             onPress={handleAvatarPress}
           />
         </View>
@@ -214,6 +215,7 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   headerRight: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
   sectionHeader: {

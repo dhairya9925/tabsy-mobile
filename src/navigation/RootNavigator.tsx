@@ -18,6 +18,8 @@ import { SettingsScreen } from '../screens/profile/SettingsScreen';
 import { CategoryManagerScreen } from '../screens/journal/CategoryManagerScreen';
 import { EditProfileModal } from '../screens/profile/EditProfileModal';
 import { SplashScreen } from '../screens/auth/SplashScreen';
+import { AIAgentScreen } from '../screens/ai/AIAgentScreen';
+import { QuickAddOverlay } from '../screens/ai/QuickAddOverlay';
 import { useAuthStore } from '../store/useAuthStore';
 import { linking } from './linking';
 import { ErrorBoundary, OfflineSyncBanner } from '../components';
@@ -150,8 +152,25 @@ export const RootNavigator: React.FC = () => {
                 animation: 'slide_from_bottom',
               }}
             />
+            <RootStack.Screen
+              name="AIAgent"
+              component={AIAgentScreen}
+              options={{
+                presentation: 'modal',
+                animation: 'slide_from_bottom',
+              }}
+            />
+            <RootStack.Screen
+              name="QuickAddModal"
+              component={QuickAddOverlay}
+              options={{
+                presentation: 'transparentModal',
+                animation: 'fade',
+              }}
+            />
           </>
         )}
+
       </RootStack.Navigator>
     </NavigationContainer>
     </ErrorBoundary>

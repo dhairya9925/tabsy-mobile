@@ -127,6 +127,7 @@ export const ProfileScreen: React.FC = () => {
         <View style={styles.profileHeader}>
           <AvatarCircle
             name={displayName !== 'No name set' ? displayName : email}
+            email={email}
             avatarUrl={user?.avatar_url}
             size={58}
           />

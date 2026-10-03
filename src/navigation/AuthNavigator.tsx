@@ -4,6 +4,7 @@ import { AuthStackParamList } from './types';
 import { WelcomeScreen } from '../screens/auth/WelcomeScreen';
 import { LoginScreen } from '../screens/auth/LoginScreen';
 import { SignupScreen } from '../screens/auth/SignupScreen';
+import { AvatarSelectionScreen } from '../screens/auth/AvatarSelectionScreen';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 
@@ -19,6 +20,7 @@ export const AuthNavigator: React.FC = () => {
       <Stack.Screen name="Welcome" component={WelcomeScreen} />
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Signup" component={SignupScreen} />
+      <Stack.Screen name="AvatarSelect" component={AvatarSelectionScreen} />
     </Stack.Navigator>
   );
 };
