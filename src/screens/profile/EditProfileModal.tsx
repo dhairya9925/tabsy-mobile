@@ -129,7 +129,39 @@ export const EditProfileModal: React.FC = () => {
         </SproutText>
       </View>
 
-
+      {/* Quick Avatar Presets */}
+      <View style={styles.presetContainer}>
+        <SproutText variant="eyebrow" color={colors.accent} style={styles.presetTitle}>
+          CHOOSE AN AVATAR PRESET
+        </SproutText>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.presetScroll}
+        >
+          {AVATAR_OPTIONS.map((item) => {
+            const isSelected = selectedAvatar === item.url;
+            return (
+              <TouchableOpacity
+                key={item.id}
+                activeOpacity={0.8}
+                onPress={() => setSelectedAvatar(item.url)}
+                style={[
+                  styles.presetItem,
+                  isSelected && styles.presetItemSelected,
+                ]}
+              >
+                <Image source={{ uri: item.url }} style={styles.presetImage} />
+                {isSelected && (
+                  <View style={styles.presetCheck}>
+                    <Check size={10} color={colors.surface} strokeWidth={3} />
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </View>
 
       {/* Form Fields */}
       <View style={styles.formCard}>
