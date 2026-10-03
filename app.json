@@ -35,7 +35,13 @@
       ],
       "expo-secure-store",
       "./plugins/withQuickAdd",
-      "expo-audio"
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Tabsy needs microphone access for voice input.",
+          "speechRecognitionPermission": "Tabsy uses speech recognition to convert your voice into text for expense entry."
+        }
+      ]
     ]
   }
 }

@@ -16,7 +16,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { colors, radii, spacing, shadows, fontFamilies } from '../../theme';
 import { SproutText } from '../../components';
 import { useAIStore } from '../../store/useAIStore';
-import { useAudioRecorder } from '../../hooks/useAudioRecorder';
+import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import { formatCurrency } from '../../utils/formatters';
 import { haptics } from '../../utils/haptics';
 import { analytics } from '../../utils/analytics';
@@ -62,14 +62,15 @@ export const QuickAddOverlay: React.FC = () => {
   const cancelConfirmation = useAIStore((s) => s.cancelConfirmation);
   const selectOption = useAIStore((s) => s.selectOption);
 
-  // Audio recording hook
+  // Speech recognition hook
   const {
-    isRecording,
+    isListening,
+    interimTranscript,
     durationSeconds,
-    startRecording,
-    stopRecording,
-    cancelRecording,
-  } = useAudioRecorder();
+    startListening,
+    stopListening,
+    cancelListening,
+  } = useSpeechRecognition();
 
   // Animation values
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -83,9 +84,9 @@ export const QuickAddOverlay: React.FC = () => {
     }).start();
   }, [fadeAnim]);
 
-  // Pulse animation during recording
+  // Pulse animation during speech recognition
   useEffect(() => {
-    if (isRecording) {
+    if (isListening) {
       Animated.loop(
         Animated.sequence([
           Animated.timing(pulseAnim, {
@@ -103,7 +104,7 @@ export const QuickAddOverlay: React.FC = () => {
     } else {
       pulseAnim.setValue(1);
     }
-  }, [isRecording, pulseAnim]);
+  }, [isListening, pulseAnim]);
 
   // Sync offline queued expenses and track event on mount
   useEffect(() => {
@@ -120,8 +121,8 @@ export const QuickAddOverlay: React.FC = () => {
 
   const handleClose = () => {
     haptics.selection();
-    if (isRecording) {
-      cancelRecording();
+    if (isListening) {
+      cancelListening();
     }
     cancelConfirmation();
     navigation.goBack();
@@ -145,22 +146,24 @@ export const QuickAddOverlay: React.FC = () => {
 
   const handleVoiceToggle = async () => {
     setSubmitError(null);
-    if (isRecording) {
+    if (isListening) {
       await haptics.impact('light');
-      const uri = await stopRecording();
-      if (uri) {
-        analytics.track('ai_recording_completed', { durationSeconds });
+      const spokenText = await stopListening();
+      if (spokenText && spokenText.trim().length > 0) {
+        analytics.track('ai_stt_completed', { durationSeconds });
         try {
-          await sendMessage({ audioUri: uri });
+          await sendMessage({ text: spokenText.trim(), isVoice: true });
         } catch (err: any) {
           haptics.error();
-          setSubmitError(err?.message || 'Failed to process voice note');
+          setSubmitError(err?.message || 'Failed to process voice expense');
         }
+      } else {
+        analytics.track('ai_stt_error', { reason: 'empty_transcription' });
       }
     } else {
       await haptics.impact('medium');
-      analytics.track('ai_recording_started');
-      await startRecording();
+      analytics.track('ai_stt_started');
+      await startListening();
     }
   };
 
@@ -310,7 +313,7 @@ export const QuickAddOverlay: React.FC = () => {
                   ) : (
                     <View style={styles.voiceSection}>
                       <View style={styles.micHaloContainer}>
-                        {isRecording && (
+                        {isListening && (
                           <Animated.View
                             style={[
                               styles.recordingHalo,
@@ -321,12 +324,12 @@ export const QuickAddOverlay: React.FC = () => {
                         <TouchableOpacity
                           style={[
                             styles.micButton,
-                            isRecording && styles.micButtonActive,
+                            isListening && styles.micButtonActive,
                           ]}
                           onPress={handleVoiceToggle}
                           activeOpacity={0.8}
                         >
-                          {isRecording ? (
+                          {isListening ? (
                             <Square size={22} color={colors.surface} />
                           ) : (
                             <Mic size={24} color={colors.surface} />
@@ -336,12 +339,12 @@ export const QuickAddOverlay: React.FC = () => {
 
                       <SproutText
                         variant="caption"
-                        color={isRecording ? colors.negative : colors.muted}
+                        color={isListening ? colors.negative : colors.muted}
                         weight="600"
                         style={styles.voiceStatusText}
                       >
-                        {isRecording
-                          ? `Recording (00:${String(durationSeconds).padStart(2, '0')}) — Tap to Stop`
+                        {isListening
+                          ? (interimTranscript ? `"${interimTranscript}"` : `Listening (00:${String(durationSeconds).padStart(2, '0')}) — Tap to Stop`)
                           : 'Tap microphone to speak expense'}
                       </SproutText>
                     </View>

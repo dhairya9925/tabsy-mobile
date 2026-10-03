@@ -31,7 +31,7 @@ interface AIState {
   pendingConfirmation: AIParseResponse | null;
 
   // Actions
-  sendMessage: (params: { text?: string; audioUri?: string }) => Promise<void>;
+  sendMessage: (params: { text: string; isVoice?: boolean }) => Promise<void>;
   selectOption: (option: string) => Promise<void>;
   confirmExpense: (expense: AIParseResponse, onSuccess?: () => void) => Promise<boolean>;
   cancelConfirmation: () => void;
@@ -56,9 +56,9 @@ export const useAIStore = create<AIState>((set, get) => ({
 
   setError: (err) => set({ error: err }),
 
-  sendMessage: async ({ text, audioUri }) => {
+  sendMessage: async ({ text, isVoice = false }) => {
     const trimmedText = text?.trim();
-    if (!trimmedText && !audioUri) return;
+    if (!trimmedText) return;
 
     set({ error: null, isLoading: true });
 
@@ -76,9 +76,9 @@ export const useAIStore = create<AIState>((set, get) => ({
     const userMessage: ChatMessage = {
       id: userMsgId,
       role: 'user',
-      content: trimmedText || '🎤 Processing voice recording...',
+      content: isVoice ? `🎤 "${trimmedText}"` : trimmedText,
       timestamp: Date.now(),
-      isVoice: !!audioUri,
+      isVoice: Boolean(isVoice),
     };
 
     set((state) => ({
@@ -89,20 +89,8 @@ export const useAIStore = create<AIState>((set, get) => ({
     try {
       const response = await aiApi.parseExpense({
         text: trimmedText,
-        audioUri,
         conversationHistory: history,
       });
-
-      // If voice was transcribed, update user's bubble with transcribed text
-      if (audioUri && response.transcribed_text) {
-        set((state) => ({
-          messages: state.messages.map((m) =>
-            m.id === userMsgId
-              ? { ...m, content: `🎤 "${response.transcribed_text}"` }
-              : m
-          ),
-        }));
-      }
 
       // 3. Handle AI Response Status
       const assistantMsgId = `assistant_${Date.now()}`;
@@ -119,7 +107,7 @@ export const useAIStore = create<AIState>((set, get) => ({
         analytics.track('ai_expense_parsed', {
           type: response.expense_type,
           confidence: response.confidence,
-          isVoice: Boolean(audioUri),
+          isVoice: Boolean(isVoice),
         });
 
         set((state) => ({

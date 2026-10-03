@@ -24,7 +24,7 @@ import {
   TypingIndicator,
 } from '../../components/ai';
 import { useAIStore, ChatMessage } from '../../store/useAIStore';
-import { useAudioRecorder } from '../../hooks/useAudioRecorder';
+import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import { AIParseResponse } from '../../api/ai';
 import { haptics } from '../../utils/haptics';
 import { analytics } from '../../utils/analytics';
@@ -61,13 +61,14 @@ export const AIAgentScreen: React.FC = () => {
   } = useAIStore();
 
   const {
-    isRecording,
+    isListening,
+    interimTranscript,
     durationSeconds,
-    errorMessage: audioError,
-    startRecording,
-    stopRecording,
-    cancelRecording,
-  } = useAudioRecorder();
+    errorMessage: sttError,
+    startListening,
+    stopListening,
+    cancelListening,
+  } = useSpeechRecognition();
 
   // Scroll to bottom when messages update or loading changes
   useEffect(() => {
@@ -98,16 +99,18 @@ export const AIAgentScreen: React.FC = () => {
     if (isLoading) return;
     setError(null);
     await haptics.impact('medium');
-    analytics.track('ai_recording_started');
-    await startRecording();
+    analytics.track('ai_stt_started');
+    await startListening();
   };
 
   const handleStopRecord = async () => {
     await haptics.impact('light');
-    const uri = await stopRecording();
-    if (uri) {
-      analytics.track('ai_recording_completed', { durationSeconds });
-      await sendMessage({ audioUri: uri });
+    const spokenText = await stopListening();
+    if (spokenText && spokenText.trim().length > 0) {
+      analytics.track('ai_stt_completed', { durationSeconds });
+      await sendMessage({ text: spokenText.trim(), isVoice: true });
+    } else {
+      analytics.track('ai_stt_error', { reason: 'empty_transcription' });
     }
   };
 
@@ -205,7 +208,7 @@ export const AIAgentScreen: React.FC = () => {
     );
   };
 
-  const displayError = error || audioError;
+  const displayError = error || sttError;
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
@@ -299,13 +302,13 @@ export const AIAgentScreen: React.FC = () => {
           <View style={styles.inputWrapper}>
             <TextInput
               style={styles.textInput}
-              placeholder="Type expense (e.g. 250 lunch with Sam)..."
+              placeholder={isListening ? 'Listening...' : 'Type expense (e.g. 250 lunch with Sam)...'}
               placeholderTextColor={colors.muted}
-              value={inputText}
+              value={isListening && interimTranscript ? interimTranscript : inputText}
               onChangeText={setInputText}
               onSubmitEditing={handleSendText}
               returnKeyType="send"
-              editable={!isLoading && !isRecording}
+              editable={!isLoading && !isListening}
               multiline={false}
             />
 
@@ -323,11 +326,11 @@ export const AIAgentScreen: React.FC = () => {
 
           {/* Voice Record Button */}
           <VoiceRecordButton
-            isRecording={isRecording}
+            isRecording={isListening}
             durationSeconds={durationSeconds}
             onStartRecord={handleStartRecord}
             onStopRecord={handleStopRecord}
-            onCancelRecord={cancelRecording}
+            onCancelRecord={cancelListening}
             disabled={isLoading}
           />
         </View>
