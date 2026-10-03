@@ -122,7 +122,7 @@ export const CoordinatorClearingSection: React.FC<CoordinatorClearingSectionProp
   };
 
   return (
-    <View style={[styles.container, shadows.card]}>
+    <View style={[styles.container, shadows.card, { backgroundColor: colors.surfaceElevated }]}>
       {/* Header */}
       <TouchableOpacity
         style={styles.header}
@@ -167,7 +167,7 @@ export const CoordinatorClearingSection: React.FC<CoordinatorClearingSectionProp
       {!collapsed && (
         <View style={styles.content}>
           {/* Section 1: Landlord Rent Disbursal */}
-          <View style={styles.subCard}>
+          <View style={[styles.subCard, { backgroundColor: colors.surface }]}>
             <View style={styles.subCardHeader}>
               <Building2 size={15} color={colors.accent} style={{ marginRight: 6 }} />
               <SproutText style={styles.subCardTitle} weight="700">
@@ -213,7 +213,7 @@ export const CoordinatorClearingSection: React.FC<CoordinatorClearingSectionProp
 
           {/* Section 2: Pending Roommate Collections */}
           {pendingCollections.length > 0 && (
-            <View style={styles.subCard}>
+            <View style={[styles.subCard, { backgroundColor: colors.surface }]}>
               <SproutText style={styles.subCardTitle} weight="700">
                 Awaiting Roommate Collections ({pendingCollections.length})
               </SproutText>
@@ -266,7 +266,7 @@ export const CoordinatorClearingSection: React.FC<CoordinatorClearingSectionProp
 
           {/* Section 3: Pending Refunds */}
           {pendingRefunds.length > 0 && (
-            <View style={styles.subCard}>
+            <View style={[styles.subCard, { backgroundColor: colors.surface }]}>
               <View style={styles.subCardHeader}>
                 <Sparkles size={14} color={colors.accent} style={{ marginRight: 5 }} />
                 <SproutText style={styles.subCardTitle} weight="700">
@@ -321,7 +321,7 @@ export const CoordinatorClearingSection: React.FC<CoordinatorClearingSectionProp
           )}
 
           {/* Section 4: Lock Month & Rollover */}
-          <View style={styles.lockCard}>
+          <View style={[styles.lockCard, { backgroundColor: colors.surface }]}>
             <View style={styles.lockRow}>
               <Lock size={15} color={isLocked ? colors.muted : colors.text} style={{ marginRight: 6 }} />
               <SproutText style={styles.lockTitle} weight="700">

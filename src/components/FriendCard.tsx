@@ -6,7 +6,7 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { fontFamilies, radii, spacing } from '../theme';
+import { fontFamilies, radii, spacing, colors } from '../theme';
 import { SproutText } from './SproutText';
 import { AvatarCircle } from './AvatarCircle';
 import { FriendRecord } from '../types';
@@ -63,17 +63,17 @@ export const FriendCard: React.FC<FriendCardProps> = ({
       activeOpacity={mode === 'friend' && onPress ? 0.82 : 1}
       onPress={mode === 'friend' ? onPress : undefined}
       disabled={mode !== 'friend' || !onPress}
-      style={styles.card}
+      style={[styles.card, { backgroundColor: colors.surfaceElevated, borderColor: colors.line }]}
     >
       {/* Top Row: Avatar, Name & Actions */}
       <View style={styles.topRow}>
         <AvatarCircle name={name} email={email} size={38} />
 
         <View style={styles.infoCol}>
-          <SproutText style={styles.name} numberOfLines={1}>
+          <SproutText style={[styles.name, { color: colors.text }]} numberOfLines={1}>
             {name}
           </SproutText>
-          <SproutText style={styles.subtitle} numberOfLines={1}>
+          <SproutText style={[styles.subtitle, { color: colors.muted }]} numberOfLines={1}>
             {email || (isShadow ? 'Contact only' : 'Tabsy member')}
           </SproutText>
         </View>
@@ -89,18 +89,18 @@ export const FriendCard: React.FC<FriendCardProps> = ({
                   <TouchableOpacity
                     activeOpacity={0.8}
                     onPress={onAccept}
-                    style={styles.acceptBtn}
+                    style={[styles.acceptBtn, { backgroundColor: colors.accentSoft }]}
                     accessibilityLabel="Accept friend request"
                   >
-                    <Check size={15} color="#2D523C" strokeWidth={2.5} />
+                    <Check size={15} color={colors.accent} strokeWidth={2.5} />
                   </TouchableOpacity>
                   <TouchableOpacity
                     activeOpacity={0.8}
                     onPress={onReject}
-                    style={styles.rejectBtn}
+                    style={[styles.rejectBtn, { backgroundColor: colors.negativeSoft }]}
                     accessibilityLabel="Reject friend request"
                   >
-                    <X size={15} color="#AF4932" strokeWidth={2.5} />
+                    <X size={15} color={colors.negative} strokeWidth={2.5} />
                   </TouchableOpacity>
                 </>
               )}
@@ -109,9 +109,9 @@ export const FriendCard: React.FC<FriendCardProps> = ({
 
           {mode === 'sent' && (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <View style={styles.sentBadge}>
-                <Clock size={10} color="#D8E8CB" style={{ marginRight: 4 }} />
-                <SproutText style={styles.sentBadgeText}>
+              <View style={[styles.sentBadge, { backgroundColor: colors.text }]}>
+                <Clock size={10} color={colors.surface} style={{ marginRight: 4 }} />
+                <SproutText style={[styles.sentBadgeText, { color: colors.surface }]}>
                   Pending
                 </SproutText>
               </View>
@@ -119,14 +119,14 @@ export const FriendCard: React.FC<FriendCardProps> = ({
                 <TouchableOpacity
                   activeOpacity={0.7}
                   onPress={onCancel}
-                  style={styles.cancelBtn}
+                  style={[styles.cancelBtn, { backgroundColor: colors.negativeSoft }]}
                   accessibilityLabel="Cancel friend request"
                   disabled={isActionLoading}
                 >
                   {isActionLoading ? (
-                    <ActivityIndicator size="small" color="#AF4932" />
+                    <ActivityIndicator size="small" color={colors.negative} />
                   ) : (
-                    <X size={13} color="#AF4932" strokeWidth={2.5} />
+                    <X size={13} color={colors.negative} strokeWidth={2.5} />
                   )}
                 </TouchableOpacity>
               )}
@@ -142,11 +142,11 @@ export const FriendCard: React.FC<FriendCardProps> = ({
                   style={styles.removeBtn}
                   accessibilityLabel="Remove friend"
                 >
-                  <UserMinus size={15} color="#8D9E92" strokeWidth={1.8} />
+                  <UserMinus size={15} color={colors.muted} strokeWidth={1.8} />
                 </TouchableOpacity>
               )}
               {onPress && (
-                <ChevronRight size={17} color="#8D9E92" strokeWidth={2} style={styles.chevron} />
+                <ChevronRight size={17} color={colors.muted} strokeWidth={2} style={styles.chevron} />
               )}
             </View>
           )}
@@ -154,20 +154,20 @@ export const FriendCard: React.FC<FriendCardProps> = ({
       </View>
 
       {/* Hairline Divider */}
-      <View style={styles.divider} />
+      <View style={[styles.divider, { backgroundColor: colors.line }]} />
 
       {/* Bottom Row: Note on Left & Status / Settle on Right */}
       <View style={styles.bottomRow}>
         <View style={styles.bottomLeft}>
           {isShadow ? (
-            <View style={styles.contactBadge}>
-              <Ghost size={10} color="#D8E8CB" style={{ marginRight: 4 }} />
-              <SproutText style={styles.contactBadgeText}>
+            <View style={[styles.contactBadge, { backgroundColor: colors.text }]}>
+              <Ghost size={10} color={colors.surface} style={{ marginRight: 4 }} />
+              <SproutText style={[styles.contactBadgeText, { color: colors.surface }]}>
                 Contact
               </SproutText>
             </View>
           ) : (
-            <SproutText style={styles.descriptionText} numberOfLines={1}>
+            <SproutText style={[styles.descriptionText, { color: colors.muted }]} numberOfLines={1}>
               {mode === 'friend'
                 ? isSettled
                   ? 'All settled up'
@@ -185,9 +185,9 @@ export const FriendCard: React.FC<FriendCardProps> = ({
               <TouchableOpacity
                 activeOpacity={0.8}
                 onPress={onSettleUp}
-                style={styles.settleBtn}
+                style={[styles.settleBtn, { backgroundColor: colors.text }]}
               >
-                <SproutText style={styles.settleBtnText}>
+                <SproutText style={[styles.settleBtnText, { color: colors.surface }]}>
                   Settle Up
                 </SproutText>
               </TouchableOpacity>
@@ -197,20 +197,20 @@ export const FriendCard: React.FC<FriendCardProps> = ({
               style={[
                 styles.badgePill,
                 isSettled
-                  ? styles.badgeSettled
+                  ? { backgroundColor: colors.background }
                   : isOwed
-                  ? styles.badgeOwed
-                  : styles.badgeOwes,
+                  ? { backgroundColor: colors.accentSoft }
+                  : { backgroundColor: colors.negativeSoft },
               ]}
             >
               <SproutText
                 style={[
                   styles.badgeText,
                   isSettled
-                    ? styles.badgeTextSettled
+                    ? { color: colors.muted }
                     : isOwed
-                    ? styles.badgeTextOwed
-                    : styles.badgeTextOwes,
+                    ? { color: colors.accent }
+                    : { color: colors.negative },
                 ]}
               >
                 {isSettled

@@ -89,10 +89,10 @@ export const RhythmScreen: React.FC = () => {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <SproutText variant="eyebrow" color={colors.muted} style={styles.eyebrow}>
+          <SproutText variant="eyebrow" style={[styles.eyebrow, { color: colors.muted }]}>
             {`${currentMonth} RHYTHM`}
           </SproutText>
-          <SproutText variant="hero" style={styles.heroText}>
+          <SproutText variant="hero" style={[styles.heroText, { color: colors.text }]}>
             Keep it clear,{'\n'}day by day.
           </SproutText>
         </View>

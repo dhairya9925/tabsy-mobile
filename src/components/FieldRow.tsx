@@ -34,7 +34,8 @@ export const FieldRow: React.FC<FieldRowProps> = ({
     <View
       style={[
         styles.container,
-        errorMessage ? styles.containerError : null,
+        { backgroundColor: colors.surface },
+        errorMessage ? [styles.containerError, { borderColor: colors.negative }] : null,
       ]}
     >
       {icon && <View style={styles.iconContainer}>{icon}</View>}
@@ -56,7 +57,7 @@ export const FieldRow: React.FC<FieldRowProps> = ({
         ) : (
           <TextInput
             placeholderTextColor={colors.muted}
-            style={[styles.input, style]}
+            style={[styles.input, style, { color: colors.text }]}
             value={value}
             placeholder={placeholder}
             {...rest}

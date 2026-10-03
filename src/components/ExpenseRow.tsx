@@ -68,27 +68,27 @@ export const ExpenseRow: React.FC<ExpenseRowProps> = ({ expense, onPress }) => {
       activeOpacity={0.7}
       onPress={onPress}
       disabled={!onPress}
-      style={styles.container}
+      style={[styles.container, { borderBottomColor: colors.line }]}
     >
-      <View style={styles.iconCircle}>{icon}</View>
+      <View style={[styles.iconCircle, { backgroundColor: colors.surfaceElevated }]}>{icon}</View>
 
       <View style={styles.infoCol}>
-        <SproutText style={styles.title} numberOfLines={1}>
+        <SproutText style={[styles.title, { color: colors.text }]} numberOfLines={1}>
           {expense.description || expense.note || categoryName}
         </SproutText>
-        <SproutText style={styles.subtitle}>
+        <SproutText style={[styles.subtitle, { color: colors.muted }]}>
           {datePart} · {categoryName}
         </SproutText>
       </View>
 
       <View style={styles.amountCol}>
-        <SproutText style={styles.amount}>
+        <SproutText style={[styles.amount, { color: colors.text }]}>
           {formatCurrency(expense.amount)}
         </SproutText>
         {expense.is_pending_sync && (
-          <View style={styles.pendingBadge}>
+          <View style={[styles.pendingBadge, { backgroundColor: colors.clay }]}>
             <Clock size={8.5} color="#7A3E2D" strokeWidth={2.4} style={{ marginRight: 2 }} />
-            <SproutText style={styles.pendingText} weight="700">
+            <SproutText style={[styles.pendingText, { color: '#7A3E2D' }]} weight="700">
               Pending
             </SproutText>
           </View>

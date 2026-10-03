@@ -25,7 +25,7 @@ export const GroupMemberRow: React.FC<GroupMemberRowProps> = ({
   const isAdmin = member.role === 'admin';
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { borderBottomColor: colors.line }]}>
       <AvatarCircle
         name={profile?.display_name}
         email={profile?.email}
@@ -35,20 +35,20 @@ export const GroupMemberRow: React.FC<GroupMemberRowProps> = ({
 
       <View style={styles.infoCol}>
         <View style={styles.nameRow}>
-          <SproutText style={styles.name} numberOfLines={1}>
+          <SproutText style={[styles.name, { color: colors.text }]} numberOfLines={1}>
             {name} {isCurrentUser ? '(You)' : ''}
           </SproutText>
           {isAdmin && (
-            <View style={styles.adminBadge}>
-              <Crown size={10} color="#D8E8CB" style={{ marginRight: 3.5 }} />
-              <SproutText style={styles.adminText}>
+            <View style={[styles.adminBadge, { backgroundColor: colors.text }]}>
+              <Crown size={10} color={colors.surface} style={{ marginRight: 3.5 }} />
+              <SproutText style={[styles.adminText, { color: colors.surface }]}>
                 Admin
               </SproutText>
             </View>
           )}
         </View>
         {email ? (
-          <SproutText style={styles.email} numberOfLines={1}>
+          <SproutText style={[styles.email, { color: colors.muted }]} numberOfLines={1}>
             {email}
           </SproutText>
         ) : null}

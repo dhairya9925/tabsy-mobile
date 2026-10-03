@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, StyleSheet, Animated } from 'react-native';
-import { colors, radii, spacing, shadows } from '../theme';
+import { colors, statusColors, radii, spacing, shadows } from '../theme';
 import { SproutText } from './SproutText';
 import { AlertCircle, CheckCircle2, X } from 'lucide-react-native';
 
@@ -52,8 +52,9 @@ export const Toast: React.FC<ToastProps> = ({
     <Animated.View
       style={[
         styles.toast,
-        isError && styles.errorToast,
-        isSuccess && styles.successToast,
+        { backgroundColor: colors.surface, borderColor: colors.line, shadowColor: colors.text },
+        isError && { backgroundColor: statusColors.negativeBg, borderColor: statusColors.negativeText },
+        isSuccess && { backgroundColor: statusColors.positiveBg, borderColor: colors.positive },
         { opacity },
       ]}
       pointerEvents={visible ? 'auto' : 'none'}
@@ -67,7 +68,7 @@ export const Toast: React.FC<ToastProps> = ({
       </View>
       <SproutText
         variant="caption"
-        color={isError ? colors.negative : colors.text}
+        color={isError ? statusColors.negativeText : isSuccess ? colors.positive : colors.text}
         weight="600"
         style={styles.message}
       >
@@ -95,12 +96,12 @@ const styles = StyleSheet.create({
     ...shadows.modal,
   },
   errorToast: {
-    backgroundColor: colors.negativeSoft,
-    borderColor: colors.negative,
+    backgroundColor: statusColors.negativeBg,
+    borderColor: statusColors.negativeText,
   },
   successToast: {
-    backgroundColor: colors.soft,
-    borderColor: colors.accent,
+    backgroundColor: statusColors.positiveBg,
+    borderColor: colors.positive,
   },
   iconWrapper: {
     marginRight: spacing.sm,

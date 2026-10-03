@@ -82,7 +82,7 @@ export const SproutAmountInput = forwardRef<TextInput, SproutAmountInputProps>(
     return (
       <Pressable
         onPress={handlePressCard}
-        style={[styles.sproutAmountCard, style]}
+        style={[styles.sproutAmountCard, { backgroundColor: colors.surface, borderColor: colors.line, shadowColor: colors.text }, style]}
         accessible={true}
         accessibilityRole="adjustable"
         accessibilityLabel={`${label} ₹${parts.displayInt}${parts.displayDecimalActive || parts.displayDecimalPlaceholder}`}

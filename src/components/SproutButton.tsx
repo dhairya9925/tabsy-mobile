@@ -35,10 +35,10 @@ export const SproutButton: React.FC<SproutButtonProps> = ({
 
   const containerStyle: StyleProp<ViewStyle> = [
     styles.base,
-    isPrimary && styles.primary,
-    isOutline && styles.outline,
-    isClay && styles.clay,
-    isSoft && styles.soft,
+    isPrimary && { backgroundColor: colors.accent },
+    isOutline && [styles.outline, { borderColor: colors.accent }],
+    isClay && { backgroundColor: colors.clay },
+    isSoft && { backgroundColor: colors.soft },
     variant === 'ghost' && styles.ghost,
     (disabled || isLoading) && styles.disabled,
     style,
@@ -90,19 +90,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: spacing.lg,
   },
-  primary: {
-    backgroundColor: colors.accent,
-  },
   outline: {
     backgroundColor: 'transparent',
     borderWidth: 1.5,
-    borderColor: colors.accent,
-  },
-  clay: {
-    backgroundColor: colors.clay,
-  },
-  soft: {
-    backgroundColor: colors.soft,
   },
   ghost: {
     backgroundColor: 'transparent',

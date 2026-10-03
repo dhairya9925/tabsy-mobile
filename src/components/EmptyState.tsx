@@ -24,8 +24,8 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   style,
 }) => {
   return (
-    <View style={[styles.container, card && [styles.cardContainer, shadows.card], style]}>
-      <View style={styles.iconCircle}>
+    <View style={[styles.container, card && [styles.cardContainer, { backgroundColor: colors.surface, borderColor: colors.line }, shadows.card], style]}>
+      <View style={[styles.iconCircle, { backgroundColor: colors.soft }]}>
         {icon}
       </View>
 

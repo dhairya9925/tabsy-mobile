@@ -70,10 +70,10 @@ export const WhoOwesWhomSection: React.FC<WhoOwesWhomSectionProps> = ({
     <View style={styles.wrapper}>
       {/* 1. PRIORITY SECTION: User's Actionable Settlements (You Owe / Owed to You) */}
       {hasMyBalances && (
-        <View style={styles.myBalancesCard}>
-          <View style={styles.myBalancesHeader}>
+        <View style={[styles.myBalancesCard, { backgroundColor: colors.surfaceElevated, borderColor: colors.line }]}>
+          <View style={[styles.myBalancesHeader, { borderBottomColor: colors.line }]}>
             <View style={styles.myHeaderLeft}>
-              <View style={styles.pulseDot} />
+              <View style={[styles.pulseDot, { backgroundColor: colors.accent }]} />
               <SproutText variant="eyebrow" color={colors.text} style={styles.myHeaderEyebrow}>
                 YOUR PENDING SETTLEMENTS
               </SproutText>
@@ -100,8 +100,8 @@ export const WhoOwesWhomSection: React.FC<WhoOwesWhomSectionProps> = ({
                   <SproutText variant="body" color={colors.text} weight="700" numberOfLines={1}>
                     Pay {b.to_name}
                   </SproutText>
-                  <View style={styles.debtTag}>
-                    <SproutText style={styles.debtTagText}>YOU OWE</SproutText>
+                  <View style={[styles.debtTag, { backgroundColor: colors.negativeSoft, borderColor: colors.negative }]}>
+                    <SproutText style={[styles.debtTagText, { color: colors.negative }]}>YOU OWE</SproutText>
                   </View>
                 </View>
                 <SproutText variant="caption" color={colors.muted} style={{ fontSize: 11, marginTop: 1 }}>
@@ -119,8 +119,8 @@ export const WhoOwesWhomSection: React.FC<WhoOwesWhomSectionProps> = ({
                     style={styles.settleBtn}
                     onPress={() => onSettle(b)}
                   >
-                    <Handshake size={12} color="#F0BF67" style={{ marginRight: 4 }} />
-                    <SproutText style={styles.settleBtnText}>
+                    <Handshake size={12} color={colors.surface} style={{ marginRight: 4 }} />
+                    <SproutText style={[styles.settleBtnText, { color: colors.surface }]}>
                       Settle Up
                     </SproutText>
                   </TouchableOpacity>
@@ -144,8 +144,8 @@ export const WhoOwesWhomSection: React.FC<WhoOwesWhomSectionProps> = ({
                   <SproutText variant="body" color={colors.text} weight="700" numberOfLines={1}>
                     {b.from_name}
                   </SproutText>
-                  <View style={styles.creditTag}>
-                    <SproutText style={styles.creditTagText}>OWES YOU</SproutText>
+                  <View style={[styles.creditTag, { backgroundColor: colors.accentSoft, borderColor: colors.accent }]}>
+                    <SproutText style={[styles.creditTagText, { color: colors.accent }]}>OWES YOU</SproutText>
                   </View>
                 </View>
                 <SproutText variant="caption" color={colors.muted} style={{ fontSize: 11, marginTop: 1 }}>
@@ -177,7 +177,7 @@ export const WhoOwesWhomSection: React.FC<WhoOwesWhomSectionProps> = ({
 
       {/* 2. SQUARED AWAY PILL (When current user has 0 dues, but others still owe) */}
       {!hasMyBalances && otherTransfers.length > 0 && (
-        <View style={styles.squaredAwayPill}>
+        <View style={[styles.squaredAwayPill, { backgroundColor: colors.accentSoft, borderColor: colors.accent }]}>
           <Sparkles size={14} color={colors.accent} />
           <SproutText variant="caption" color={colors.accent} weight="600" style={{ fontSize: 11.5 }}>
             You're all squared away · No pending payments for you
@@ -187,8 +187,8 @@ export const WhoOwesWhomSection: React.FC<WhoOwesWhomSectionProps> = ({
 
       {/* 3. COHESIVE GROUP TRANSFERS TABLE (All other roommates) */}
       {otherTransfers.length > 0 && (
-        <View style={styles.tableCard}>
-          <View style={styles.tableHeader}>
+        <View style={[styles.tableCard, { backgroundColor: colors.surfaceElevated, borderColor: colors.line }]}>
+          <View style={[styles.tableHeader, { borderBottomColor: colors.line }]}>
             <View>
               <SproutText variant="eyebrow" color={colors.muted} style={styles.tableEyebrow}>
                 {hasMyBalances ? 'OTHER GROUP BALANCES' : 'SIMPLIFIED DEBT TRANSFERS'}
@@ -197,7 +197,7 @@ export const WhoOwesWhomSection: React.FC<WhoOwesWhomSectionProps> = ({
                 Who Owes Whom
               </SproutText>
             </View>
-            <View style={styles.countBadge}>
+            <View style={[styles.countBadge, { backgroundColor: colors.soft }]}>
               <SproutText variant="caption" color={colors.muted} weight="600" style={{ fontSize: 10.5 }}>
                 {otherTransfers.length} transfer{otherTransfers.length > 1 ? 's' : ''}
               </SproutText>
@@ -211,7 +211,7 @@ export const WhoOwesWhomSection: React.FC<WhoOwesWhomSectionProps> = ({
                 key={`other-${b.from_user_id}-${b.to_user_id}-${idx}`}
                 style={[
                   styles.tableRow,
-                  idx > 0 && styles.rowHairlineBorder,
+                  idx > 0 && [styles.rowHairlineBorder, { borderTopColor: colors.line }],
                 ]}
               >
                 {/* Debtor */}
@@ -262,7 +262,7 @@ export const WhoOwesWhomSection: React.FC<WhoOwesWhomSectionProps> = ({
             <TouchableOpacity
               activeOpacity={0.7}
               onPress={() => setShowAllTransfers(!showAllTransfers)}
-              style={styles.toggleBtn}
+              style={[styles.toggleBtn, { borderTopColor: colors.line }]}
             >
               <SproutText variant="caption" color={colors.accent} weight="700" style={{ fontSize: 11 }}>
                 {showAllTransfers
@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: 18,
     borderWidth: 1.5,
-    borderColor: '#E7C5B5',
+    borderColor: colors.negative,
     padding: 13,
     shadowColor: colors.text,
     shadowOffset: { width: 0, height: 1 },

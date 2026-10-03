@@ -97,7 +97,7 @@ export const JoinGroupPopup: React.FC<JoinGroupPopupProps> = ({
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={styles.keyboardWrap}
         >
-          <View style={styles.dialogCard}>
+          <View style={[styles.dialogCard, { backgroundColor: colors.surface, borderColor: colors.line, shadowColor: colors.text }]}>
             {/* Header */}
             <View style={styles.header}>
               <View style={styles.iconCircle}>
@@ -122,7 +122,7 @@ export const JoinGroupPopup: React.FC<JoinGroupPopupProps> = ({
             </View>
 
             {/* Input Container */}
-            <View style={styles.inputWrap}>
+            <View style={[styles.inputWrap, { backgroundColor: colors.background, borderColor: colors.line }]}>
               <KeyRound size={16} color={colors.muted} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
@@ -151,9 +151,9 @@ export const JoinGroupPopup: React.FC<JoinGroupPopupProps> = ({
 
             {/* Error Message */}
             {!!errorMessage && (
-              <View style={styles.errorPill}>
-                <AlertCircle size={13} color="#9C4221" style={{ marginRight: 5 }} />
-                <SproutText style={styles.errorText} numberOfLines={2}>
+              <View style={[styles.errorPill, { backgroundColor: colors.negativeSoft, borderColor: colors.negative }]}>
+                <AlertCircle size={13} color={colors.negative} style={{ marginRight: 5 }} />
+                <SproutText style={[styles.errorText, { color: colors.negative }]} numberOfLines={2}>
                   {errorMessage}
                 </SproutText>
               </View>
@@ -164,7 +164,7 @@ export const JoinGroupPopup: React.FC<JoinGroupPopupProps> = ({
               <TouchableOpacity
                 activeOpacity={0.7}
                 onPress={handleClose}
-                style={styles.cancelBtn}
+                style={[styles.cancelBtn, { backgroundColor: colors.surface, borderColor: colors.line }]}
                 disabled={isLoading}
               >
                 <SproutText variant="body" color={colors.muted} weight="600" style={styles.cancelText}>
@@ -175,13 +175,13 @@ export const JoinGroupPopup: React.FC<JoinGroupPopupProps> = ({
               <TouchableOpacity
                 activeOpacity={0.8}
                 onPress={handleJoin}
-                style={[styles.joinBtn, !inviteCode.trim() && styles.joinBtnDisabled]}
+                style={[styles.joinBtn, { backgroundColor: colors.text }, !inviteCode.trim() && styles.joinBtnDisabled]}
                 disabled={isLoading || !inviteCode.trim()}
               >
                 {isLoading ? (
-                  <ActivityIndicator size="small" color="#F0BF67" />
+                  <ActivityIndicator size="small" color={colors.surface} />
                 ) : (
-                  <SproutText style={styles.joinBtnText}>
+                  <SproutText style={[styles.joinBtnText, { color: colors.surface }]}>
                     Join Group
                   </SproutText>
                 )}

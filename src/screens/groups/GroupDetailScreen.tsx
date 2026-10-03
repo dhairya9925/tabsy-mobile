@@ -200,10 +200,10 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         />
 
         <View style={styles.topBarCenter}>
-          <SproutText style={styles.topBarEyebrow}>
+          <SproutText style={[styles.topBarEyebrow, { color: colors.muted }]}>
             SHARED RHYTHM
           </SproutText>
-          <SproutText style={styles.topBarTitle} numberOfLines={1}>
+          <SproutText style={[styles.topBarTitle, { color: colors.text }]} numberOfLines={1}>
             {group?.name || 'Group'}
           </SproutText>
         </View>
@@ -263,7 +263,7 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
       {subTab === 'expenses' && (
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <SproutText style={styles.sectionTitle}>
+            <SproutText style={[styles.sectionTitle, { color: colors.text }]}>
               Group Activity
             </SproutText>
             <TouchableOpacity
@@ -272,19 +272,19 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
               style={styles.addBtn}
             >
               <PlusCircle size={15} color={colors.accent} style={{ marginRight: 4 }} />
-              <SproutText style={styles.addBtnText}>
+              <SproutText style={[styles.addBtnText, { color: colors.accent }]}>
                 + Add Expense
               </SproutText>
             </TouchableOpacity>
           </View>
 
           {expenses.length === 0 && !isLoading ? (
-            <View style={styles.emptyCard}>
+            <View style={[styles.emptyCard, { backgroundColor: colors.surfaceElevated, borderColor: colors.line }]}>
               <Receipt size={38} color={colors.muted} strokeWidth={1.5} />
-              <SproutText variant="subtitle" color={colors.text} style={styles.emptyTitle}>
+              <SproutText variant="subtitle" style={[styles.emptyTitle, { color: colors.text }]}>
                 No group expenses yet
               </SproutText>
-              <SproutText variant="caption" color={colors.muted} style={styles.emptyDesc}>
+              <SproutText variant="caption" style={[styles.emptyDesc, { color: colors.muted }]}>
                 Split your first group bill with roommates or friends.
               </SproutText>
             </View>
@@ -301,7 +301,7 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
               <View style={styles.confirmNote}>
                 <CheckCheck size={14} color={colors.muted} />
-                <SproutText style={styles.confirmText}>
+                <SproutText style={[styles.confirmText, { color: colors.muted }]}>
                   All group shares have been recorded.
                 </SproutText>
               </View>
@@ -314,12 +314,12 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         <View style={styles.section}>
           {/* Monthly Settlement Banner (Yellow marked area - Fixed) */}
           <TouchableOpacity
-            style={styles.settlementBanner}
+            style={[styles.settlementBanner, { backgroundColor: colors.surfaceElevated, borderColor: colors.line }]}
             activeOpacity={0.75}
             onPress={() => navigation.navigate('MonthlySettlementDetail', { groupId, groupName: group?.name })}
           >
             <View style={styles.settlementBannerLeft}>
-              <View style={styles.settlementIconCircle}>
+              <View style={[styles.settlementIconCircle, { backgroundColor: colors.soft }]}>
                 <Calendar size={20} color={colors.accent} strokeWidth={2} />
               </View>
               <View style={styles.settlementTextCol}>
@@ -333,7 +333,7 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                 </SproutText>
               </View>
             </View>
-            <View style={styles.settlementChevronWrap}>
+            <View style={[styles.settlementChevronWrap, { backgroundColor: colors.soft }]}>
               <ChevronRight size={15} color={colors.accent} strokeWidth={2.5} />
             </View>
           </TouchableOpacity>
@@ -356,8 +356,8 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
           {/* Add Member Box */}
           {isAdmin && (
-            <View style={styles.addMemberCard}>
-              <SproutText variant="eyebrow" color={colors.muted} style={styles.addMemberEyebrow}>
+            <View style={[styles.addMemberCard, { backgroundColor: colors.surfaceElevated }]}>
+              <SproutText variant="eyebrow" style={[styles.addMemberEyebrow, { color: colors.muted }]}>
                 INVITE BY EMAIL
               </SproutText>
               <View style={styles.addMemberRow}>
@@ -374,9 +374,9 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                   activeOpacity={0.8}
                   onPress={handleAddMember}
                   disabled={isAddingMember}
-                  style={styles.addMemberSubmit}
+                  style={[styles.addMemberSubmit, { backgroundColor: colors.accent }]}
                 >
-                  <SproutText variant="caption" color={colors.onAccent} weight="700">
+                  <SproutText variant="caption" weight="700" style={{ color: colors.surface }}>
                     {isAddingMember ? 'Adding...' : 'Add'}
                   </SproutText>
                 </TouchableOpacity>

@@ -43,9 +43,9 @@ export const AvatarPickerSheet: React.FC<AvatarPickerSheetProps> = ({
           onPress={onClose}
         />
 
-        <View style={[styles.sheetContainer, shadows.card]}>
+        <View style={[styles.sheetContainer, shadows.card, { backgroundColor: colors.surfaceElevated, borderColor: colors.line }]}>
           {/* Grab Handle */}
-          <View style={styles.handleBar} />
+          <View style={[styles.handleBar, { backgroundColor: colors.line }]} />
 
           {/* Header */}
           <View style={styles.header}>
@@ -77,7 +77,8 @@ export const AvatarPickerSheet: React.FC<AvatarPickerSheetProps> = ({
                   key={key}
                   style={[
                     styles.avatarItem,
-                    isSelected && styles.avatarItemSelected,
+                    { backgroundColor: colors.background },
+                    isSelected && [styles.avatarItemSelected, { borderColor: colors.accent, backgroundColor: colors.accentSoft }],
                   ]}
                   activeOpacity={0.7}
                   onPress={() => onSelect(key)}
@@ -90,8 +91,8 @@ export const AvatarPickerSheet: React.FC<AvatarPickerSheetProps> = ({
                     resizeMode="cover"
                   />
                   {isSelected && (
-                    <View style={styles.checkBadge}>
-                      <Check size={12} color={colors.surface} strokeWidth={3} />
+                    <View style={[styles.checkBadge, { backgroundColor: colors.accent, borderColor: colors.surfaceElevated }]}>
+                      <Check size={12} color={colors.onAccent || colors.surface} strokeWidth={3} />
                     </View>
                   )}
                 </TouchableOpacity>
@@ -102,7 +103,7 @@ export const AvatarPickerSheet: React.FC<AvatarPickerSheetProps> = ({
           {/* Optional: Remove Avatar Button */}
           {!!selected && (
             <TouchableOpacity
-              style={styles.removeButton}
+              style={[styles.removeButton, { backgroundColor: colors.background, borderColor: colors.line }]}
               activeOpacity={0.7}
               onPress={() => onSelect(null)}
             >

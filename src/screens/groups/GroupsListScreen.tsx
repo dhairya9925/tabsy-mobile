@@ -302,13 +302,13 @@ export const GroupsListScreen: React.FC = () => {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <SproutText variant="eyebrow" color={colors.muted} style={styles.eyebrow}>
+          <SproutText variant="eyebrow" style={[styles.eyebrow, { color: colors.muted }]}>
             {mainTab === 'groups' ? 'SHARED RHYTHM' : '1-ON-1 RHYTHM'}
           </SproutText>
-          <SproutText variant="hero" style={styles.title}>
+          <SproutText variant="hero" style={[styles.title, { color: colors.text }]}>
             {mainTab === 'groups' ? 'Groups' : 'Friends'}
           </SproutText>
-          <SproutText style={styles.subtitle} numberOfLines={1}>
+          <SproutText style={[styles.subtitle, { color: colors.muted }]} numberOfLines={1}>
             {headerSubtitle}
           </SproutText>
         </View>
@@ -317,10 +317,10 @@ export const GroupsListScreen: React.FC = () => {
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={() => rootNavigation.navigate('Settings')}
-            style={[styles.settingsBtn, { marginRight: 8 }]}
+            style={[styles.settingsBtn, { marginRight: 8, backgroundColor: colors.surfaceElevated, borderColor: colors.line }]}
             accessibilityLabel="Open settings"
           >
-            <Settings size={18} color="#274837" strokeWidth={1.8} />
+            <Settings size={18} color={colors.text} strokeWidth={1.8} />
           </TouchableOpacity>
           <AvatarCircle
             name={currentUser?.display_name}
@@ -348,10 +348,10 @@ export const GroupsListScreen: React.FC = () => {
             <TouchableOpacity
               activeOpacity={0.85}
               onPress={() => rootNavigation.navigate('CreateGroupModal')}
-              style={styles.primaryActionBtn}
+              style={[styles.primaryActionBtn, { backgroundColor: colors.accent }]}
             >
-              <Plus size={16} color="#FFFFFF" strokeWidth={2.4} style={{ marginRight: 5 }} />
-              <SproutText style={styles.primaryActionBtnText}>
+              <Plus size={16} color={colors.onAccent} strokeWidth={2.4} style={{ marginRight: 5 }} />
+              <SproutText style={[styles.primaryActionBtnText, { color: colors.onAccent }]}>
                 New group
               </SproutText>
             </TouchableOpacity>
@@ -359,11 +359,11 @@ export const GroupsListScreen: React.FC = () => {
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={() => setShowJoinPopup(true)}
-              style={styles.secondaryActionBtn}
+              style={[styles.secondaryActionBtn, { backgroundColor: colors.soft }]}
               accessibilityLabel="Join group with code"
             >
               <KeyRound size={15} color={colors.text} strokeWidth={2.2} style={{ marginRight: 5 }} />
-              <SproutText style={styles.secondaryActionBtnText}>
+              <SproutText style={[styles.secondaryActionBtnText, { color: colors.text }]}>
                 Join
               </SproutText>
             </TouchableOpacity>
@@ -372,10 +372,10 @@ export const GroupsListScreen: React.FC = () => {
           <TouchableOpacity
             activeOpacity={0.85}
             onPress={() => rootNavigation.navigate('AddFriendModal')}
-            style={styles.singleActionBtn}
+            style={[styles.singleActionBtn, { backgroundColor: colors.accent }]}
           >
-            <UserPlus size={16} color="#FFFFFF" strokeWidth={2.4} style={{ marginRight: 6 }} />
-            <SproutText style={styles.primaryActionBtnText}>
+            <UserPlus size={16} color={colors.onAccent} strokeWidth={2.4} style={{ marginRight: 6 }} />
+            <SproutText style={[styles.primaryActionBtnText, { color: colors.onAccent }]}>
               Add friend
             </SproutText>
           </TouchableOpacity>

@@ -15,7 +15,7 @@ export interface AvatarCircleProps {
 }
 
 const AVATAR_PALETTES = [
-  { bg: '#D8E8CB', text: '#214D32' }, // Sage Green
+  { bg: colors.soft, text: '#214D32' }, // Sage Green
   { bg: '#E2DBF7', text: '#3E2E6B' }, // Soft Lavender
   { bg: '#D6EAF8', text: '#1B4965' }, // Sky Blue
   { bg: '#FCE7D6', text: '#7A3E1D' }, // Peach Amber
@@ -143,13 +143,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: '#E6D3A3',
+    borderColor: colors.goldHighlight,
     overflow: 'hidden',
   },
   image: {
     backgroundColor: colors.sun,
     borderWidth: 1.5,
-    borderColor: '#E6D3A3',
+    borderColor: colors.goldHighlight,
     overflow: 'hidden',
   },
 });

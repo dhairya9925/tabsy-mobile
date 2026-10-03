@@ -35,8 +35,9 @@ export const SproutTabBar: React.FC<SproutTabBarProps> = ({
           onPress={onAIPress}
           style={({ pressed }) => [
             styles.aiFloatingButton,
+            { backgroundColor: colors.goldBackground, borderColor: colors.goldHighlight, shadowColor: colors.text },
             { bottom: insets.bottom + 66 },
-            pressed && styles.aiButtonPressed,
+            pressed && [styles.aiButtonPressed, { backgroundColor: colors.goldHighlight }],
           ]}
         >
           <Sparkles size={23} color={colors.accent} strokeWidth={2.2} />
@@ -44,7 +45,7 @@ export const SproutTabBar: React.FC<SproutTabBarProps> = ({
       )}
 
       {/* Main Bottom Tab Bar */}
-      <View style={[styles.bar, { height: 66 + insets.bottom }]}>
+      <View style={[styles.bar, { backgroundColor: colors.surface, borderTopColor: colors.line, height: 66 + insets.bottom }]}>
         <View style={styles.tabItems}>
           {state.routes.map((route, index) => {
             const isFocused = state.index === index;
@@ -53,7 +54,7 @@ export const SproutTabBar: React.FC<SproutTabBarProps> = ({
               typeof options.tabBarLabel === 'string'
                 ? options.tabBarLabel
                 : options.title || route.name;
-            const color = isFocused ? colors.accent : '#7B887F';
+            const color = isFocused ? colors.accent : colors.muted;
             const icon = options.tabBarIcon?.({ focused: isFocused, color, size: 19 });
 
             const onPress = () => {
@@ -96,11 +97,12 @@ export const SproutTabBar: React.FC<SproutTabBarProps> = ({
           onPress={onAddPress}
           style={({ pressed }) => [
             styles.addButton,
+            { backgroundColor: colors.accent, shadowColor: colors.text },
             { bottom: insets.bottom + 8 },
             pressed && styles.addButtonPressed,
           ]}
         >
-          <Plus size={24} color={colors.onAccent} strokeWidth={2.25} />
+          <Plus size={24} color={colors.onAccent || colors.surface} strokeWidth={2.25} />
         </Pressable>
       </View>
     </View>
@@ -116,9 +118,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   bar: {
-    backgroundColor: colors.surface,
     borderTopWidth: 1,
-    borderTopColor: colors.line,
     width: '100%',
   },
   tabItems: {
@@ -151,10 +151,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FDF6E2',
     borderWidth: 1.5,
-    borderColor: '#E6D3A3',
-    shadowColor: colors.text,
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.14,
     shadowRadius: 5,
@@ -163,7 +160,6 @@ const styles = StyleSheet.create({
   },
   aiButtonPressed: {
     transform: [{ scale: 0.93 }],
-    backgroundColor: '#F5E8C7',
   },
   addButton: {
     position: 'absolute',
@@ -173,8 +169,6 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.accent,
-    shadowColor: colors.text,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,

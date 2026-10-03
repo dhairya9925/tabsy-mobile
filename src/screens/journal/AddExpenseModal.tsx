@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { colors, radii, spacing, shadows, fontFamilies } from '../../theme';
+import { colors, statusColors, radii, spacing, shadows, fontFamilies } from '../../theme';
 import {
   SproutText,
   SproutAmountInput,
@@ -50,6 +50,7 @@ import {
   User,
   Sparkles,
   ChevronRight,
+  ChevronDown,
 } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -422,7 +423,7 @@ export const AddExpenseModal: React.FC = () => {
 
           {/* Friend Mode Specific Section */}
           {mode === 'friend' && (
-            <View style={styles.compactSubSectionCard}>
+            <View style={[styles.compactSubSectionCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
               {friends.length === 0 ? (
                 <View style={styles.emptyCard}>
                   <SproutText variant="caption" color={colors.muted}>
@@ -432,31 +433,34 @@ export const AddExpenseModal: React.FC = () => {
               ) : (
                 <>
                   {/* Top Row: Selected Friend (Tap to open full searchable sheet) & Quick Switchers */}
-                  <View style={styles.compactHeaderRow}>
+                  <View style={styles.compactHeaderCol}>
                     <TouchableOpacity
                       activeOpacity={0.75}
                       onPress={() => setShowFriendPicker(true)}
-                      style={styles.compactEntityMain}
+                      style={[styles.compactEntityDropdown, { backgroundColor: colors.background, borderColor: colors.line }]}
                     >
-                      <AvatarCircle
-                        name={selectedFriendNameComputed}
-                        email={selectedFriendEmail}
-                        avatarUrl={selectedFriendAvatarUrl}
-                        size={26}
-                      />
-                      <View style={styles.compactEntityInfo}>
-                        <SproutText variant="caption" color={colors.muted} style={styles.compactMicroEyebrow}>
-                          SPLIT WITH
-                        </SproutText>
-                        <SproutText variant="subtitle" color={colors.text} weight="700" numberOfLines={1} style={styles.compactEntityName}>
-                          {selectedFriendNameComputed} ▾
-                        </SproutText>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                        <AvatarCircle
+                          name={selectedFriendNameComputed}
+                          email={selectedFriendEmail}
+                          avatarUrl={selectedFriendAvatarUrl}
+                          size={32}
+                        />
+                        <View style={styles.compactEntityInfo}>
+                          <SproutText variant="caption" color={colors.muted} numberOfLines={1} style={styles.compactMicroEyebrow}>
+                            SPLIT WITH
+                          </SproutText>
+                          <SproutText variant="subtitle" color={colors.text} weight="700" numberOfLines={1} style={styles.compactEntityName}>
+                            {selectedFriendNameComputed}
+                          </SproutText>
+                        </View>
                       </View>
+                      <ChevronDown size={18} color={colors.muted} />
                     </TouchableOpacity>
 
                     {/* Quick Friends Avatars (top 3 friends for 1-tap switching) */}
                     {friends.length > 1 && (
-                      <View style={styles.compactQuickRow}>
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ width: '100%', marginTop: 2 }} contentContainerStyle={styles.compactQuickRow}>
                         {friends.slice(0, 3).map((f) => {
                           const fid = f.profile?.user_id || (f.user_id === myUserId ? f.friend_id : f.user_id);
                           const isSelected = selectedFriendId === fid;
@@ -487,7 +491,7 @@ export const AddExpenseModal: React.FC = () => {
                             </SproutText>
                           </TouchableOpacity>
                         )}
-                      </View>
+                      </ScrollView>
                     )}
                   </View>
 
@@ -529,7 +533,7 @@ export const AddExpenseModal: React.FC = () => {
                     <View style={[styles.compactBreakdownPill, paidBy === 'me' ? styles.breakdownPillPositive : styles.breakdownPillNeutral]}>
                       <SproutText
                         variant="caption"
-                        color={paidBy === 'me' ? '#25603A' : '#7D4734'}
+                        color={paidBy === 'me' ? statusColors.positiveText : statusColors.warningText}
                         weight="700"
                         style={{ fontSize: 11 }}
                       >
@@ -550,7 +554,7 @@ export const AddExpenseModal: React.FC = () => {
 
           {/* Group Mode Specific Section */}
           {mode === 'group' && (
-            <View style={styles.compactSubSectionCard}>
+            <View style={[styles.compactSubSectionCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
               {groups.length === 0 ? (
                 <View style={styles.emptyCard}>
                   <SproutText variant="caption" color={colors.muted}>
@@ -560,28 +564,31 @@ export const AddExpenseModal: React.FC = () => {
               ) : (
                 <>
                   {/* Top Row: Active Group pill & Quick Group Switchers */}
-                  <View style={styles.compactHeaderRow}>
+                  <View style={styles.compactHeaderCol}>
                     <TouchableOpacity
                       activeOpacity={0.75}
                       onPress={() => setShowGroupPicker(true)}
-                      style={styles.compactEntityMain}
+                      style={[styles.compactEntityDropdown, { backgroundColor: colors.background, borderColor: colors.line }]}
                     >
-                      <View style={styles.compactGroupIconWrap}>
-                        <Users size={16} color={colors.accent} />
+                      <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                        <View style={[styles.compactGroupIconWrap, { width: 32, height: 32, borderRadius: 16 }]}>
+                          <Users size={18} color={colors.accent} />
+                        </View>
+                        <View style={styles.compactEntityInfo}>
+                          <SproutText variant="caption" color={colors.muted} numberOfLines={1} style={styles.compactMicroEyebrow}>
+                            GROUP
+                          </SproutText>
+                          <SproutText variant="subtitle" color={colors.text} weight="700" numberOfLines={1} style={styles.compactEntityName}>
+                            {selectedGroup?.name || 'Select group'}
+                          </SproutText>
+                        </View>
                       </View>
-                      <View style={styles.compactEntityInfo}>
-                        <SproutText variant="caption" color={colors.muted} style={styles.compactMicroEyebrow}>
-                          ACTIVE GROUP
-                        </SproutText>
-                        <SproutText variant="subtitle" color={colors.text} weight="700" numberOfLines={1} style={styles.compactEntityName}>
-                          {selectedGroup?.name || 'Select group'} ▾
-                        </SproutText>
-                      </View>
+                      <ChevronDown size={18} color={colors.muted} />
                     </TouchableOpacity>
 
                     {/* Quick Groups Pills */}
                     {groups.length > 1 && (
-                      <View style={styles.compactQuickRow}>
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ width: '100%', marginTop: 2 }} contentContainerStyle={styles.compactQuickRow}>
                         {groups.slice(0, 3).map((g) => {
                           const isSelected = selectedGroupId === g.id;
                           return (
@@ -614,7 +621,7 @@ export const AddExpenseModal: React.FC = () => {
                             </SproutText>
                           </TouchableOpacity>
                         )}
-                      </View>
+                      </ScrollView>
                     )}
                   </View>
 
@@ -654,7 +661,7 @@ export const AddExpenseModal: React.FC = () => {
                   {/* Split Summary */}
                   {groupMembers.length > 0 && (
                     <View style={[styles.compactBreakdownPill, styles.breakdownPillPositive]}>
-                      <SproutText variant="caption" color="#25603A" weight="700" style={{ fontSize: 11 }}>
+                      <SproutText variant="caption" color={statusColors.positiveText} weight="700" style={{ fontSize: 11 }}>
                         {numericAmount > 0
                           ? `Equal split · ₹${(numericAmount / groupMembers.length).toFixed(2)} each across ${groupMembers.length} members`
                           : `Split equally among all ${groupMembers.length} members`}
@@ -677,7 +684,8 @@ export const AddExpenseModal: React.FC = () => {
                   onPress={() => setSelectedCategoryId(cat.id)}
                   style={[
                     styles.compactCategoryPill,
-                    isSelected && styles.compactCategoryPillSelected,
+                    { backgroundColor: colors.surface, borderColor: colors.line },
+                    isSelected && [styles.compactCategoryPillSelected, { backgroundColor: colors.accent, borderColor: colors.accent }],
                   ]}
                 >
                   {cat.icon(isSelected ? colors.onAccent : colors.muted, 13)}
@@ -695,7 +703,7 @@ export const AddExpenseModal: React.FC = () => {
           </View>
 
           {/* Details Fields: Compact 2-in-1 Note & Date Card */}
-          <View style={styles.compactFieldsCard}>
+          <View style={[styles.compactFieldsCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
             {/* Note Field */}
             <View style={styles.compactFieldRow}>
               <FileText size={15} color={colors.muted} strokeWidth={1.8} style={{ marginRight: 8 }} />
@@ -711,7 +719,7 @@ export const AddExpenseModal: React.FC = () => {
               </SproutText>
             </View>
 
-            <View style={styles.compactFieldDivider} />
+            <View style={[styles.compactFieldDivider, { backgroundColor: colors.line }]} />
 
             {/* Date Field */}
             <TouchableOpacity
@@ -887,8 +895,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#FDF6E2',
-    borderColor: '#E6D3A3',
+    backgroundColor: colors.goldBackground,
+    borderColor: colors.goldHighlight,
     borderWidth: 1,
     borderRadius: radii.lg,
     paddingHorizontal: spacing.md,
@@ -905,12 +913,12 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#F5E6BF',
+    backgroundColor: colors.goldHighlight,
     alignItems: 'center',
     justifyContent: 'center',
   },
   aiQuickText: {
-    color: '#8A6820',
+    color: colors.text,
     fontFamily: fontFamilies.bold,
     fontSize: 12,
   },
@@ -959,7 +967,7 @@ const styles = StyleSheet.create({
   },
   modeContainer: {
     flexDirection: 'row',
-    backgroundColor: '#DFE9DC',
+    backgroundColor: colors.accentSoft,
     borderRadius: 999,
     padding: 4,
     marginVertical: 12,
@@ -973,7 +981,7 @@ const styles = StyleSheet.create({
   },
   modeTabSelected: {
     backgroundColor: colors.surface,
-    shadowColor: '#183228',
+    shadowColor: colors.text,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
@@ -990,22 +998,25 @@ const styles = StyleSheet.create({
     borderColor: colors.line,
     marginBottom: 6,
   },
-  compactHeaderRow: {
+  compactHeaderCol: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    gap: 10,
+    marginBottom: 12,
+  },
+  compactEntityDropdown: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  compactEntityMain: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
+    padding: 10,
+    borderRadius: radii.md,
+    borderWidth: 1,
   },
   compactGroupIconWrap: {
     width: 26,
     height: 26,
     borderRadius: 13,
-    backgroundColor: '#DFE9DC',
+    backgroundColor: colors.accentSoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1036,19 +1047,19 @@ const styles = StyleSheet.create({
     borderColor: colors.accent,
   },
   compactQuickGroupPill: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surfaceElevated,
     paddingVertical: 3,
     paddingHorizontal: 8,
     borderRadius: radii.full,
     borderWidth: 1,
-    borderColor: '#E5EDE2',
+    borderColor: colors.line,
   },
   compactQuickGroupPillSelected: {
     backgroundColor: colors.accent,
     borderColor: colors.accent,
   },
   compactQuickMoreBadge: {
-    backgroundColor: '#DFE9DC',
+    backgroundColor: colors.accentSoft,
     paddingVertical: 3,
     paddingHorizontal: 6,
     borderRadius: radii.full,
@@ -1072,10 +1083,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   breakdownPillPositive: {
-    backgroundColor: '#D8E8CB',
+    backgroundColor: statusColors.positiveBg,
   },
   breakdownPillNeutral: {
-    backgroundColor: '#F4DACD',
+    backgroundColor: statusColors.warningBg,
   },
   compactGroupPaidByRow: {
     flexDirection: 'row',
@@ -1084,12 +1095,12 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   compactPayerPill: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surfaceElevated,
     paddingVertical: 4,
     paddingHorizontal: 8,
     borderRadius: radii.full,
     borderWidth: 1,
-    borderColor: '#E5EDE2',
+    borderColor: colors.line,
   },
   compactPayerPillSelected: {
     backgroundColor: colors.accent,
@@ -1153,7 +1164,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   compactDateChip: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surfaceElevated,
     paddingVertical: 4,
     paddingHorizontal: 10,
     borderRadius: radii.full,
@@ -1190,7 +1201,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    shadowColor: '#183228',
+    shadowColor: colors.text,
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.16,
     shadowRadius: 5,

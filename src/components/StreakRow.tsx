@@ -11,7 +11,7 @@ export interface StreakRowProps {
 
 export const StreakRow: React.FC<StreakRowProps> = ({ days }) => {
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
       {days.map((day, index) => {
         const isDone = day.isDone;
         const isToday = day.isToday;
@@ -21,8 +21,9 @@ export const StreakRow: React.FC<StreakRowProps> = ({ days }) => {
             <View
               style={[
                 styles.bubble,
-                isDone && styles.bubbleDone,
-                isToday && !isDone && styles.bubbleToday,
+                { borderColor: colors.line, backgroundColor: colors.surface },
+                isDone && [styles.bubbleDone, { backgroundColor: colors.accent, borderColor: colors.accent }],
+                isToday && !isDone && [styles.bubbleToday, { borderColor: colors.accent }],
                 day.isFuture && styles.bubbleFuture,
               ]}
             >

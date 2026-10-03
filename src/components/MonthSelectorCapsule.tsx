@@ -42,14 +42,14 @@ export const MonthSelectorCapsule: React.FC<MonthSelectorCapsuleProps> = ({
   const isCurrentMonth = now.getMonth() + 1 === month && now.getFullYear() === year;
 
   return (
-    <View style={[styles.wrapper, isDark && styles.wrapperDark]}>
+    <View style={[styles.wrapper, { backgroundColor: colors.surfaceElevated, borderColor: colors.line }]}>
       <TouchableOpacity
         style={styles.navButton}
         onPress={onPrevMonth}
         activeOpacity={0.7}
         accessibilityLabel="Previous month"
       >
-        <ChevronLeft size={18} color={isDark ? colors.surface : colors.text} />
+        <ChevronLeft size={18} color={colors.text} />
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -60,13 +60,13 @@ export const MonthSelectorCapsule: React.FC<MonthSelectorCapsuleProps> = ({
       >
         <Calendar size={14} color={colors.accent} style={{ marginRight: 6 }} />
         <SproutText
-          style={[styles.monthText, isDark && styles.monthTextDark]}
+          style={[styles.monthText, { color: colors.text }]}
           weight="700"
         >
           {monthName} {year}
         </SproutText>
         {isCurrentMonth && (
-          <View style={styles.currentBadge}>
+          <View style={[styles.currentBadge, { backgroundColor: colors.accentSoft }]}>
             <SproutText style={styles.currentBadgeText}>Now</SproutText>
           </View>
         )}
@@ -78,7 +78,7 @@ export const MonthSelectorCapsule: React.FC<MonthSelectorCapsuleProps> = ({
         activeOpacity={0.7}
         accessibilityLabel="Next month"
       >
-        <ChevronRight size={18} color={isDark ? colors.surface : colors.text} />
+        <ChevronRight size={18} color={colors.text} />
       </TouchableOpacity>
     </View>
   );

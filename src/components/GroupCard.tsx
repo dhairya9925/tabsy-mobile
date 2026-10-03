@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { fontFamilies, spacing } from '../theme';
+import { fontFamilies, spacing, colors } from '../theme';
 import { SproutText } from './SproutText';
 import { Group } from '../types';
 import { getGroupTypeMeta } from '../utils/groupTypes';
@@ -57,32 +57,32 @@ export const GroupCard: React.FC<GroupCardProps> = ({
       activeOpacity={0.8}
       onPress={onPress}
       disabled={!onPress}
-      style={styles.card}
+      style={[styles.card, { backgroundColor: colors.surfaceElevated, borderColor: colors.line }]}
     >
       {/* Top Header Row */}
       <View style={styles.topRow}>
-        <View style={styles.iconSquircle}>
-          {getGroupIcon(group.type, 18, '#335C44')}
+        <View style={[styles.iconSquircle, { backgroundColor: colors.soft }]}>
+          {getGroupIcon(group.type, 18, colors.accent)}
         </View>
 
         <View style={styles.infoCol}>
-          <SproutText style={styles.title} numberOfLines={1}>
+          <SproutText style={[styles.title, { color: colors.text }]} numberOfLines={1}>
             {group.name}
           </SproutText>
-          <SproutText style={styles.subtitle} numberOfLines={1}>
+          <SproutText style={[styles.subtitle, { color: colors.muted }]} numberOfLines={1}>
             {subtitle}
           </SproutText>
         </View>
 
-        <ChevronRight size={17} color="#8D9E92" strokeWidth={2} style={styles.chevron} />
+        <ChevronRight size={17} color={colors.muted} strokeWidth={2} style={styles.chevron} />
       </View>
 
       {/* Hairline Divider */}
-      <View style={styles.divider} />
+      <View style={[styles.divider, { backgroundColor: colors.line }]} />
 
       {/* Bottom Footer Row */}
       <View style={styles.bottomRow}>
-        <SproutText style={styles.descriptionText} numberOfLines={1}>
+        <SproutText style={[styles.descriptionText, { color: colors.muted }]} numberOfLines={1}>
           {description}
         </SproutText>
 
@@ -90,20 +90,20 @@ export const GroupCard: React.FC<GroupCardProps> = ({
           style={[
             styles.badgePill,
             isSettled
-              ? styles.badgeSettled
+              ? [styles.badgeSettled, { backgroundColor: colors.soft }]
               : isOwed
-              ? styles.badgeOwed
-              : styles.badgeOwes,
+              ? [styles.badgeOwed, { backgroundColor: colors.accentSoft }]
+              : [styles.badgeOwes, { backgroundColor: colors.negativeSoft }],
           ]}
         >
           <SproutText
             style={[
               styles.badgeText,
               isSettled
-                ? styles.badgeTextSettled
+                ? [styles.badgeTextSettled, { color: colors.text }]
                 : isOwed
-                ? styles.badgeTextOwed
-                : styles.badgeTextOwes,
+                ? [styles.badgeTextOwed, { color: colors.brandBase }]
+                : [styles.badgeTextOwes, { color: colors.negative }],
             ]}
           >
             {isSettled

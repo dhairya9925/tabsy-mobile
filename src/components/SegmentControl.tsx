@@ -80,6 +80,7 @@ export function SegmentControl<T = string>({
         styles.container,
         isLg && styles.containerLg,
         isSm && styles.containerSm,
+        { backgroundColor: colors.accentSoft },
         style,
       ]}
     >
@@ -90,6 +91,7 @@ export function SegmentControl<T = string>({
           style={[
             styles.indicatorPill,
             isLg ? styles.indicatorPillLg : styles.indicatorPillMd,
+            { backgroundColor: colors.surfaceElevated, shadowColor: colors.text },
             {
               top: padding,
               bottom: padding,
@@ -114,7 +116,10 @@ export function SegmentControl<T = string>({
               isLg && styles.segmentLg,
               isSm && styles.segmentSm,
               // Fallback before container width measurement
-              !isReady && isSelected && (isLg ? styles.fallbackSelectedLg : styles.fallbackSelected),
+              !isReady && isSelected && [
+                isLg ? styles.fallbackSelectedLg : styles.fallbackSelected,
+                { backgroundColor: colors.surfaceElevated, shadowColor: colors.text }
+              ],
             ]}
           >
             <SproutText
@@ -124,8 +129,8 @@ export function SegmentControl<T = string>({
                 isSm && styles.labelSm,
                 {
                   color: isSelected
-                    ? (isLg ? '#183228' : colors.accent)
-                    : (isLg ? '#5D6E62' : colors.muted),
+                    ? colors.text
+                    : colors.muted,
                   fontFamily: isSelected ? fontFamilies.bold : fontFamilies.medium,
                 },
               ]}
@@ -149,13 +154,11 @@ const styles = StyleSheet.create({
     padding: 3,
   },
   containerLg: {
-    backgroundColor: '#DFE7DC',
     borderRadius: 14,
     padding: 3,
     minHeight: 42,
   },
   containerSm: {
-    backgroundColor: '#DFE9DC',
     borderRadius: radii.full,
     padding: 2.5,
   },

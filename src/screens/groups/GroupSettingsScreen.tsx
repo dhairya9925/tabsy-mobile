@@ -200,7 +200,7 @@ export const GroupSettingsScreen: React.FC<Props> = ({ route, navigation }) => {
 
         {/* Danger Zone */}
         {isAdmin && (
-          <View style={styles.dangerZone}>
+          <View style={[styles.dangerZone, { backgroundColor: colors.negativeSoft, borderColor: colors.negative }]}>
             <View style={styles.dangerHeader}>
               <ShieldAlert size={18} color={colors.negative} style={{ marginRight: 6 }} />
               <SproutText variant="subtitle" color={colors.negative} weight="700">

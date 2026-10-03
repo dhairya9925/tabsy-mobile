@@ -71,7 +71,7 @@ export const MonthlyLedgerTable: React.FC<MonthlyLedgerTableProps> = ({
   };
 
   return (
-    <View style={[styles.container, shadows.card]}>
+    <View style={[styles.container, shadows.card, { backgroundColor: colors.surfaceElevated }]}>
       {/* Table Header */}
       <View style={styles.tableHeader}>
         <View>
@@ -280,7 +280,7 @@ export const MonthlyLedgerTable: React.FC<MonthlyLedgerTableProps> = ({
 
       {/* Summary Footer Card */}
       {summary && (
-        <View style={styles.summaryFooter}>
+        <View style={[styles.summaryFooter, { backgroundColor: colors.surface }]}>
           <SproutText style={styles.summaryTitle} weight="800">
             CLEARING TOTALS
           </SproutText>

@@ -13,9 +13,9 @@ import {
   JetBrainsMono_400Regular,
   JetBrainsMono_700Bold,
 } from '@expo-google-fonts/jetbrains-mono';
-import { RootNavigator } from './src/navigation/RootNavigator';
 import { SplashScreen } from './src/screens/auth/SplashScreen';
 import { useQuickAddStore } from './src/store/useQuickAddStore';
+import { useThemeStore } from './src/store/useThemeStore';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -37,14 +37,21 @@ export default function App() {
     JetBrainsMono_700Bold,
   });
 
+  const [themeLoaded, setThemeLoaded] = React.useState(false);
+
   React.useEffect(() => {
     useQuickAddStore.getState().init();
+    useThemeStore.getState().initThemePreferences().then(() => {
+      setThemeLoaded(true);
+    });
   }, []);
 
-  if (!fontsLoaded) {
-
+  if (!fontsLoaded || !themeLoaded) {
     return <SplashScreen />;
   }
+
+  // Defer evaluation of all screens until the theme is fully hydrated from AsyncStorage
+  const { RootNavigator } = require('./src/navigation/RootNavigator');
 
   return (
     <SafeAreaProvider>

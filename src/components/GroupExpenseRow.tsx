@@ -68,23 +68,23 @@ export const GroupExpenseRow: React.FC<GroupExpenseRowProps> = ({
       activeOpacity={0.7}
       onPress={onPress}
       disabled={!onPress}
-      style={styles.container}
+      style={[styles.container, { borderBottomColor: colors.line }]}
     >
-      <View style={styles.iconCircle}>
+      <View style={[styles.iconCircle, { backgroundColor: colors.surfaceElevated }]}>
         {getCategoryIcon(expense.category)}
       </View>
 
       <View style={styles.infoCol}>
-        <SproutText style={styles.title} numberOfLines={1}>
+        <SproutText style={[styles.title, { color: colors.text }]} numberOfLines={1}>
           {expense.note || expense.category}
         </SproutText>
-        <SproutText style={styles.subtitle} numberOfLines={1}>
+        <SproutText style={[styles.subtitle, { color: colors.muted }]} numberOfLines={1}>
           {subText}
         </SproutText>
       </View>
 
       <View style={styles.amountCol}>
-        <SproutText style={styles.amount}>
+        <SproutText style={[styles.amount, { color: colors.text }]}>
           {formatCurrency(expense.amount)}
         </SproutText>
         <SproutText style={[styles.foot, { color: footColor }]}>

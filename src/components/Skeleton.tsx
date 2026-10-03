@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Animated, StyleSheet, ViewStyle, StyleProp } from 'react-native';
-import { colors, radii, spacing, shadows } from '../theme';
+import { colors, statusColors, radii, spacing, shadows } from '../theme';
 
 interface SkeletonProps {
   width?: number | string;
@@ -56,6 +56,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
           height,
           borderRadius: computedRadius,
           opacity: opacityAnim,
+          backgroundColor: colors.line,
         },
         style,
       ]}
@@ -65,7 +66,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
 
 export const CardSkeleton: React.FC = () => {
   return (
-    <View style={[styles.cardSkeleton, shadows.card]}>
+    <View style={[styles.cardSkeleton, shadows.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
       <Skeleton width={100} height={12} variant="text" style={{ marginBottom: spacing.sm }} />
       <Skeleton width={180} height={32} style={{ marginBottom: spacing.md }} />
       <Skeleton width={140} height={14} variant="text" />
@@ -77,7 +78,7 @@ export const ExpenseListSkeleton: React.FC<{ count?: number }> = ({ count = 4 })
   return (
     <View style={styles.listSkeleton}>
       {Array.from({ length: count }).map((_, idx) => (
-        <View key={`exp-skel-${idx}`} style={styles.expenseRowSkeleton}>
+        <View key={`exp-skel-${idx}`} style={[styles.expenseRowSkeleton, { backgroundColor: colors.surface, borderColor: colors.line }]}>
           <Skeleton width={40} height={40} variant="circle" />
           <View style={styles.expenseTextSkeleton}>
             <Skeleton width="60%" height={14} variant="text" style={{ marginBottom: 6 }} />
@@ -94,7 +95,7 @@ export const GroupListSkeleton: React.FC<{ count?: number }> = ({ count = 3 }) =
   return (
     <View style={styles.listSkeleton}>
       {Array.from({ length: count }).map((_, idx) => (
-        <View key={`grp-skel-${idx}`} style={[styles.groupCardSkeleton, shadows.card]}>
+        <View key={`grp-skel-${idx}`} style={[styles.groupCardSkeleton, shadows.card, { backgroundColor: colors.surfaceElevated, borderColor: colors.line }]}>
           {/* Top Header Row matching GroupCard */}
           <View style={styles.groupCardTop}>
             <Skeleton width={37} height={37} borderRadius={radii.md} />
@@ -106,7 +107,7 @@ export const GroupListSkeleton: React.FC<{ count?: number }> = ({ count = 3 }) =
           </View>
 
           {/* Hairline Divider */}
-          <View style={styles.groupCardDivider} />
+          <View style={[styles.groupCardDivider, { backgroundColor: colors.line }]} />
 
           {/* Bottom Footer Row */}
           <View style={styles.groupCardBottom}>
@@ -123,36 +124,36 @@ export const MonthlyHouseholdLedgerSkeleton: React.FC = () => {
   return (
     <View style={styles.ledgerSkeletonContainer}>
       {/* 1. Hero Action Slip Card Skeleton (Deep Forest Green card matching HeroActionSlipCard) */}
-      <View style={[styles.heroSlipSkeleton, shadows.card]}>
+      <View style={[styles.heroSlipSkeleton, shadows.card, { backgroundColor: statusColors.forestCardBg }]}>
         {/* Header Eyebrow Row */}
         <View style={styles.heroSlipHeaderRow}>
-          <Skeleton width={96} height={10} style={styles.darkSkeletonItem} />
-          <Skeleton width={44} height={10} style={styles.darkSkeletonItem} />
+          <Skeleton width={96} height={10} style={[styles.darkSkeletonItem, { backgroundColor: statusColors.forestCardBorder }]} />
+          <Skeleton width={44} height={10} style={[styles.darkSkeletonItem, { backgroundColor: statusColors.forestCardBorder }]} />
         </View>
 
         {/* Hero Body Row */}
         <View style={styles.heroSlipBodyRow}>
           <View style={styles.heroSlipLeftCol}>
-            <Skeleton width={80} height={9} style={[styles.darkSkeletonItem, { marginBottom: 6 }]} />
-            <Skeleton width={140} height={26} style={[styles.darkSkeletonItemHighlight, { marginBottom: 6 }]} />
-            <Skeleton width={100} height={11} style={styles.darkSkeletonItem} />
+            <Skeleton width={80} height={9} style={[styles.darkSkeletonItem, { backgroundColor: statusColors.forestCardBorder, marginBottom: 6 }]} />
+            <Skeleton width={140} height={26} style={[styles.darkSkeletonItemHighlight, { backgroundColor: colors.accent, marginBottom: 6 }]} />
+            <Skeleton width={100} height={11} style={[styles.darkSkeletonItem, { backgroundColor: statusColors.forestCardBorder }]} />
           </View>
 
           {/* Circular Dial Placeholder */}
-          <Skeleton width={50} height={50} variant="circle" style={styles.darkSkeletonItem} />
+          <Skeleton width={50} height={50} variant="circle" style={[styles.darkSkeletonItem, { backgroundColor: statusColors.forestCardBorder }]} />
         </View>
 
         {/* Bottom Status Bar Skeleton */}
-        <View style={styles.heroSlipStatusBar}>
-          <Skeleton width={110} height={14} borderRadius={radii.full} style={styles.darkSkeletonItem} />
-          <Skeleton width={64} height={14} borderRadius={radii.full} style={styles.darkSkeletonItem} />
+        <View style={[styles.heroSlipStatusBar, { backgroundColor: statusColors.forestCardBorder }]}>
+          <Skeleton width={110} height={14} borderRadius={radii.full} style={[styles.darkSkeletonItem, { backgroundColor: statusColors.forestCardBorder }]} />
+          <Skeleton width={64} height={14} borderRadius={radii.full} style={[styles.darkSkeletonItem, { backgroundColor: statusColors.forestCardBorder }]} />
         </View>
       </View>
 
       {/* 2. Monthly Ledger Table Skeleton (Warm White Card matching MonthlyLedgerTable) */}
-      <View style={[styles.ledgerTableSkeleton, shadows.card]}>
+      <View style={[styles.ledgerTableSkeleton, shadows.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
         {/* Table Header */}
-        <View style={styles.ledgerTableHeader}>
+        <View style={[styles.ledgerTableHeader, { borderBottomColor: colors.line }]}>
           <View>
             <Skeleton width={90} height={8} style={{ marginBottom: 4 }} />
             <Skeleton width={120} height={15} />
@@ -166,6 +167,7 @@ export const MonthlyHouseholdLedgerSkeleton: React.FC = () => {
             key={`ledger-row-skel-${idx}`}
             style={[
               styles.ledgerTableRowSkeleton,
+              { borderBottomColor: colors.line },
               idx === 3 && { borderBottomWidth: 0 },
             ]}
           >
@@ -219,7 +221,7 @@ const styles = StyleSheet.create({
     marginLeft: spacing.md,
   },
   groupCardSkeleton: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surfaceElevated,
     borderTopLeftRadius: radii.xl,
     borderTopRightRadius: radii.sm,
     borderBottomLeftRadius: radii.xl,
@@ -252,7 +254,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   heroSlipSkeleton: {
-    backgroundColor: colors.text, // Signature Deep forest green #183228
+    backgroundColor: statusColors.forestCardBg,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 8,
     borderBottomLeftRadius: 24,
@@ -281,17 +283,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#1E3C30',
+    backgroundColor: statusColors.forestCardBorder,
     borderRadius: radii.md,
     paddingVertical: 6,
     paddingHorizontal: 10,
     marginTop: 4,
   },
   darkSkeletonItem: {
-    backgroundColor: '#264335',
+    backgroundColor: statusColors.forestCardBorder,
   },
   darkSkeletonItemHighlight: {
-    backgroundColor: '#335443',
+    backgroundColor: colors.accent,
   },
   ledgerTableSkeleton: {
     backgroundColor: colors.surface,

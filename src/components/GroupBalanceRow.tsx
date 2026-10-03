@@ -22,13 +22,13 @@ export const GroupBalanceRow: React.FC<GroupBalanceRowProps> = ({
   const canSettle = isYouOwe || isOwedToYou;
 
   const borderStyle = isYouOwe
-    ? styles.borderOwe
+    ? [styles.borderOwe, { borderColor: colors.negative, backgroundColor: colors.negativeSoft }]
     : isOwedToYou
-    ? styles.borderOwed
+    ? [styles.borderOwed, { borderColor: colors.accent, backgroundColor: colors.accentSoft }]
     : styles.borderNormal;
 
   return (
-    <View style={[styles.container, borderStyle]}>
+    <View style={[styles.container, borderStyle, { backgroundColor: colors.surface, borderColor: colors.line }]}>
       <View style={styles.topRow}>
         <View style={styles.partyCol}>
           <SproutText
@@ -74,7 +74,7 @@ export const GroupBalanceRow: React.FC<GroupBalanceRowProps> = ({
           <TouchableOpacity
             activeOpacity={0.8}
             onPress={() => onSettle(balance)}
-            style={styles.settleBtn}
+            style={[styles.settleBtn, { borderColor: colors.accent, backgroundColor: colors.surface }]}
           >
             <Handshake size={14} color={colors.accent} style={{ marginRight: 4 }} />
             <SproutText variant="caption" color={colors.accent} weight="700">

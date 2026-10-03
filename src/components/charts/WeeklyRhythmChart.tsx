@@ -54,8 +54,8 @@ export const WeeklyRhythmChart: React.FC<WeeklyRhythmChartProps> = ({
     <View style={styles.container}>
       {/* Rhythm Header / Badge */}
       <View style={styles.headerRow}>
-        <View style={styles.badgeContainer}>
-          <View style={styles.checkCircle}>
+        <View style={[styles.badgeContainer, { backgroundColor: colors.soft }]}>
+          <View style={[styles.checkCircle, { backgroundColor: colors.accent }]}>
             <Check size={11} color={colors.surface} strokeWidth={2.5} />
           </View>
           <SproutText variant="caption" color={colors.text} style={styles.badgeText}>
@@ -93,7 +93,7 @@ export const WeeklyRhythmChart: React.FC<WeeklyRhythmChartProps> = ({
               <View
                 style={[
                   styles.dayLabelCircle,
-                  day.isToday && styles.todayCircle,
+                  day.isToday && [styles.todayCircle, { backgroundColor: colors.surface, borderColor: colors.accent }],
                 ]}
               >
                 <SproutText
@@ -134,7 +134,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: colors.soft,
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: radii.full,
@@ -143,7 +142,6 @@ const styles = StyleSheet.create({
     width: 16,
     height: 16,
     borderRadius: 8,
-    backgroundColor: colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -179,9 +177,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   todayCircle: {
-    backgroundColor: colors.surface,
     borderWidth: 1.5,
-    borderColor: colors.accent,
   },
   todayLabel: {
     fontWeight: '700',

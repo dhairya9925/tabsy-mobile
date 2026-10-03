@@ -45,9 +45,9 @@ export const SproutText: React.FC<SproutTextProps> = ({
     <RNText
       style={[
         variantStyle,
+        style,
         familyOverride,
         color ? { color } : null,
-        style,
         safeLineHeightOverride,
       ]}
       {...rest}

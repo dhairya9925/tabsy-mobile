@@ -23,9 +23,9 @@ export const BalancePillsRow: React.FC<BalancePillsRowProps> = ({
         activeOpacity={0.85}
         onPress={onPressReceive}
         disabled={!onPressReceive}
-        style={[styles.pill, styles.pillReceive]}
+        style={[styles.pill, styles.pillReceive, { backgroundColor: colors.soft }]}
       >
-        <SproutText style={styles.pillText}>
+        <SproutText style={[styles.pillText, { color: colors.text }]}>
           {formatCurrency(toReceive)} to receive
         </SproutText>
       </TouchableOpacity>
@@ -34,9 +34,9 @@ export const BalancePillsRow: React.FC<BalancePillsRowProps> = ({
         activeOpacity={0.85}
         onPress={onPressPay}
         disabled={!onPressPay}
-        style={[styles.pill, styles.pillPay]}
+        style={[styles.pill, styles.pillPay, { backgroundColor: colors.clay }]}
       >
-        <SproutText style={styles.pillText}>
+        <SproutText style={[styles.pillText, { color: colors.text }]}>
           {formatCurrency(toPay)} to pay
         </SproutText>
       </TouchableOpacity>
