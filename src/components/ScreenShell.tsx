@@ -8,7 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { colors, spacing } from '../theme';
 import { useThemeStore } from '../store/useThemeStore';
@@ -31,12 +31,13 @@ export const ScreenShell: React.FC<ScreenShellProps> = ({
   contentContainerStyle,
 }) => {
   const isDark = useThemeStore((s) => s.isDark);
+  const insets = useSafeAreaInsets();
 
   const content = scrollable ? (
     <ScrollView
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
-      contentContainerStyle={[styles.scrollContent, contentContainerStyle]}
+      contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom + spacing.xl, 112) }, contentContainerStyle]}
       refreshControl={
         onRefresh ? (
           <RefreshControl
@@ -51,7 +52,7 @@ export const ScreenShell: React.FC<ScreenShellProps> = ({
       {children}
     </ScrollView>
   ) : (
-    <View style={[styles.staticContent, contentContainerStyle]}>{children}</View>
+    <View style={[styles.staticContent, { paddingBottom: Math.max(insets.bottom, spacing.md) }, contentContainerStyle]}>{children}</View>
   );
 
   return (
@@ -61,7 +62,7 @@ export const ScreenShell: React.FC<ScreenShellProps> = ({
     >
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior="padding"
         style={styles.keyboardContainer}
       >
         {content}

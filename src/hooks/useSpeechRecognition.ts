@@ -124,9 +124,11 @@ export const useSpeechRecognition = (): UseSpeechRecognitionReturn => {
               }
 
               if (event.error !== 'aborted' && event.error !== 'no-speech') {
-                setErrorMessage(
-                  event.message || `Speech recognition error: ${event.error}`
-                );
+                let msg = event.message || `Speech recognition error: ${event.error}`;
+                if (msg.includes('language is supported') && msg.includes('downloaded')) {
+                  msg = 'Offline voice requires a language pack. Tap the mic on your keyboard to dictate.';
+                }
+                setErrorMessage(msg);
               }
               finishPendingStop();
             }

@@ -5,8 +5,10 @@ import { outboxService } from '../services/offline/outboxService';
 import { SproutText } from './SproutText';
 import { colors, radii, spacing, fontFamilies } from '../theme';
 import { WifiOff, RefreshCw, CheckCircle2 } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export const OfflineSyncBanner: React.FC = () => {
+  const insets = useSafeAreaInsets();
   const [isOnline, setIsOnline] = useState<boolean>(networkService.isOnline());
   const [pendingCount, setPendingCount] = useState<number>(outboxService.getPendingCount());
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
@@ -73,7 +75,7 @@ export const OfflineSyncBanner: React.FC = () => {
   // 1. Synced Success State
   if (showSyncedSuccess) {
     return (
-      <View style={[styles.banner, styles.bannerSuccess]}>
+      <View style={[styles.banner, styles.bannerSuccess, { marginTop: Math.max(insets.top, spacing.xs) }]}>
         <CheckCircle2 size={13} color="#183228" strokeWidth={2.4} style={styles.icon} />
         <SproutText style={styles.textSuccess} weight="700">
           All changes synced with server
@@ -85,7 +87,7 @@ export const OfflineSyncBanner: React.FC = () => {
   // 2. Syncing State
   if (isSyncing) {
     return (
-      <View style={[styles.banner, styles.bannerSyncing]}>
+      <View style={[styles.banner, styles.bannerSyncing, { marginTop: Math.max(insets.top, spacing.xs) }]}>
         <Animated.View style={[styles.icon, { transform: [{ rotate: spin }] }]}>
           <RefreshCw size={13} color="#183228" strokeWidth={2.2} />
         </Animated.View>
@@ -98,7 +100,7 @@ export const OfflineSyncBanner: React.FC = () => {
 
   // 3. Offline Mode State
   return (
-    <View style={[styles.banner, styles.bannerOffline]}>
+    <View style={[styles.banner, styles.bannerOffline, { marginTop: Math.max(insets.top, spacing.xs) }]}>
       <WifiOff size={13} color="#7A3E2D" strokeWidth={2.2} style={styles.icon} />
       <SproutText style={styles.textOffline} weight="700">
         {pendingCount > 0

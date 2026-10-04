@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useQueryClient } from '@tanstack/react-query';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, radii, spacing, fontFamilies } from '../../theme';
 import { SproutText } from '../../components/SproutText';
 import { Toast } from '../../components';
@@ -42,6 +43,7 @@ import {
 export const AIAgentScreen: React.FC = () => {
   const navigation = useNavigation();
   const queryClient = useQueryClient();
+  const insets = useSafeAreaInsets();
   const [inputText, setInputText] = useState('');
   const [successToast, setSuccessToast] = useState<string | null>(null);
   const flatListRef = useRef<FlatList<ChatMessage>>(null);
@@ -225,7 +227,7 @@ export const AIAgentScreen: React.FC = () => {
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <KeyboardAvoidingView
         style={styles.keyboardContainer}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior="padding"
         keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0}
       >
         {/* Success Toast */}
@@ -309,7 +311,7 @@ export const AIAgentScreen: React.FC = () => {
 
 
         {/* Bottom Input Area */}
-        <View style={styles.inputBarContainer}>
+        <View style={[styles.inputBarContainer, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
           <View style={styles.inputWrapper}>
             <TextInput
               ref={textInputRef}
