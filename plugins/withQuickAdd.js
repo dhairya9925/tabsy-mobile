@@ -133,6 +133,26 @@ function withQuickAdd(config) {
     },
   ]);
 
+  // 3. Register the package in MainApplication.kt
+  const { withMainApplication } = require('@expo/config-plugins');
+  config = withMainApplication(config, (config) => {
+    let mainApp = config.modResults.contents;
+    
+    // Check if it's already added to prevent duplicates
+    if (!mainApp.includes('QuickAddPackage()')) {
+      const packageListMatch = mainApp.match(/PackageList\(this\)\.packages\.apply\s*\{/);
+      if (packageListMatch) {
+        mainApp = mainApp.replace(
+          /PackageList\(this\)\.packages\.apply\s*\{/,
+          'PackageList(this).packages.apply {\n          add(com.tabsy.app.quickadd.QuickAddPackage())'
+        );
+      }
+    }
+    
+    config.modResults.contents = mainApp;
+    return config;
+  });
+
   return config;
 }
 
