@@ -129,6 +129,14 @@ function withQuickAdd(config) {
         }
       }
 
+      // Also copy the notification icon drawable
+      const iconSrc = path.join(config.modRequest.projectRoot, 'plugins', 'android-src', 'res', 'drawable', 'ic_notification.xml');
+      const iconDestDir = path.join(config.modRequest.platformProjectRoot, 'app', 'src', 'main', 'res', 'drawable');
+      if (fs.existsSync(iconSrc)) {
+        fs.mkdirSync(iconDestDir, { recursive: true });
+        fs.copyFileSync(iconSrc, path.join(iconDestDir, 'ic_notification.xml'));
+      }
+
       return config;
     },
   ]);

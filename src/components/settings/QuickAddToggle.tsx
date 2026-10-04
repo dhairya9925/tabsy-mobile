@@ -5,6 +5,7 @@ import {
   Switch,
   TouchableOpacity,
   ActivityIndicator,
+  AppState,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { colors, radii, spacing, shadows } from '../../theme';
@@ -28,11 +29,22 @@ export const QuickAddToggle: React.FC = () => {
   const hasNotificationPermission = useQuickAddStore((s) => s.hasNotificationPermission);
   const isCheckingPermissions = useQuickAddStore((s) => s.isCheckingPermissions);
   const toggleService = useQuickAddStore((s) => s.toggleService);
+  const checkPermissions = useQuickAddStore((s) => s.checkPermissions);
   const requestOverlayPermission = useQuickAddStore((s) => s.requestOverlayPermission);
   const requestNotificationPermission = useQuickAddStore((s) => s.requestNotificationPermission);
 
   const [isToggling, setIsToggling] = useState(false);
   const isAndroid = QuickAddModule.isSupported();
+
+  // Re-check permissions when the app comes back to foreground (e.g. returning from Settings)
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active' && isEnabled) {
+        checkPermissions();
+      }
+    });
+    return () => subscription.remove();
+  }, [isEnabled, checkPermissions]);
 
   const handleToggle = async (value: boolean) => {
     setIsToggling(true);

@@ -70,21 +70,15 @@ class QuickAddService : Service() {
     private fun startForegroundNotification() {
         val notification = buildNotification()
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                startForeground(
-                    NOTIFICATION_ID,
-                    notification,
-                    ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
-                )
-            } else {
-                startForeground(
-                    NOTIFICATION_ID,
-                    notification,
-                    ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
-                )
-            }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            // Android 14+ requires FOREGROUND_SERVICE_SPECIAL_USE permission (declared in manifest)
+            startForeground(
+                NOTIFICATION_ID,
+                notification,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+            )
         } else {
+            // Android 13 and below: no foreground service type needed
             startForeground(NOTIFICATION_ID, notification)
         }
     }
@@ -146,9 +140,9 @@ class QuickAddService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Icon fallback
-        val iconRes = resources.getIdentifier("notification_icon", "drawable", packageName).takeIf { it != 0 }
-            ?: applicationInfo.icon
+        // Use our custom monochrome notification icon; fall back to a safe system icon
+        val iconRes = resources.getIdentifier("ic_notification", "drawable", packageName).takeIf { it != 0 }
+            ?: android.R.drawable.ic_input_add
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(iconRes)
