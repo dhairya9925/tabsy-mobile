@@ -89,6 +89,7 @@ class QuickAddOverlayActivity : Activity() {
     private lateinit var tvParsedAmount: TextView
     private lateinit var tvParsedCategory: TextView
     private lateinit var tvParsedNote: TextView
+    private lateinit var tvParsedDate: TextView
     private lateinit var btnCancel: Button
     private lateinit var btnConfirm: Button
     private lateinit var tvSuccessBanner: TextView
@@ -156,6 +157,7 @@ class QuickAddOverlayActivity : Activity() {
         tvParsedAmount = findViewById(R.id.tvParsedAmount)
         tvParsedCategory = findViewById(R.id.tvParsedCategory)
         tvParsedNote = findViewById(R.id.tvParsedNote)
+        tvParsedDate = findViewById(R.id.tvParsedDate)
         btnCancel = findViewById(R.id.btnCancel)
         btnConfirm = findViewById(R.id.btnConfirm)
         tvSuccessBanner = findViewById(R.id.tvSuccessBanner)
@@ -519,6 +521,20 @@ class QuickAddOverlayActivity : Activity() {
         }
     }
 
+    private fun formatCategoryWithEmoji(cat: String): String {
+        val lower = cat.lowercase(Locale.ROOT)
+        return when {
+            lower.contains("grocer") -> "🛒 Groceries"
+            lower.contains("food") || lower.contains("din") || lower.contains("drink") || lower.contains("beverage") -> "🍵 Food & Dining"
+            lower.contains("transport") || lower.contains("travel") || lower.contains("petrol") || lower.contains("fuel") -> "🚗 Transport"
+            lower.contains("entertain") || lower.contains("movie") -> "🎬 Entertainment"
+            lower.contains("shop") || lower.contains("cloth") -> "🛍️ Shopping"
+            lower.contains("health") || lower.contains("med") -> "💊 Health"
+            lower.contains("bill") || lower.contains("util") || lower.contains("rent") -> "⚡ Bills"
+            else -> "✨ $cat"
+        }
+    }
+
     private fun parseLocally(text: String): ParsedExpenseData {
         val lower = text.lowercase(Locale.ROOT)
 
@@ -530,7 +546,7 @@ class QuickAddOverlayActivity : Activity() {
 
         val category = when {
             lower.contains("grocer") || lower.contains("vegetable") || lower.contains("milk") || lower.contains("fruit") || lower.contains("supermarket") -> "Groceries"
-            lower.contains("food") || lower.contains("lunch") || lower.contains("dinner") || lower.contains("breakfast") || lower.contains("chai") || lower.contains("coffee") || lower.contains("burger") || lower.contains("pizza") || lower.contains("restaurant") || lower.contains("cafe") -> "Food & Dining"
+            lower.contains("food") || lower.contains("lunch") || lower.contains("dinner") || lower.contains("breakfast") || lower.contains("chai") || lower.contains("coffee") || lower.contains("burger") || lower.contains("pizza") || lower.contains("restaurant") || lower.contains("cafe") || lower.contains("chaas") || lower.contains("lassi") || lower.contains("tea") || lower.contains("drink") || lower.contains("snack") || lower.contains("biryani") || lower.contains("dosa") || lower.contains("roti") || lower.contains("thali") || lower.contains("juice") -> "Food & Dining"
             lower.contains("petrol") || lower.contains("diesel") || lower.contains("fuel") || lower.contains("cab") || lower.contains("uber") || lower.contains("ola") || lower.contains("auto") || lower.contains("metro") || lower.contains("taxi") || lower.contains("bus") -> "Transportation"
             lower.contains("movie") || lower.contains("cinema") || lower.contains("netflix") || lower.contains("spotify") || lower.contains("game") -> "Entertainment"
             lower.contains("cloth") || lower.contains("shirt") || lower.contains("shoes") || lower.contains("amazon") || lower.contains("flipkart") || lower.contains("myntra") -> "Shopping"
@@ -539,11 +555,18 @@ class QuickAddOverlayActivity : Activity() {
             else -> "General"
         }
 
+        val cleanedNote = text
+            .replace(Regex("(?i)^(?:add|spent|paid|log|record|put)\\s+\\d+(?:\\.\\d+)?\\s+(?:to|for|on|in)\\s+"), "")
+            .replace(Regex("(?i)^(?:add|spent|paid|log|record|put)\\s+"), "")
+            .trim()
+            .ifEmpty { text }
+            .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() }
+
         val today = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
         return ParsedExpenseData(
             amount = amount,
             category = category,
-            note = text.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() },
+            note = cleanedNote,
             expenseDate = today
         )
     }
@@ -554,8 +577,22 @@ class QuickAddOverlayActivity : Activity() {
         confirmationSection.visibility = View.VISIBLE
 
         tvParsedAmount.text = "₹${String.format(Locale.US, "%.2f", parsed.amount)}"
-        tvParsedCategory.text = parsed.category
+        tvParsedCategory.text = formatCategoryWithEmoji(parsed.category)
         tvParsedNote.text = parsed.note
+
+        val displayDate = try {
+            val inputDf = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+            val dateObj = inputDf.parse(parsed.expenseDate)
+            val todayStr = inputDf.format(Date())
+            if (parsed.expenseDate == todayStr) {
+                "Today, " + SimpleDateFormat("d MMM", Locale.US).format(Date())
+            } else {
+                SimpleDateFormat("EEE, d MMM", Locale.US).format(dateObj ?: Date())
+            }
+        } catch (e: Exception) {
+            "Today"
+        }
+        tvParsedDate.text = displayDate
     }
 
     private fun saveExpense(expense: ParsedExpenseData) {

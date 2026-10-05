@@ -24,14 +24,16 @@
             android:orientation="horizontal">
 
             <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@drawable/ic_notification" />
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="@drawable/header_icon_bg"
+                android:padding="8dp"
+                android:src="@drawable/ic_overlay_logo" />
 
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="10dp"
+                android:layout_marginStart="12dp"
                 android:layout_weight="1"
                 android:orientation="vertical">
 
@@ -39,7 +41,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Quick Add Expense"
-                    android:textColor="#1F2937"
+                    android:textColor="#0F172A"
                     android:textSize="16sp"
                     android:textStyle="bold" />
 
@@ -47,18 +49,19 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Tabsy AI Assistant"
-                    android:textColor="#6B7280"
-                    android:textSize="11sp" />
+                    android:textColor="#64748B"
+                    android:textSize="12sp" />
             </LinearLayout>
 
             <ImageView
                 android:id="@+id/btnClose"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
-                android:padding="6dp"
-                android:src="@drawable/ic_close"
+                android:background="@drawable/close_btn_bg"
                 android:clickable="true"
-                android:focusable="true" />
+                android:focusable="true"
+                android:padding="8dp"
+                android:src="@drawable/ic_close_gray" />
         </LinearLayout>
 
         <!-- Mode Tab Bar -->
@@ -78,7 +81,7 @@
                 android:background="@drawable/tab_active_bg"
                 android:gravity="center"
                 android:text="🎤  Voice"
-                android:textColor="#3C6E47"
+                android:textColor="#2E6930"
                 android:textSize="13sp"
                 android:textStyle="bold"
                 android:clickable="true"
@@ -93,7 +96,7 @@
                 android:background="@drawable/tab_inactive_bg"
                 android:gravity="center"
                 android:text="⌨️  Type"
-                android:textColor="#6B7280"
+                android:textColor="#64748B"
                 android:textSize="13sp"
                 android:textStyle="bold"
                 android:clickable="true"
@@ -141,7 +144,7 @@
                 android:gravity="center"
                 android:minLines="2"
                 android:text="Listening..."
-                android:textColor="#1F2937"
+                android:textColor="#0F172A"
                 android:textSize="16sp"
                 android:textStyle="bold" />
 
@@ -152,7 +155,7 @@
                 android:layout_marginTop="4dp"
                 android:gravity="center"
                 android:text="Tap mic to speak your expense"
-                android:textColor="#6B7280"
+                android:textColor="#64748B"
                 android:textSize="12sp" />
         </LinearLayout>
 
@@ -172,8 +175,8 @@
                 android:layout_weight="1"
                 android:background="@drawable/overlay_input_bg"
                 android:hint="e.g. Spent 350 on groceries"
-                android:textColor="#1F2937"
-                android:textColorHint="#9CA3AF"
+                android:textColor="#0F172A"
+                android:textColorHint="#94A3B8"
                 android:textSize="14sp"
                 android:paddingHorizontal="14dp"
                 android:imeOptions="actionSend"
@@ -187,6 +190,7 @@
                 android:layout_marginStart="8dp"
                 android:background="@drawable/btn_confirm_bg"
                 android:text="Send"
+                android:textAllCaps="false"
                 android:textColor="#FFFFFF"
                 android:textSize="13sp"
                 android:textStyle="bold" />
@@ -213,7 +217,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
                 android:text="Analyzing expense with AI..."
-                android:textColor="#4B5563"
+                android:textColor="#475569"
                 android:textSize="13sp" />
         </LinearLayout>
 
@@ -226,83 +230,166 @@
             android:orientation="vertical"
             android:visibility="gone">
 
+            <!-- Elegant Receipt Card -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@drawable/overlay_input_bg"
-                android:padding="14dp"
-                android:orientation="vertical">
+                android:background="@drawable/receipt_card_bg"
+                android:orientation="vertical"
+                android:padding="18dp">
 
+                <!-- Header / Label -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:letterSpacing="0.06"
+                    android:text="TOTAL EXPENSE"
+                    android:textColor="#94A3B8"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+
+                <!-- Large Amount Display -->
                 <TextView
                     android:id="@+id/tvParsedAmount"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
                     android:text="₹0.00"
-                    android:textColor="#1F2937"
-                    android:textSize="26sp"
+                    android:textColor="#0F172A"
+                    android:textSize="34sp"
                     android:textStyle="bold" />
 
+                <!-- Divider -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="14dp"
+                    android:layout_marginBottom="14dp"
+                    android:background="#EDF2F7" />
+
+                <!-- Category Row -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Category"
+                        android:textColor="#64748B"
+                        android:textSize="13sp" />
+
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="1dp"
+                        android:layout_weight="1" />
 
                     <TextView
                         android:id="@+id/tvParsedCategory"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:background="@drawable/tab_active_bg"
-                        android:paddingHorizontal="10dp"
-                        android:paddingVertical="3dp"
-                        android:text="General"
-                        android:textColor="#3C6E47"
+                        android:background="@drawable/category_pill_bg"
+                        android:paddingHorizontal="12dp"
+                        android:paddingVertical="4dp"
+                        android:text="✨ General"
+                        android:textColor="#2E6930"
                         android:textSize="12sp"
                         android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- Note / Description Row -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:gravity="top"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Note"
+                        android:textColor="#64748B"
+                        android:textSize="13sp" />
 
                     <TextView
                         android:id="@+id/tvParsedNote"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
+                        android:layout_marginStart="20dp"
                         android:layout_weight="1"
+                        android:gravity="end"
+                        android:maxLines="3"
                         android:ellipsize="end"
-                        android:maxLines="1"
-                        android:text="Note"
-                        android:textColor="#6B7280"
+                        android:text="Expense description"
+                        android:textColor="#1E293B"
                         android:textSize="13sp" />
                 </LinearLayout>
+
+                <!-- Date Row -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Date"
+                        android:textColor="#64748B"
+                        android:textSize="13sp" />
+
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="1dp"
+                        android:layout_weight="1" />
+
+                    <TextView
+                        android:id="@+id/tvParsedDate"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Today"
+                        android:textColor="#64748B"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
             </LinearLayout>
 
             <!-- Action Buttons -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="18dp"
                 android:orientation="horizontal">
 
                 <Button
                     android:id="@+id/btnCancel"
                     android:layout_width="0dp"
-                    android:layout_height="44dp"
+                    android:layout_height="48dp"
                     android:layout_marginEnd="6dp"
                     android:layout_weight="1"
                     android:background="@drawable/btn_cancel_bg"
                     android:text="Cancel"
-                    android:textColor="#4B5563"
-                    android:textSize="13sp" />
+                    android:textAllCaps="false"
+                    android:textColor="#475569"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
 
                 <Button
                     android:id="@+id/btnConfirm"
                     android:layout_width="0dp"
-                    android:layout_height="44dp"
+                    android:layout_height="48dp"
                     android:layout_marginStart="6dp"
                     android:layout_weight="1"
                     android:background="@drawable/btn_confirm_bg"
                     android:text="Confirm &amp; Save"
+                    android:textAllCaps="false"
                     android:textColor="#FFFFFF"
-                    android:textSize="13sp"
+                    android:textSize="14sp"
                     android:textStyle="bold" />
             </LinearLayout>
         </LinearLayout>
@@ -312,10 +399,10 @@
             android:id="@+id/tvSuccessBanner"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="18dp"
             android:gravity="center"
             android:text="✅ Expense Saved!"
-            android:textColor="#3C6E47"
+            android:textColor="#2E6930"
             android:textSize="16sp"
             android:textStyle="bold"
             android:visibility="gone" />
