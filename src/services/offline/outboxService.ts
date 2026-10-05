@@ -253,7 +253,7 @@ class OutboxService {
         const { groupId, payload } = action.payload;
         const backendPayload: any = {
           amount: Math.round(Number(payload.amount) * 100) / 100,
-          category: String(payload.category || 'general').trim(),
+          category: String(payload.category || 'other').trim(),
           note: (payload.note || payload.description) ? String(payload.note || payload.description).trim() : null,
           expense_date: this.sanitizeIsoDate(payload.expense_date || payload.date),
         };

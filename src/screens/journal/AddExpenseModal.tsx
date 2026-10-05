@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   View,
   StyleSheet,
@@ -21,7 +21,9 @@ import {
   AvatarCircle,
   FriendPickerSheet,
   GroupPickerSheet,
+  CategoryPickerSheet,
 } from '../../components';
+import { getCategoryIcon } from '../../components/ExpenseRow';
 import { useTransitionAutoFocus } from '../../hooks';
 import { expensesApi } from '../../api/expenses';
 import { friendsApi } from '../../api/friends';
@@ -48,10 +50,11 @@ import {
   Users,
   UserCheck,
   Search,
+  Layers,
+  ChevronDown,
   User,
   Sparkles,
   ChevronRight,
-  ChevronDown,
 } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -88,50 +91,13 @@ export function formatFriendlyDate(dateStr?: string): string {
   return d.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' });
 }
 
-interface SproutCategoryItem {
-  id: string;
-  name: string;
-  shortLabel: string;
-  icon: (color: string, size?: number) => React.ReactNode;
-}
-
-const DEFAULT_SPROUT_CATEGORIES: SproutCategoryItem[] = [
-  {
-    id: 'food',
-    name: 'Food & Dining',
-    shortLabel: 'Food',
-    icon: (c, s = 14) => <Utensils size={s} color={c} strokeWidth={1.8} />,
-  },
-  {
-    id: 'transport',
-    name: 'Transport',
-    shortLabel: 'Travel',
-    icon: (c, s = 14) => <Car size={s} color={c} strokeWidth={1.8} />,
-  },
-  {
-    id: 'shopping',
-    name: 'Shopping',
-    shortLabel: 'Shop',
-    icon: (c, s = 14) => <ShoppingBag size={s} color={c} strokeWidth={1.8} />,
-  },
-  {
-    id: 'bills',
-    name: 'Bills & Utilities',
-    shortLabel: 'Bills',
-    icon: (c, s = 14) => <ReceiptText size={s} color={c} strokeWidth={1.8} />,
-  },
-  {
-    id: 'entertainment',
-    name: 'Entertainment',
-    shortLabel: 'Fun',
-    icon: (c, s = 14) => <Film size={s} color={c} strokeWidth={1.8} />,
-  },
-  {
-    id: 'other',
-    name: 'Other',
-    shortLabel: 'Other',
-    icon: (c, s = 14) => <MoreHorizontal size={s} color={c} strokeWidth={1.8} />,
-  },
+const DEFAULT_CATEGORIES: Category[] = [
+  { id: 'food', name: 'Food & Dining' },
+  { id: 'transport', name: 'Transport' },
+  { id: 'shopping', name: 'Shopping' },
+  { id: 'bills', name: 'Bills & Utilities' },
+  { id: 'entertainment', name: 'Entertainment' },
+  { id: 'other', name: 'Other' },
 ];
 
 export const AddExpenseModal: React.FC = () => {
@@ -150,8 +116,52 @@ export const AddExpenseModal: React.FC = () => {
   const [amountStr, setAmountStr] = useState('');
   const [description, setDescription] = useState('');
   const [dateStr, setDateStr] = useState(toLocalDateString(new Date()));
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('food');
+  const [categories, setCategories] = useState<Category[]>(DEFAULT_CATEGORIES);
+  const [selectedCategoryName, setSelectedCategoryName] = useState<string>('Food & Dining');
+  const [isCategorySheetOpen, setIsCategorySheetOpen] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
+
+  // Load custom categories from server/cache
+  useEffect(() => {
+    expensesApi.getCategories().then((customCats) => {
+      if (Array.isArray(customCats) && customCats.length > 0) {
+        setCategories(() => {
+          const map = new Map<string, Category>();
+          DEFAULT_CATEGORIES.forEach((c) => map.set(c.name.toLowerCase(), c));
+          customCats.forEach((c) => {
+            if (c.name && !map.has(c.name.toLowerCase())) {
+              map.set(c.name.toLowerCase(), {
+                id: c.id || c.name.toLowerCase().replace(/\s+/g, '_'),
+                name: c.name,
+              });
+            }
+          });
+          const combined = Array.from(map.values());
+          const otherIdx = combined.findIndex((c) => c.name.toLowerCase() === 'other');
+          if (otherIdx > -1 && otherIdx < combined.length - 1) {
+            const [other] = combined.splice(otherIdx, 1);
+            combined.push(other);
+          }
+          return combined;
+        });
+      }
+    }).catch(() => {});
+  }, []);
+
+  // Quick categories: top 5 categories plus active selection if outside top 5
+  const quickCategories = useMemo(() => {
+    const top5 = categories.slice(0, 5);
+    const selectedNorm = selectedCategoryName.trim().toLowerCase();
+    const isAlreadyInTop5 = top5.some((c) => c.name.trim().toLowerCase() === selectedNorm);
+    if (!isAlreadyInTop5 && selectedCategoryName) {
+      const foundInAll = categories.find((c) => c.name.trim().toLowerCase() === selectedNorm);
+      if (foundInAll) {
+        return [...top5, foundInAll];
+      }
+      return [...top5, { id: 'active_cat', name: selectedCategoryName }];
+    }
+    return top5;
+  }, [categories, selectedCategoryName]);
 
   // Friend mode state
   const [friends, setFriends] = useState<FriendRecord[]>([]);
@@ -255,8 +265,7 @@ export const AddExpenseModal: React.FC = () => {
     setIsSubmitting(true);
     Keyboard.dismiss();
     try {
-      const selectedCat = DEFAULT_SPROUT_CATEGORIES.find((c) => c.id === selectedCategoryId);
-      const catSlug = selectedCat?.id || 'other';
+      const catSlug = selectedCategoryName.trim() || 'Other';
 
       if (mode === 'personal') {
         const created = await expensesApi.createPersonalExpense({
@@ -680,34 +689,58 @@ export const AddExpenseModal: React.FC = () => {
             </View>
           )}
 
-          {/* Category Strip (Compact Horizontal Pills) */}
-          <View style={styles.compactCategoryRow}>
-            {DEFAULT_SPROUT_CATEGORIES.map((cat) => {
-              const isSelected = selectedCategoryId === cat.id;
+          {/* Category Strip (Top 5 Quick Pills + All Sheet Trigger) */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.compactCategoryScroll}
+          >
+            {quickCategories.map((cat) => {
+              const isSelected = selectedCategoryName.trim().toLowerCase() === cat.name.trim().toLowerCase();
               return (
                 <TouchableOpacity
-                  key={cat.id}
+                  key={cat.id || cat.name}
                   activeOpacity={0.75}
-                  onPress={() => setSelectedCategoryId(cat.id)}
+                  onPress={() => setSelectedCategoryName(cat.name)}
                   style={[
                     styles.compactCategoryPill,
                     { backgroundColor: colors.surface, borderColor: colors.line },
                     isSelected && [styles.compactCategoryPillSelected, { backgroundColor: colors.accent, borderColor: colors.accent }],
                   ]}
                 >
-                  {cat.icon(isSelected ? colors.onAccent : colors.muted, 13)}
+                  {getCategoryIcon(cat.name, isSelected ? colors.onAccent : colors.muted, 13)}
                   <SproutText
                     variant="caption"
                     color={isSelected ? colors.onAccent : colors.muted}
                     weight={isSelected ? '700' : '600'}
                     style={styles.compactCategoryLabel}
                   >
-                    {cat.shortLabel}
+                    {cat.name}
                   </SproutText>
                 </TouchableOpacity>
               );
             })}
-          </View>
+
+            <TouchableOpacity
+              activeOpacity={0.75}
+              onPress={() => setIsCategorySheetOpen(true)}
+              style={[
+                styles.compactCategoryPill,
+                { backgroundColor: colors.surfaceElevated, borderColor: colors.line },
+              ]}
+            >
+              <Layers size={13} color={colors.accent} />
+              <SproutText
+                variant="caption"
+                color={colors.accent}
+                weight="700"
+                style={[styles.compactCategoryLabel, { color: colors.accent }]}
+              >
+                All ({categories.length})
+              </SproutText>
+              <ChevronDown size={13} color={colors.accent} />
+            </TouchableOpacity>
+          </ScrollView>
 
           {/* Details Fields: Compact 2-in-1 Note & Date Card */}
           <View style={[styles.compactFieldsCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
@@ -846,6 +879,14 @@ export const AddExpenseModal: React.FC = () => {
         selectedGroupId={selectedGroupId}
         onSelectGroup={handleSelectGroup}
         onClose={() => setShowGroupPicker(false)}
+      />
+      <CategoryPickerSheet
+        visible={isCategorySheetOpen}
+        categories={categories}
+        selectedCategoryName={selectedCategoryName}
+        onSelectCategory={(catName) => setSelectedCategoryName(catName)}
+        onClose={() => setIsCategorySheetOpen(false)}
+        onManageCategories={() => rootNavigation.navigate('CategoryManager')}
       />
     </SafeAreaView>
   );
@@ -1113,6 +1154,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
     borderColor: colors.accent,
   },
+  compactCategoryScroll: {
+    paddingVertical: 4,
+    gap: 6,
+    alignItems: 'center',
+  },
   compactCategoryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1120,7 +1166,6 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
   compactCategoryPill: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1129,8 +1174,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.line,
-    gap: 4,
-    paddingHorizontal: 2,
+    gap: 5,
+    paddingHorizontal: 12,
   },
   compactCategoryPillSelected: {
     backgroundColor: colors.accent,

@@ -169,5 +169,16 @@ class QuickAddModule(private val reactContext: ReactApplicationContext) :
             promise.reject("SYNC_THEME_ERROR", e.message, e)
         }
     }
+
+    @ReactMethod
+    fun syncCategories(categoriesJson: String, promise: Promise) {
+        try {
+            val prefs = reactContext.getSharedPreferences(QuickAddService.PREFS_NAME, android.content.Context.MODE_PRIVATE)
+            prefs.edit().putString("user_categories", categoriesJson).apply()
+            promise.resolve(true)
+        } catch (e: Exception) {
+            promise.reject("SYNC_CATEGORIES_ERROR", e.message, e)
+        }
+    }
 }
 

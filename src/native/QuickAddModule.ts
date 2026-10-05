@@ -30,6 +30,7 @@ export interface QuickAddModuleInterface {
   getPendingExpenses(): Promise<string>;
   clearPendingExpenses(): Promise<boolean>;
   syncTheme(themeConfig: QuickAddThemeConfig): Promise<boolean>;
+  syncCategories(categories: { name: string; icon?: string }[]): Promise<boolean>;
   addActionListener(listener: (mode: 'voice' | 'text') => void): () => void;
 }
 
@@ -308,6 +309,18 @@ export const QuickAddModule: QuickAddModuleInterface = {
         return Boolean(await nativeModule.syncTheme(JSON.stringify(themeConfig)));
       } catch (err) {
         console.warn('[QuickAddModule] syncTheme native call failed:', err);
+      }
+    }
+    return true;
+  },
+
+  async syncCategories(categories: { name: string; icon?: string }[]): Promise<boolean> {
+    const nativeModule = getNativeModule();
+    if (nativeModule?.syncCategories) {
+      try {
+        return Boolean(await nativeModule.syncCategories(JSON.stringify(categories)));
+      } catch (err) {
+        console.warn('[QuickAddModule] syncCategories native call failed:', err);
       }
     }
     return true;

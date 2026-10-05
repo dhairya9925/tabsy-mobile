@@ -300,7 +300,9 @@
                         android:background="@drawable/category_pill_bg"
                         android:paddingHorizontal="12dp"
                         android:paddingVertical="4dp"
-                        android:text="✨ General"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:text="✨ Other"
                         android:textColor="#2E6930"
                         android:textSize="12sp"
                         android:textStyle="bold" />

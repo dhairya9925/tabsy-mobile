@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   View,
   StyleSheet,
@@ -6,6 +6,7 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  TouchableOpacity,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
@@ -15,12 +16,13 @@ import {
   SproutButton,
   CircleButton,
   CategoryChip,
+  CategoryPickerSheet,
   FieldRow,
   Toast,
 } from '../../components';
 import { expensesApi } from '../../api/expenses';
 import { Category } from '../../types';
-import { X, FileText, Calendar } from 'lucide-react-native';
+import { X, FileText, Calendar, Layers, ChevronDown } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'EditExpenseModal'>;
@@ -62,9 +64,25 @@ export const EditExpenseModal: React.FC<Props> = ({ route, navigation }) => {
     return list;
   });
 
+  const [isCategorySheetOpen, setIsCategorySheetOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+
+  // Quick categories: top 5 categories plus active selection if outside top 5
+  const quickCategories = useMemo(() => {
+    const top5 = categories.slice(0, 5);
+    const selectedNorm = selectedCategoryName.trim().toLowerCase();
+    const isAlreadyInTop5 = top5.some((c) => c.name.trim().toLowerCase() === selectedNorm);
+    if (!isAlreadyInTop5 && selectedCategoryName) {
+      const foundInAll = categories.find((c) => c.name.trim().toLowerCase() === selectedNorm);
+      if (foundInAll) {
+        return [...top5, foundInAll];
+      }
+      return [...top5, { id: 'active_cat', name: selectedCategoryName }];
+    }
+    return top5;
+  }, [categories, selectedCategoryName]);
 
   useEffect(() => {
     expensesApi.getCategories()
@@ -192,15 +210,26 @@ export const EditExpenseModal: React.FC<Props> = ({ route, navigation }) => {
 
           {/* Categories Selector */}
           <View style={styles.section}>
-            <SproutText variant="eyebrow" color={colors.muted} style={styles.sectionLabel}>
-              CATEGORY
-            </SproutText>
+            <View style={styles.sectionHeaderRow}>
+              <SproutText variant="eyebrow" color={colors.muted} style={styles.sectionLabel}>
+                CATEGORY
+              </SproutText>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => setIsCategorySheetOpen(true)}
+                style={styles.allCategoriesLink}
+              >
+                <SproutText variant="caption" color={colors.accent} weight="700">
+                  {categories.length > 5 ? `All (${categories.length}) ▾` : 'Browse ▾'}
+                </SproutText>
+              </TouchableOpacity>
+            </View>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.categoryScroll}
             >
-              {categories.map((cat) => (
+              {quickCategories.map((cat) => (
                 <CategoryChip
                   key={cat.id}
                   id={cat.id}
@@ -209,6 +238,21 @@ export const EditExpenseModal: React.FC<Props> = ({ route, navigation }) => {
                   onSelect={() => setSelectedCategoryName(cat.name)}
                 />
               ))}
+
+              <TouchableOpacity
+                activeOpacity={0.75}
+                onPress={() => setIsCategorySheetOpen(true)}
+                style={[
+                  styles.moreCategoriesPill,
+                  { backgroundColor: colors.surfaceElevated, borderColor: colors.line },
+                ]}
+              >
+                <Layers size={13} color={colors.accent} />
+                <SproutText variant="caption" color={colors.accent} weight="700" style={{ marginLeft: 4 }}>
+                  All ({categories.length})
+                </SproutText>
+                <ChevronDown size={13} color={colors.accent} style={{ marginLeft: 2 }} />
+              </TouchableOpacity>
             </ScrollView>
           </View>
 
@@ -241,6 +285,15 @@ export const EditExpenseModal: React.FC<Props> = ({ route, navigation }) => {
           />
         </View>
       </KeyboardAvoidingView>
+
+      <CategoryPickerSheet
+        visible={isCategorySheetOpen}
+        categories={categories}
+        selectedCategoryName={selectedCategoryName}
+        onSelectCategory={(catName) => setSelectedCategoryName(catName)}
+        onClose={() => setIsCategorySheetOpen(false)}
+        onManageCategories={() => navigation.navigate('CategoryManager')}
+      />
     </SafeAreaView>
   );
 };
@@ -297,12 +350,32 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: spacing.lg,
   },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.xs,
+  },
   sectionLabel: {
-    marginBottom: spacing.sm,
+    marginBottom: 0,
+  },
+  allCategoriesLink: {
+    paddingVertical: 2,
+    paddingHorizontal: 4,
   },
   categoryScroll: {
     paddingVertical: 6,
     paddingRight: spacing.sm,
+    alignItems: 'center',
+    gap: 8,
+  },
+  moreCategoriesPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: radii.full,
+    borderWidth: 1,
   },
   bottomBar: {
     paddingHorizontal: spacing.lg,

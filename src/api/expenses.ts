@@ -9,6 +9,7 @@ import {
 import { cacheService, CACHE_KEYS } from '../services/offline/cacheService';
 import { outboxService } from '../services/offline/outboxService';
 import { networkService } from '../services/offline/networkService';
+import { QuickAddModule } from '../native/QuickAddModule';
 
 export const expensesApi = {
   async getPersonalExpenses(params?: {
@@ -186,7 +187,10 @@ export const expensesApi = {
   async getCategories(): Promise<Category[]> {
     if (!networkService.isOnline()) {
       const cached = await cacheService.get<Category[]>(CACHE_KEYS.CATEGORIES);
-      if (Array.isArray(cached) && cached.length > 0) return cached;
+      if (Array.isArray(cached) && cached.length > 0) {
+        QuickAddModule.syncCategories(cached.map((c) => ({ name: c.name }))).catch(() => {});
+        return cached;
+      }
     }
 
     try {
@@ -194,11 +198,15 @@ export const expensesApi = {
       const categories = Array.isArray(res) ? res : [];
       if (categories.length > 0) {
         await cacheService.set(CACHE_KEYS.CATEGORIES, categories);
+        QuickAddModule.syncCategories(categories.map((c) => ({ name: c.name }))).catch(() => {});
       }
       return categories;
     } catch (err) {
       const cached = await cacheService.get<Category[]>(CACHE_KEYS.CATEGORIES);
-      if (Array.isArray(cached) && cached.length > 0) return cached;
+      if (Array.isArray(cached) && cached.length > 0) {
+        QuickAddModule.syncCategories(cached.map((c) => ({ name: c.name }))).catch(() => {});
+        return cached;
+      }
       return [];
     }
   },

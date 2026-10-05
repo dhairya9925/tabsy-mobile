@@ -91,3 +91,12 @@ test('QuickAddModule syncTheme executes cleanly with theme config', async () => 
   assert.strictEqual(syncThemeRes, true);
 });
 
+test('QuickAddModule syncCategories executes cleanly with category list', async () => {
+  const syncCatsRes = await QuickAddModule.syncCategories([
+    { name: 'Food & Dining' },
+    { name: 'Transport' },
+    { name: 'Groceries' },
+  ]);
+  assert.strictEqual(syncCatsRes, true);
+});
+

@@ -720,7 +720,13 @@ class QuickAddOverlayActivity : Activity() {
                         val json = JSONObject(resp)
                         val data = if (json.has("data")) json.getJSONObject("data") else json
                         val amt = if (data.has("amount") && !data.isNull("amount")) data.getDouble("amount") else parseLocally(userText).amount
-                        val cat = data.optString("category", "General").replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() }
+                        val rawCat = data.optString("category", "").trim()
+                        val cat = if (rawCat.isNotEmpty() && !rawCat.equals("general", ignoreCase = true) && !rawCat.equals("null", ignoreCase = true)) {
+                            rawCat.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() }
+                        } else {
+                            val local = parseLocally(userText)
+                            if (local.category.isNotEmpty() && !local.category.equals("general", ignoreCase = true)) local.category else "Other"
+                        }
                         val note = data.optString("note", userText).ifEmpty { userText }
                         val today = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
                         val date = data.optString("expense_date", today).ifEmpty { today }
@@ -755,8 +761,43 @@ class QuickAddOverlayActivity : Activity() {
             lower.contains("shop") || lower.contains("cloth") -> "🛍️ Shopping"
             lower.contains("health") || lower.contains("med") -> "💊 Health"
             lower.contains("bill") || lower.contains("util") || lower.contains("rent") -> "⚡ Bills"
+            lower.contains("other") -> "✨ Other"
             else -> "✨ $cat"
         }
+    }
+
+    private fun getUserCategories(): List<String> {
+        val defaultList = listOf("Food & Dining", "Transport", "Shopping", "Bills & Utilities", "Entertainment", "Other")
+        try {
+            val prefs = getSharedPreferences(QuickAddService.PREFS_NAME, Context.MODE_PRIVATE)
+            val jsonStr = prefs.getString("user_categories", null) ?: return defaultList
+            val arr = org.json.JSONArray(jsonStr)
+            val list = mutableListOf<String>()
+            for (i in 0 until arr.length()) {
+                val item = arr.optJSONObject(i)
+                val name = item?.optString("name") ?: arr.optString(i)
+                if (!name.isNullOrBlank() && !list.contains(name)) {
+                    list.add(name)
+                }
+            }
+            return if (list.isNotEmpty()) list else defaultList
+        } catch (e: Exception) {
+            return defaultList
+        }
+    }
+
+    private fun showCategorySelectionDialog() {
+        val categories = getUserCategories()
+        val items = categories.toTypedArray()
+        android.app.AlertDialog.Builder(this)
+            .setTitle("Change Category")
+            .setItems(items) { _, which ->
+                val chosen = items[which]
+                pendingExpense = pendingExpense?.copy(category = chosen)
+                tvParsedCategory.text = formatCategoryWithEmoji(chosen)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     private fun parseLocally(text: String): ParsedExpenseData {
@@ -769,14 +810,14 @@ class QuickAddOverlayActivity : Activity() {
         }
 
         val category = when {
-            lower.contains("grocer") || lower.contains("vegetable") || lower.contains("milk") || lower.contains("fruit") || lower.contains("supermarket") -> "Groceries"
-            lower.contains("food") || lower.contains("lunch") || lower.contains("dinner") || lower.contains("breakfast") || lower.contains("chai") || lower.contains("coffee") || lower.contains("burger") || lower.contains("pizza") || lower.contains("restaurant") || lower.contains("cafe") || lower.contains("chaas") || lower.contains("lassi") || lower.contains("tea") || lower.contains("drink") || lower.contains("snack") || lower.contains("biryani") || lower.contains("dosa") || lower.contains("roti") || lower.contains("thali") || lower.contains("juice") -> "Food & Dining"
-            lower.contains("petrol") || lower.contains("diesel") || lower.contains("fuel") || lower.contains("cab") || lower.contains("uber") || lower.contains("ola") || lower.contains("auto") || lower.contains("metro") || lower.contains("taxi") || lower.contains("bus") -> "Transportation"
-            lower.contains("movie") || lower.contains("cinema") || lower.contains("netflix") || lower.contains("spotify") || lower.contains("game") -> "Entertainment"
-            lower.contains("cloth") || lower.contains("shirt") || lower.contains("shoes") || lower.contains("amazon") || lower.contains("flipkart") || lower.contains("myntra") -> "Shopping"
-            lower.contains("med") || lower.contains("pharmacy") || lower.contains("doctor") || lower.contains("hospital") -> "Health"
+            lower.contains("sabji") || lower.contains("sabzi") || lower.contains("vegetable") || lower.contains("milk") || lower.contains("fruit") || lower.contains("supermarket") || lower.contains("grocer") || lower.contains("kirana") -> "Food & Dining"
+            lower.contains("food") || lower.contains("lunch") || lower.contains("dinner") || lower.contains("breakfast") || lower.contains("chai") || lower.contains("coffee") || lower.contains("burger") || lower.contains("pizza") || lower.contains("restaurant") || lower.contains("cafe") || lower.contains("chaas") || lower.contains("lassi") || lower.contains("tea") || lower.contains("drink") || lower.contains("snack") || lower.contains("biryani") || lower.contains("dosa") || lower.contains("roti") || lower.contains("thali") || lower.contains("juice") || lower.contains("swiggy") || lower.contains("zomato") || lower.contains("blinkit") || lower.contains("zepto") || lower.contains("instamart") -> "Food & Dining"
+            lower.contains("petrol") || lower.contains("diesel") || lower.contains("fuel") || lower.contains("cab") || lower.contains("uber") || lower.contains("ola") || lower.contains("auto") || lower.contains("metro") || lower.contains("taxi") || lower.contains("bus") || lower.contains("travel") || lower.contains("transit") -> "Transport"
+            lower.contains("movie") || lower.contains("cinema") || lower.contains("netflix") || lower.contains("spotify") || lower.contains("game") || lower.contains("entertain") || lower.contains("party") -> "Entertainment"
+            lower.contains("cloth") || lower.contains("shirt") || lower.contains("shoes") || lower.contains("amazon") || lower.contains("flipkart") || lower.contains("myntra") || lower.contains("shop") -> "Shopping"
+            lower.contains("med") || lower.contains("pharmacy") || lower.contains("doctor") || lower.contains("hospital") || lower.contains("clinic") -> "Health"
             lower.contains("rent") || lower.contains("recharge") || lower.contains("wifi") || lower.contains("bill") || lower.contains("electricity") || lower.contains("water") -> "Bills & Utilities"
-            else -> "General"
+            else -> "Other"
         }
 
         val cleanedNote = text
@@ -802,6 +843,9 @@ class QuickAddOverlayActivity : Activity() {
 
         tvParsedAmount.text = "₹${String.format(Locale.US, "%.2f", parsed.amount)}"
         tvParsedCategory.text = formatCategoryWithEmoji(parsed.category)
+        tvParsedCategory.setOnClickListener {
+            showCategorySelectionDialog()
+        }
         tvParsedNote.text = parsed.note
 
         val displayDate = try {
