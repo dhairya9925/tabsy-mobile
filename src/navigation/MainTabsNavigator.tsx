@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MainTabsParamList, RootStackParamList } from './types';
-import { colors } from '../theme';
+import { useTheme } from '../theme';
 import { RhythmScreen } from '../screens/rhythm/RhythmScreen';
 import { JournalNavigator } from './JournalNavigator';
 import { SharedNavigator } from './SharedNavigator';
@@ -20,9 +20,11 @@ const Tab = createBottomTabNavigator<MainTabsParamList>();
 
 export const MainTabsNavigator: React.FC = () => {
   const rootNavigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { colors, themeVersion } = useTheme();
 
   return (
     <Tab.Navigator
+      key={`main-tabs-${themeVersion}`}
       initialRouteName="Rhythm"
       tabBar={(props) => (
         <SproutTabBar
@@ -35,7 +37,7 @@ export const MainTabsNavigator: React.FC = () => {
         headerShown: false,
         tabBarShowLabel: true,
         tabBarActiveTintColor: colors.accent,
-        tabBarInactiveTintColor: '#7B887F',
+        tabBarInactiveTintColor: colors.muted,
       }}
     >
       <Tab.Screen

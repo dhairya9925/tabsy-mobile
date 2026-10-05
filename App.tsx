@@ -26,6 +26,20 @@ const queryClient = new QueryClient({
   },
 });
 
+function AppContent() {
+  const themeVersion = useThemeStore((s) => s.themeVersion);
+  // Defer evaluation of all screens until the theme is fully hydrated from AsyncStorage
+  const { RootNavigator } = require('./src/navigation/RootNavigator');
+
+  return (
+    <SafeAreaProvider>
+      <QueryClientProvider client={queryClient}>
+        <RootNavigator key={`root-nav-${themeVersion}`} />
+      </QueryClientProvider>
+    </SafeAreaProvider>
+  );
+}
+
 export default function App() {
   const [fontsLoaded] = useFonts({
     Manrope_400Regular,
@@ -50,14 +64,5 @@ export default function App() {
     return <SplashScreen />;
   }
 
-  // Defer evaluation of all screens until the theme is fully hydrated from AsyncStorage
-  const { RootNavigator } = require('./src/navigation/RootNavigator');
-
-  return (
-    <SafeAreaProvider>
-      <QueryClientProvider client={queryClient}>
-        <RootNavigator />
-      </QueryClientProvider>
-    </SafeAreaProvider>
-  );
+  return <AppContent />;
 }

@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
     minHeight: 55,
     paddingVertical: 7,
     borderBottomWidth: 1,
-    borderBottomColor: '#CBD7CC',
+    borderBottomColor: colors.line,
   },
   iconCircle: {
     width: 37,
@@ -122,13 +122,13 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: fontFamilies.medium,
     fontSize: 13,
-    color: '#183228',
+    color: colors.text,
     marginBottom: 2,
   },
   subtitle: {
     fontFamily: fontFamilies.medium,
     fontSize: 10,
-    color: '#6D7C72',
+    color: colors.muted,
   },
   amountCol: {
     alignItems: 'flex-end',
@@ -137,12 +137,12 @@ const styles = StyleSheet.create({
   amount: {
     fontFamily: fontFamilies.medium,
     fontSize: 13,
-    color: '#183228',
+    color: colors.text,
   },
   pendingBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F4DACD', // Soft clay/peach
+    backgroundColor: colors.clay,
     paddingHorizontal: 4,
     paddingVertical: 1,
     borderRadius: 4,
@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
   },
   pendingText: {
     fontSize: 8.5,
-    color: '#7A3E2D',
+    color: colors.negative,
   },
 });
 

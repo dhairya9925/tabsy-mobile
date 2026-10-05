@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
-import { fontFamilies, colors, spacing } from '../theme';
+import { fontFamilies, colors, spacing, useTheme } from '../theme';
 import { SproutText } from './SproutText';
 import { formatCurrency } from '../utils/formatters';
 
@@ -16,6 +16,7 @@ export const MonthlyPaceCard: React.FC<MonthlyPaceCardProps> = ({
   budget,
   onPress,
 }) => {
+  const { colors: themeColors, statusColors: themeStatus } = useTheme();
   const remaining = Math.max(0, budget - spent);
   const percentageUsed = budget > 0 ? Math.min(100, Math.round((spent / budget) * 100)) : 0;
 
@@ -32,7 +33,7 @@ export const MonthlyPaceCard: React.FC<MonthlyPaceCardProps> = ({
       : `M ${r} ${r} L ${r} 0 A ${r} ${r} 0 ${largeArcFlag} 1 ${x} ${y} Z`;
 
   const content = (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: themeStatus.forestCardBg, borderColor: themeStatus.forestCardBorder, borderWidth: 1 }]}>
       <View style={styles.leftCol}>
         <SproutText variant="eyebrow" color="#BDCABF" style={styles.eyebrow}>
           MONTHLY PACE
@@ -57,9 +58,9 @@ export const MonthlyPaceCard: React.FC<MonthlyPaceCardProps> = ({
             />
             {/* Filled Progress Slice */}
             {percentageUsed >= 100 ? (
-              <Circle cx={r} cy={r} r={r} fill={colors.sun} />
+              <Circle cx={r} cy={r} r={r} fill={themeColors.sun} />
             ) : percentageUsed > 0 ? (
-              <Path d={piePath} fill={colors.sun} />
+              <Path d={piePath} fill={themeColors.sun} />
             ) : null}
           </Svg>
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RootStackParamList } from './types';
 import { AuthNavigator } from './AuthNavigator';
@@ -23,7 +23,7 @@ import { QuickAddOverlay } from '../screens/ai/QuickAddOverlay';
 import { useAuthStore } from '../store/useAuthStore';
 import { linking } from './linking';
 import { ErrorBoundary, OfflineSyncBanner } from '../components';
-import { colors } from '../theme';
+import { useTheme } from '../theme';
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 
@@ -32,6 +32,22 @@ import { NativeOverlayListener } from '../components/ai/NativeOverlayListener';
 export const RootNavigator: React.FC = () => {
   const isInitialized = useAuthStore((s) => s.isInitialized);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const { colors, isDark, themeVersion } = useTheme();
+
+  const baseTheme = isDark ? DarkTheme : DefaultTheme;
+  const navTheme = React.useMemo(() => ({
+    ...baseTheme,
+    dark: isDark,
+    colors: {
+      ...baseTheme.colors,
+      primary: colors.accent,
+      background: colors.background,
+      card: colors.surface,
+      text: colors.text,
+      border: colors.line,
+      notification: colors.accent,
+    },
+  }), [isDark, baseTheme, colors.accent, colors.background, colors.surface, colors.text, colors.line]);
 
   if (!isInitialized) {
     return <SplashScreen />;
@@ -39,7 +55,7 @@ export const RootNavigator: React.FC = () => {
 
   return (
     <ErrorBoundary>
-      <NavigationContainer linking={linking}>
+      <NavigationContainer linking={linking} theme={navTheme}>
         {isAuthenticated && (
           <>
             <OfflineSyncBanner />
@@ -47,6 +63,7 @@ export const RootNavigator: React.FC = () => {
           </>
         )}
         <RootStack.Navigator
+          key={`root-stack-${themeVersion}`}
           screenOptions={{
             headerShown: false,
             contentStyle: { backgroundColor: colors.background },

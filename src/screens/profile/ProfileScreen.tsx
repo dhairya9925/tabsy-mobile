@@ -8,7 +8,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
-import { colors, radii, spacing, shadows } from '../../theme';
+import { colors, radii, spacing, shadows, useTheme } from '../../theme';
 import {
   SproutText,
   ScreenShell,
@@ -34,6 +34,7 @@ export const ProfileScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+  const { colors: themeColors, shadows: themeShadows } = useTheme();
 
   const [isDeleting, setIsDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -123,7 +124,7 @@ export const ProfileScreen: React.FC = () => {
       </View>
 
       {/* Hero Profile Card */}
-      <View style={[styles.heroCard, shadows.card]}>
+      <View style={[styles.heroCard, themeShadows.card, { backgroundColor: themeColors.surface, borderColor: themeColors.line }]}>
         <View style={styles.profileHeader}>
           <AvatarCircle
             name={displayName !== 'No name set' ? displayName : email}
@@ -132,29 +133,29 @@ export const ProfileScreen: React.FC = () => {
             size={58}
           />
           <View style={styles.profileInfo}>
-            <SproutText variant="title" color={colors.text} numberOfLines={1}>
+            <SproutText variant="title" color={themeColors.text} numberOfLines={1}>
               {displayName}
             </SproutText>
-            <SproutText variant="bodyMuted" numberOfLines={1}>
+            <SproutText variant="bodyMuted" color={themeColors.muted} numberOfLines={1}>
               {email}
             </SproutText>
           </View>
         </View>
 
         <TouchableOpacity
-          style={styles.editProfileButton}
+          style={[styles.editProfileButton, { backgroundColor: themeColors.background, borderColor: themeColors.accent }]}
           activeOpacity={0.8}
           onPress={() => navigation.navigate('EditProfileModal')}
         >
-          <Pencil size={15} color={colors.accent} />
-          <SproutText variant="buttonSm" color={colors.accent}>
+          <Pencil size={15} color={themeColors.accent} />
+          <SproutText variant="buttonSm" color={themeColors.accent}>
             Edit Profile
           </SproutText>
         </TouchableOpacity>
       </View>
 
       {/* Quick Menu Card */}
-      <View style={[styles.menuCard, shadows.card]}>
+      <View style={[styles.menuCard, themeShadows.card, { backgroundColor: themeColors.surface, borderColor: themeColors.line }]}>
         <TouchableOpacity
           style={styles.menuRow}
           activeOpacity={0.7}
@@ -163,22 +164,22 @@ export const ProfileScreen: React.FC = () => {
           }}
         >
           <View style={styles.menuRowLeft}>
-            <View style={[styles.menuIconWrap, { backgroundColor: colors.soft }]}>
-              <Tag size={17} color={colors.accent} />
+            <View style={[styles.menuIconWrap, { backgroundColor: themeColors.soft }]}>
+              <Tag size={17} color={themeColors.accent} />
             </View>
             <View>
-              <SproutText variant="body" color={colors.text} weight="600">
+              <SproutText variant="body" color={themeColors.text} weight="600">
                 Manage Categories
               </SproutText>
-              <SproutText variant="caption" color={colors.muted}>
+              <SproutText variant="caption" color={themeColors.muted}>
                 Create custom spending tags
               </SproutText>
             </View>
           </View>
-          <ChevronRight size={18} color={colors.muted} />
+          <ChevronRight size={18} color={themeColors.muted} />
         </TouchableOpacity>
 
-        <View style={styles.menuDivider} />
+        <View style={[styles.menuDivider, { backgroundColor: themeColors.line }]} />
 
         <TouchableOpacity
           style={styles.menuRow}
@@ -186,22 +187,22 @@ export const ProfileScreen: React.FC = () => {
           onPress={() => navigation.navigate('Settings')}
         >
           <View style={styles.menuRowLeft}>
-            <View style={[styles.menuIconWrap, { backgroundColor: colors.background }]}>
-              <Settings size={17} color={colors.text} />
+            <View style={[styles.menuIconWrap, { backgroundColor: themeColors.background }]}>
+              <Settings size={17} color={themeColors.text} />
             </View>
             <View>
-              <SproutText variant="body" color={colors.text} weight="600">
+              <SproutText variant="body" color={themeColors.text} weight="600">
                 App Preferences
               </SproutText>
-              <SproutText variant="caption" color={colors.muted}>
+              <SproutText variant="caption" color={themeColors.muted}>
                 Currency, budget pace & info
               </SproutText>
             </View>
           </View>
-          <ChevronRight size={18} color={colors.muted} />
+          <ChevronRight size={18} color={themeColors.muted} />
         </TouchableOpacity>
 
-        <View style={styles.menuDivider} />
+        <View style={[styles.menuDivider, { backgroundColor: themeColors.line }]} />
 
         <TouchableOpacity
           style={styles.menuRow}
@@ -209,42 +210,42 @@ export const ProfileScreen: React.FC = () => {
           onPress={handleLogoutPress}
         >
           <View style={styles.menuRowLeft}>
-            <View style={[styles.menuIconWrap, { backgroundColor: colors.clay }]}>
-              <LogOut size={17} color={colors.negative} />
+            <View style={[styles.menuIconWrap, { backgroundColor: themeColors.clay }]}>
+              <LogOut size={17} color={themeColors.negative} />
             </View>
             <View>
-              <SproutText variant="body" color={colors.negative} weight="600">
+              <SproutText variant="body" color={themeColors.negative} weight="600">
                 Log Out
               </SproutText>
-              <SproutText variant="caption" color={colors.muted}>
+              <SproutText variant="caption" color={themeColors.muted}>
                 Sign out of your session
               </SproutText>
             </View>
           </View>
-          <ChevronRight size={18} color={colors.muted} />
+          <ChevronRight size={18} color={themeColors.muted} />
         </TouchableOpacity>
       </View>
 
       {/* Danger Zone Card */}
-      <View style={[styles.dangerCard, shadows.card]}>
+      <View style={[styles.dangerCard, themeShadows.card, { backgroundColor: themeColors.surface, borderColor: themeColors.clay }]}>
         <View style={styles.dangerHeader}>
-          <Shield size={18} color={colors.negative} />
-          <SproutText variant="subtitle" color={colors.negative} weight="700">
+          <Shield size={18} color={themeColors.negative} />
+          <SproutText variant="subtitle" color={themeColors.negative} weight="700">
             Danger Zone
           </SproutText>
         </View>
-        <SproutText variant="caption" color={colors.muted} style={styles.dangerDesc}>
+        <SproutText variant="caption" color={themeColors.muted} style={styles.dangerDesc}>
           Once you delete your account, there is no going back. Please be certain. All expenses, balances, and history will be permanently deleted.
         </SproutText>
 
         <TouchableOpacity
-          style={[styles.deleteButton, isDeleting && styles.disabledButton]}
+          style={[styles.deleteButton, isDeleting && styles.disabledButton, { backgroundColor: themeColors.negative }]}
           activeOpacity={0.8}
           disabled={isDeleting}
           onPress={handleDeleteAccountPress}
         >
-          <Trash2 size={16} color={colors.surface} />
-          <SproutText variant="buttonSm" color={colors.surface}>
+          <Trash2 size={16} color={themeColors.surface} />
+          <SproutText variant="buttonSm" color={themeColors.surface}>
             {isDeleting ? 'Deleting Account...' : 'Delete Account'}
           </SproutText>
         </TouchableOpacity>

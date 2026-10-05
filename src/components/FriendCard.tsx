@@ -229,14 +229,14 @@ export const FriendCard: React.FC<FriendCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E2EAE0',
+    borderColor: colors.line,
     paddingHorizontal: 14,
     paddingVertical: 12,
     marginBottom: 10,
-    shadowColor: '#183228',
+    shadowColor: colors.text,
     shadowOffset: { width: 0, height: 1.5 },
     shadowOpacity: 0.035,
     shadowRadius: 4,
@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
   name: {
     fontFamily: fontFamilies.bold,
     fontSize: 15,
-    color: '#183228',
+    color: colors.text,
     marginBottom: 2,
     letterSpacing: -0.2,
   },

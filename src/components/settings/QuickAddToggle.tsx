@@ -8,7 +8,7 @@ import {
   AppState,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { colors, radii, spacing, shadows } from '../../theme';
+import { radii, spacing, shadows, useTheme } from '../../theme';
 import { SproutText } from '../SproutText';
 import { useQuickAddStore } from '../../store/useQuickAddStore';
 import { QuickAddModule } from '../../native/QuickAddModule';
@@ -22,12 +22,12 @@ import {
 
 export const QuickAddToggle: React.FC = () => {
   const navigation = useNavigation<any>();
+  const { colors } = useTheme();
 
   const isEnabled = useQuickAddStore((s) => s.isEnabled);
   const isServiceRunning = useQuickAddStore((s) => s.isServiceRunning);
   const hasOverlayPermission = useQuickAddStore((s) => s.hasOverlayPermission);
   const hasNotificationPermission = useQuickAddStore((s) => s.hasNotificationPermission);
-  const isCheckingPermissions = useQuickAddStore((s) => s.isCheckingPermissions);
   const toggleService = useQuickAddStore((s) => s.toggleService);
   const checkPermissions = useQuickAddStore((s) => s.checkPermissions);
   const requestOverlayPermission = useQuickAddStore((s) => s.requestOverlayPermission);
@@ -36,7 +36,7 @@ export const QuickAddToggle: React.FC = () => {
   const [isToggling, setIsToggling] = useState(false);
   const isAndroid = QuickAddModule.isSupported();
 
-  // Re-check permissions when the app comes back to foreground (e.g. returning from Settings)
+  // Re-check permissions when the app comes back to foreground
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextState) => {
       if (nextState === 'active' && isEnabled) {
@@ -60,41 +60,41 @@ export const QuickAddToggle: React.FC = () => {
   };
 
   return (
-    <View style={[styles.card, shadows.card]}>
-      {/* Header Row */}
+    <View style={[styles.card, shadows.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+      {/* Header Row: Icon + Title/Badge + Switch */}
       <View style={styles.headerRow}>
-        <View style={styles.headerLeft}>
-          <View style={[styles.iconWrap, { backgroundColor: isEnabled ? colors.accentSoft : colors.background }]}>
-            <Zap size={18} color={isEnabled ? colors.accent : colors.muted} />
-          </View>
-          <View>
-            <View style={styles.titleBadgeRow}>
-              <SproutText variant="subtitle" color={colors.text} weight="700">
-                Quick Add Notification
-              </SproutText>
-              <View
-                style={[
-                  styles.statusBadge,
-                  { backgroundColor: isEnabled ? colors.accentSoft : colors.background },
-                ]}
-              >
-                {isEnabled && (
-                  <Check size={10} color={colors.accent} style={{ marginRight: 3 }} />
-                )}
-                <SproutText
-                  variant="caption"
-                  color={isEnabled ? colors.accent : colors.muted}
-                  weight="700"
-                  style={{ fontSize: 10 }}
-                >
-                  {isEnabled ? 'ACTIVE' : 'OFF'}
-                </SproutText>
-              </View>
-            </View>
-            <SproutText variant="caption" color={colors.muted} style={{ marginTop: 2 }}>
-              Persistent status bar notification with quick Voice & Type actions
+        <View style={[styles.iconWrap, { backgroundColor: isEnabled ? colors.accentSoft : colors.background }]}>
+          <Zap size={18} color={isEnabled ? colors.accent : colors.muted} />
+        </View>
+
+        <View style={styles.headerContent}>
+          <View style={styles.titleRow}>
+            <SproutText variant="subtitle" color={colors.text} weight="700" style={styles.titleText}>
+              Quick Add Notification
             </SproutText>
+            <View
+              style={[
+                styles.statusBadge,
+                { backgroundColor: isEnabled ? colors.accentSoft : colors.background },
+              ]}
+            >
+              {isEnabled && (
+                <Check size={10} color={colors.accent} strokeWidth={2.4} style={{ marginRight: 3 }} />
+              )}
+              <SproutText
+                variant="caption"
+                color={isEnabled ? colors.accent : colors.muted}
+                weight="700"
+                style={{ fontSize: 10 }}
+              >
+                {isEnabled ? 'ACTIVE' : 'OFF'}
+              </SproutText>
+            </View>
           </View>
+
+          <SproutText variant="caption" color={colors.muted} style={styles.description}>
+            Persistent status bar notification with quick Voice & Type actions
+          </SproutText>
         </View>
 
         <View style={styles.switchWrap}>
@@ -113,18 +113,18 @@ export const QuickAddToggle: React.FC = () => {
 
       {/* Permission Warnings (Android only) */}
       {isAndroid && isEnabled && !hasNotificationPermission && (
-        <View style={styles.warningBanner}>
+        <View style={[styles.warningBanner, { backgroundColor: colors.background, borderColor: colors.line }]}>
           <AlertTriangle size={15} color={colors.negative} />
           <View style={{ flex: 1 }}>
             <SproutText variant="caption" color={colors.negative} weight="600">
               Notification permission needed
             </SproutText>
-            <SproutText variant="caption" color={colors.muted} style={{ fontSize: 11 }}>
+            <SproutText variant="caption" color={colors.muted} style={{ fontSize: 11, marginTop: 1 }}>
               Enable notifications to show the persistent quick add action bar.
             </SproutText>
           </View>
           <TouchableOpacity
-            style={styles.permissionBtn}
+            style={[styles.permissionBtn, { backgroundColor: colors.accentSoft }]}
             onPress={requestNotificationPermission}
             activeOpacity={0.7}
           >
@@ -136,18 +136,18 @@ export const QuickAddToggle: React.FC = () => {
       )}
 
       {isAndroid && isEnabled && !hasOverlayPermission && (
-        <View style={styles.warningBanner}>
+        <View style={[styles.warningBanner, { backgroundColor: colors.background, borderColor: colors.line }]}>
           <AlertTriangle size={15} color={colors.sun} />
           <View style={{ flex: 1 }}>
             <SproutText variant="caption" color={colors.text} weight="600">
               Draw over apps permission
             </SproutText>
-            <SproutText variant="caption" color={colors.muted} style={{ fontSize: 11 }}>
+            <SproutText variant="caption" color={colors.muted} style={{ fontSize: 11, marginTop: 1 }}>
               Allows Quick Add popup to appear directly over other apps.
             </SproutText>
           </View>
           <TouchableOpacity
-            style={styles.permissionBtn}
+            style={[styles.permissionBtn, { backgroundColor: colors.accentSoft }]}
             onPress={requestOverlayPermission}
             activeOpacity={0.7}
           >
@@ -160,9 +160,9 @@ export const QuickAddToggle: React.FC = () => {
       )}
 
       {/* Action / Test Row */}
-      <View style={styles.bottomRow}>
+      <View style={[styles.bottomRow, { borderTopColor: colors.line }]}>
         <TouchableOpacity
-          style={styles.testBtn}
+          style={[styles.testBtn, { backgroundColor: colors.background }]}
           onPress={handleTestOverlay}
           activeOpacity={0.7}
         >
@@ -184,38 +184,37 @@ export const QuickAddToggle: React.FC = () => {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.surface,
     borderRadius: radii.xl,
-    padding: spacing.md,
-    borderColor: colors.line,
+    padding: spacing.md + 2,
     borderWidth: 1,
     marginBottom: spacing.md,
   },
   headerRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'flex-start',
-  },
-  headerLeft: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
-    paddingRight: spacing.sm,
+    gap: spacing.sm + 2,
   },
   iconWrap: {
-    width: 38,
-    height: 38,
+    width: 36,
+    height: 36,
     borderRadius: radii.full,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 2,
   },
-  titleBadgeRow: {
+  headerContent: {
+    flex: 1,
+    paddingRight: 4,
+  },
+  titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     flexWrap: 'wrap',
     gap: 6,
+    marginBottom: 2,
+  },
+  titleText: {
+    flexShrink: 1,
   },
   statusBadge: {
     flexDirection: 'row',
@@ -224,15 +223,18 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: radii.full,
   },
+  description: {
+    lineHeight: 16,
+    marginTop: 2,
+  },
   switchWrap: {
-    paddingTop: 4,
+    alignSelf: 'center',
+    marginLeft: 2,
   },
   warningBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs + 2,
-    backgroundColor: colors.background,
-    borderColor: colors.line,
     borderWidth: 1,
     borderRadius: radii.md,
     padding: spacing.xs + 4,
@@ -244,23 +246,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: radii.sm,
-    backgroundColor: colors.accentSoft,
   },
   bottomRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: spacing.sm,
-    paddingTop: spacing.xs + 2,
+    marginTop: spacing.sm + 2,
+    paddingTop: spacing.xs + 4,
     borderTopWidth: 1,
-    borderTopColor: colors.line,
   },
   testBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
     borderRadius: radii.md,
-    backgroundColor: colors.background,
   },
 });
+

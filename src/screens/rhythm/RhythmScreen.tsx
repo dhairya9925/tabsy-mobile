@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import { colors, spacing } from '../../theme';
+import { colors, spacing, useTheme } from '../../theme';
 import {
   SproutText,
   ScreenShell,
@@ -29,6 +29,7 @@ export const RhythmScreen: React.FC = () => {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const monthlyBudget = useBudgetStore((s) => s.monthlyBudget);
+  const { colors: themeColors } = useTheme();
 
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -89,10 +90,10 @@ export const RhythmScreen: React.FC = () => {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <SproutText variant="eyebrow" style={[styles.eyebrow, { color: colors.muted }]}>
+          <SproutText variant="eyebrow" style={[styles.eyebrow, { color: themeColors.muted }]}>
             {`${currentMonth} RHYTHM`}
           </SproutText>
-          <SproutText variant="hero" style={[styles.heroText, { color: colors.text }]}>
+          <SproutText variant="hero" style={[styles.heroText, { color: themeColors.text }]}>
             Keep it clear,{'\n'}day by day.
           </SproutText>
         </View>
@@ -115,7 +116,7 @@ export const RhythmScreen: React.FC = () => {
         <>
           <CardSkeleton />
           <View style={styles.sectionHeader}>
-            <SproutText variant="title" color={colors.text} style={styles.sectionTitle}>
+            <SproutText variant="title" color={themeColors.text} style={styles.sectionTitle}>
               This week
             </SproutText>
           </View>
@@ -138,7 +139,7 @@ export const RhythmScreen: React.FC = () => {
 
           {/* This Week / Recent Activity Section */}
           <View style={styles.sectionHeader}>
-            <SproutText variant="title" color={colors.text} style={styles.sectionTitle}>
+            <SproutText variant="title" color={themeColors.text} style={styles.sectionTitle}>
               This week
             </SproutText>
             <TouchableOpacity
@@ -150,7 +151,7 @@ export const RhythmScreen: React.FC = () => {
                 })
               }
             >
-              <SproutText variant="caption" color={colors.accent} weight="700">
+              <SproutText variant="caption" color={themeColors.accent} weight="700">
                 See month
               </SproutText>
             </TouchableOpacity>
@@ -159,14 +160,14 @@ export const RhythmScreen: React.FC = () => {
           {recentExpenses.length === 0 ? (
             <EmptyState
               card
-              icon={<PlusCircle size={32} color={colors.accent} strokeWidth={1.75} />}
+              icon={<PlusCircle size={32} color={themeColors.accent} strokeWidth={1.75} />}
               title="No recent activity recorded"
               subtitle="Add your first expense to start your daily logging rhythm."
               actionLabel="+ Quick Add"
               onActionPress={() => navigation.navigate('AddExpenseModal')}
             />
           ) : (
-            <View style={styles.expensesList}>
+            <View style={[styles.expensesList, { backgroundColor: themeColors.surface, borderRadius: 20, padding: 12, borderWidth: 1, borderColor: themeColors.line }]}>
               {recentExpenses.map((expense) => (
                 <ExpenseRow
                   key={expense.id}

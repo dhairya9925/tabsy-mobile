@@ -10,6 +10,7 @@ import {
   TYPOGRAPHY_PRESETS,
   applyTypographyPreset,
   TypographyPresetConfig,
+  rebuildTypography,
 } from '../theme/typography';
 import { appStorage } from '../services/offline/storage';
 
@@ -66,6 +67,7 @@ export const useThemeStore = create<ThemeStoreState>((set, get) => ({
 
   setPalette: (id: PaletteKey) => {
     const palette = applyThemePalette(id);
+    rebuildTypography();
     const typographyId = get().typographyId;
     const isDefault = id === 'sprout' && typographyId === 'manrope';
     set((s) => ({
@@ -94,6 +96,7 @@ export const useThemeStore = create<ThemeStoreState>((set, get) => ({
   resetToDefault: () => {
     const palette = applyThemePalette('sprout');
     const typography = applyTypographyPreset('manrope');
+    rebuildTypography();
     set((s) => ({
       paletteId: 'sprout',
       typographyId: 'manrope',

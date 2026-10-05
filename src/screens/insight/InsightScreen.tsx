@@ -6,7 +6,7 @@ import {
   RefreshControl,
   ActivityIndicator,
 } from 'react-native';
-import { colors, radii, spacing, shadows, fontFamilies } from '../../theme';
+import { colors, radii, spacing, shadows, fontFamilies, useTheme } from '../../theme';
 import {
   SproutText,
   ScreenShell,
@@ -98,6 +98,7 @@ const AnimatedCurrencyText: React.FC<{
 export const InsightScreen: React.FC = () => {
   const rootNavigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const currentUser = useAuthStore((s) => s.user);
+  const { colors: themeColors, shadows: themeShadows } = useTheme();
   const [data, setData] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -232,20 +233,20 @@ export const InsightScreen: React.FC = () => {
       </View>
 
       {/* 2. Hero Total Spend Card */}
-      <View style={[styles.heroCard, shadows.card]}>
+      <View style={[styles.heroCard, themeShadows.card, { backgroundColor: themeColors.surface, borderColor: themeColors.line }]}>
         <View style={styles.heroHeaderRow}>
-          <SproutText variant="eyebrow" color={colors.muted}>
+          <SproutText variant="eyebrow" color={themeColors.muted}>
             TOTAL SPEND (THIS MONTH)
           </SproutText>
         </View>
 
         <AnimatedCurrencyText
           amount={displayTotal}
-          style={styles.heroAmount}
+          style={[styles.heroAmount, { color: themeColors.text }]}
         />
 
         <View style={styles.heroFooterRow}>
-          <SproutText variant="caption" color={colors.muted} style={styles.heroSubtext}>
+          <SproutText variant="caption" color={themeColors.muted} style={styles.heroSubtext}>
             Personal: {formatCurrency(data?.personalTotal || 0)} · Group Share: {formatCurrency(data?.groupShareTotal || 0)}
           </SproutText>
 
@@ -254,18 +255,18 @@ export const InsightScreen: React.FC = () => {
               style={[
                 styles.trendBadge,
                 {
-                  backgroundColor: monthComparison.trend === 'less' ? colors.soft : colors.clay,
+                  backgroundColor: monthComparison.trend === 'less' ? themeColors.soft : themeColors.clay,
                 },
               ]}
             >
               {monthComparison.trend === 'less' ? (
-                <ArrowDownRight size={13} color={colors.accent} />
+                <ArrowDownRight size={13} color={themeColors.accent} />
               ) : (
-                <ArrowUpRight size={13} color={colors.negative} />
+                <ArrowUpRight size={13} color={themeColors.negative} />
               )}
               <SproutText
                 variant="caption"
-                color={monthComparison.trend === 'less' ? colors.accent : colors.negative}
+                color={monthComparison.trend === 'less' ? themeColors.accent : themeColors.negative}
                 style={styles.trendText}
               >
                 {monthComparison.label}
@@ -276,12 +277,12 @@ export const InsightScreen: React.FC = () => {
       </View>
 
       {/* 3. Category Breakdown Card */}
-      <View style={[styles.card, shadows.card]}>
+      <View style={[styles.card, themeShadows.card, { backgroundColor: themeColors.surface, borderColor: themeColors.line }]}>
         {/* Recomposed Vertical Header */}
         <View style={styles.categoryHeader}>
           <View style={styles.headerTitleRow}>
-            <PieChartIcon size={18} color={colors.accent} />
-            <SproutText variant="subtitle" color={colors.text}>
+            <PieChartIcon size={18} color={themeColors.accent} />
+            <SproutText variant="subtitle" color={themeColors.text}>
               Spending by Category
             </SproutText>
           </View>
@@ -315,25 +316,25 @@ export const InsightScreen: React.FC = () => {
 
         {/* Category Legend & List */}
         {categorySlices.length > 0 ? (
-          <View style={styles.categoryList}>
+          <View style={[styles.categoryList, { borderTopColor: themeColors.line }]}>
             {categorySlices.map((slice) => (
-              <View key={slice.categoryId} style={styles.categoryRow}>
+              <View key={slice.categoryId} style={[styles.categoryRow, { borderBottomColor: themeColors.line }]}>
                 <View style={styles.categoryLeft}>
                   <View style={[styles.categoryDot, { backgroundColor: slice.color }]} />
                   <View style={styles.categoryIconWrap}>
                     {getCategoryIcon(slice.categoryId)}
                   </View>
-                  <SproutText variant="body" color={colors.text} style={styles.categoryName} numberOfLines={1}>
+                  <SproutText variant="body" color={themeColors.text} style={styles.categoryName} numberOfLines={1}>
                     {slice.name}
                   </SproutText>
                 </View>
 
                 <View style={styles.categoryRight}>
-                  <SproutText style={styles.categoryAmount}>
+                  <SproutText color={themeColors.text} style={styles.categoryAmount}>
                     {formatCurrencyExact(slice.value)}
                   </SproutText>
-                  <View style={styles.percentageBadge}>
-                    <SproutText variant="caption" color={colors.muted} style={styles.percentageText}>
+                  <View style={[styles.percentageBadge, { backgroundColor: themeColors.background }]}>
+                    <SproutText variant="caption" color={themeColors.muted} style={styles.percentageText}>
                       {slice.percentage}%
                     </SproutText>
                   </View>
@@ -343,7 +344,7 @@ export const InsightScreen: React.FC = () => {
           </View>
         ) : (
           <View style={styles.emptyCategories}>
-            <SproutText variant="caption" color={colors.muted}>
+            <SproutText variant="caption" color={themeColors.muted}>
               No expenses logged this month
             </SproutText>
           </View>
@@ -351,15 +352,15 @@ export const InsightScreen: React.FC = () => {
       </View>
 
       {/* 4. 6-Month Spending Trend */}
-      <View style={[styles.card, shadows.card]}>
+      <View style={[styles.card, themeShadows.card, { backgroundColor: themeColors.surface, borderColor: themeColors.line }]}>
         <View style={styles.trendHeader}>
           <View style={styles.headerTitleRow}>
-            <TrendingUp size={18} color={colors.accent} />
-            <SproutText variant="subtitle" color={colors.text}>
+            <TrendingUp size={18} color={themeColors.accent} />
+            <SproutText variant="subtitle" color={themeColors.text}>
               6-Month Spending Trend
             </SproutText>
           </View>
-          <SproutText variant="caption" color={colors.muted} style={styles.trendSub}>
+          <SproutText variant="caption" color={themeColors.muted} style={styles.trendSub}>
             Personal vs. Group share spend over the last 6 months
           </SproutText>
         </View>
@@ -368,11 +369,11 @@ export const InsightScreen: React.FC = () => {
       </View>
 
       {/* 5. Weekly Rhythm */}
-      <View style={[styles.card, shadows.card]}>
+      <View style={[styles.card, themeShadows.card, { backgroundColor: themeColors.surface, borderColor: themeColors.line }]}>
         <View style={styles.cardHeader}>
           <View style={styles.headerTitleRow}>
-            <Calendar size={18} color={colors.accent} />
-            <SproutText variant="subtitle" color={colors.text}>
+            <Calendar size={18} color={themeColors.accent} />
+            <SproutText variant="subtitle" color={themeColors.text}>
               Weekly Spending Rhythm
             </SproutText>
           </View>
@@ -386,10 +387,10 @@ export const InsightScreen: React.FC = () => {
       </View>
 
       {/* 6. Financial Snapshot / Net Balance */}
-      <View style={[styles.snapshotCard, shadows.card]}>
+      <View style={[styles.snapshotCard, themeShadows.card, { backgroundColor: themeColors.surface, borderColor: themeColors.line }]}>
         <View style={styles.snapshotHeader}>
-          <Wallet size={18} color={colors.accent} />
-          <SproutText variant="eyebrow" color={colors.text}>
+          <Wallet size={18} color={themeColors.accent} />
+          <SproutText variant="eyebrow" color={themeColors.text}>
             FINANCIAL SNAPSHOT
           </SproutText>
         </View>
@@ -398,15 +399,18 @@ export const InsightScreen: React.FC = () => {
           <View
             style={[
               styles.balancePill,
-              { backgroundColor: isOwed ? colors.soft : isOwing ? colors.clay : colors.surface },
+              {
+                backgroundColor: isOwed ? themeColors.soft : isOwing ? themeColors.clay : themeColors.background,
+                borderColor: themeColors.line,
+              },
             ]}
           >
-            <SproutText variant="eyebrow" color={isOwed ? colors.accent : isOwing ? colors.negative : colors.muted}>
+            <SproutText variant="eyebrow" color={isOwed ? themeColors.accent : isOwing ? themeColors.negative : themeColors.muted}>
               NET POSITION
             </SproutText>
             <SproutText
               variant="subtitle"
-              color={isOwed ? colors.accent : isOwing ? colors.negative : colors.text}
+              color={isOwed ? themeColors.accent : isOwing ? themeColors.negative : themeColors.text}
               style={styles.netAmount}
             >
               {isOwed
@@ -418,34 +422,34 @@ export const InsightScreen: React.FC = () => {
           </View>
         </View>
 
-        <View style={styles.debtBreakdown}>
+        <View style={[styles.debtBreakdown, { borderTopColor: themeColors.line }]}>
           <View style={styles.debtItem}>
-            <SproutText variant="caption" color={colors.muted}>
+            <SproutText variant="caption" color={themeColors.muted}>
               You're owed
             </SproutText>
-            <SproutText variant="monoSm" color={colors.accent}>
+            <SproutText variant="monoSm" color={themeColors.accent}>
               {formatCurrency(netOwed)}
             </SproutText>
           </View>
 
-          <View style={styles.debtDivider} />
+          <View style={[styles.debtDivider, { backgroundColor: themeColors.line }]} />
 
           <View style={styles.debtItem}>
-            <SproutText variant="caption" color={colors.muted}>
+            <SproutText variant="caption" color={themeColors.muted}>
               You owe
             </SproutText>
-            <SproutText variant="monoSm" color={colors.negative}>
+            <SproutText variant="monoSm" color={themeColors.negative}>
               {formatCurrency(netOwes)}
             </SproutText>
           </View>
 
-          <View style={styles.debtDivider} />
+          <View style={[styles.debtDivider, { backgroundColor: themeColors.line }]} />
 
           <View style={styles.debtItem}>
-            <SproutText variant="caption" color={colors.muted}>
+            <SproutText variant="caption" color={themeColors.muted}>
               Active balances
             </SproutText>
-            <SproutText variant="monoSm" color={colors.text}>
+            <SproutText variant="monoSm" color={themeColors.text}>
               {data?.unsettledCount ?? 0}
             </SproutText>
           </View>
