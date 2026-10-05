@@ -8,7 +8,9 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -54,6 +56,7 @@ import java.util.regex.Pattern
  * - Immediate keyboard input for typing mode
  * - Communicates with Tabsy backend or saves to offline queue
  * - Calls finish() when done or dismissed, seamlessly returning to whatever app was active
+ * - Dynamically inherits active Tabsy palette / dark mode theme (e.g. Sprout Night)
  */
 class QuickAddOverlayActivity : Activity() {
 
@@ -67,6 +70,30 @@ class QuickAddOverlayActivity : Activity() {
         val category: String,
         val note: String,
         val expenseDate: String
+    )
+
+    data class ThemeColors(
+        val isDark: Boolean,
+        val cardBg: String,
+        val innerCardBg: String,
+        val line: String,
+        val text: String,
+        val muted: String,
+        val accent: String,
+        val onAccent: String,
+        val accentSoft: String
+    )
+
+    private var themeColors = ThemeColors(
+        isDark = false,
+        cardBg = "#FFFFFF",
+        innerCardBg = "#F8FAFC",
+        line = "#E2E8F0",
+        text = "#0F172A",
+        muted = "#64748B",
+        accent = "#2E6930",
+        onAccent = "#FFFFFF",
+        accentSoft = "#EBF5EC"
     )
 
     private lateinit var rootContainer: FrameLayout
@@ -126,6 +153,7 @@ class QuickAddOverlayActivity : Activity() {
             setContentView(R.layout.activity_quick_add_overlay)
 
             initViews()
+            applyTheme()
             setupClickListeners()
 
             val requestedMode = intent?.getStringExtra("mode") ?: "voice"
@@ -133,6 +161,208 @@ class QuickAddOverlayActivity : Activity() {
         } catch (e: Exception) {
             Log.e(TAG, "Fatal error initializing QuickAddOverlayActivity", e)
             finish()
+        }
+    }
+
+    private fun dpToPx(dp: Float): Float {
+        return dp * resources.displayMetrics.density
+    }
+
+    private fun applyTheme() {
+        try {
+            val prefs = getSharedPreferences(QuickAddService.PREFS_NAME, Context.MODE_PRIVATE)
+            val themeJsonStr = prefs.getString("theme_config", null)
+
+            var isDark = false
+            var cardBg = "#FFFFFF"
+            var innerCardBg = "#F8FAFC"
+            var line = "#E2E8F0"
+            var text = "#0F172A"
+            var muted = "#64748B"
+            var accent = "#2E6930"
+            var onAccent = "#FFFFFF"
+            var accentSoft = "#EBF5EC"
+
+            if (!themeJsonStr.isNullOrEmpty()) {
+                val themeObj = JSONObject(themeJsonStr)
+                isDark = themeObj.optBoolean("isDark", false)
+                cardBg = themeObj.optString("cardBg", if (isDark) "#15241D" else "#FFFFFF")
+                innerCardBg = themeObj.optString("innerCardBg", if (isDark) "#1D2E25" else "#F8FAFC")
+                line = themeObj.optString("line", if (isDark) "#24382D" else "#E2E8F0")
+                text = themeObj.optString("text", if (isDark) "#F0F6F2" else "#0F172A")
+                muted = themeObj.optString("muted", if (isDark) "#8AA194" else "#64748B")
+                accent = themeObj.optString("accent", if (isDark) "#86C49A" else "#2E6930")
+                onAccent = themeObj.optString("onAccent", if (isDark) "#0E1813" else "#FFFFFF")
+                accentSoft = themeObj.optString("accentSoft", if (isDark) "#1D3B2E" else "#EBF5EC")
+            } else {
+                val nightModeFlags = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+                if (nightModeFlags == Configuration.UI_MODE_NIGHT_YES) {
+                    isDark = true
+                    cardBg = "#15241D"
+                    innerCardBg = "#1D2E25"
+                    line = "#24382D"
+                    text = "#F0F6F2"
+                    muted = "#8AA194"
+                    accent = "#86C49A"
+                    onAccent = "#0E1813"
+                    accentSoft = "#1D3B2E"
+                }
+            }
+
+            themeColors = ThemeColors(
+                isDark = isDark,
+                cardBg = cardBg,
+                innerCardBg = innerCardBg,
+                line = line,
+                text = text,
+                muted = muted,
+                accent = accent,
+                onAccent = onAccent,
+                accentSoft = accentSoft
+            )
+
+            // Outer Card
+            val cardDrawable = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = dpToPx(24f)
+                setColor(Color.parseColor(themeColors.cardBg))
+                setStroke(dpToPx(1f).toInt(), Color.parseColor(themeColors.line))
+            }
+            cardContainer.background = cardDrawable
+
+            // Header elements
+            findViewById<TextView>(R.id.tvHeaderTitle)?.setTextColor(Color.parseColor(themeColors.text))
+            findViewById<TextView>(R.id.tvHeaderSubtitle)?.setTextColor(Color.parseColor(themeColors.muted))
+
+            val headerIconBg = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = dpToPx(10f)
+                setColor(Color.parseColor(themeColors.accentSoft))
+            }
+            findViewById<ImageView>(R.id.ivHeaderLogo)?.apply {
+                background = headerIconBg
+                setColorFilter(Color.parseColor(themeColors.accent))
+            }
+
+            val closeBtnBg = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(Color.parseColor(if (themeColors.isDark) themeColors.innerCardBg else "#F1F5F9"))
+            }
+            btnClose.background = closeBtnBg
+            btnClose.setColorFilter(Color.parseColor(themeColors.muted))
+
+            // Update Tab Bar
+            updateTabBarTabs(currentMode)
+
+            // Voice Section
+            tvTranscript.setTextColor(Color.parseColor(themeColors.text))
+            tvVoiceStatus.setTextColor(Color.parseColor(themeColors.muted))
+            val micBg = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(Color.parseColor(themeColors.accentSoft))
+            }
+            btnMic.background = micBg
+            btnMic.setColorFilter(Color.parseColor(themeColors.accent))
+
+            // Text Section
+            val inputBg = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = dpToPx(14f)
+                setColor(Color.parseColor(themeColors.innerCardBg))
+                setStroke(dpToPx(1f).toInt(), Color.parseColor(themeColors.line))
+            }
+            etExpenseInput.background = inputBg
+            etExpenseInput.setTextColor(Color.parseColor(themeColors.text))
+            etExpenseInput.setHintTextColor(Color.parseColor(themeColors.muted))
+
+            val sendBtnBg = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = dpToPx(14f)
+                setColor(Color.parseColor(themeColors.accent))
+            }
+            btnSendText.background = sendBtnBg
+            btnSendText.setTextColor(Color.parseColor(themeColors.onAccent))
+
+            // Progress Section
+            tvProgressMessage.setTextColor(Color.parseColor(themeColors.muted))
+
+            // Confirmation Section / Receipt Card
+            val receiptCard = findViewById<LinearLayout>(R.id.receiptCardContainer)
+            val receiptBg = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = dpToPx(18f)
+                setColor(Color.parseColor(themeColors.innerCardBg))
+                setStroke(dpToPx(1.5f).toInt(), Color.parseColor(themeColors.line))
+            }
+            receiptCard?.background = receiptBg
+
+            findViewById<TextView>(R.id.tvTotalLabel)?.setTextColor(Color.parseColor(themeColors.muted))
+            tvParsedAmount.setTextColor(Color.parseColor(themeColors.text))
+            findViewById<View>(R.id.receiptDivider)?.setBackgroundColor(Color.parseColor(themeColors.line))
+            findViewById<TextView>(R.id.tvCategoryLabel)?.setTextColor(Color.parseColor(themeColors.muted))
+
+            val catPillBg = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = dpToPx(20f)
+                setColor(Color.parseColor(themeColors.accentSoft))
+                setStroke(dpToPx(1f).toInt(), Color.parseColor(themeColors.accent))
+            }
+            tvParsedCategory.background = catPillBg
+            tvParsedCategory.setTextColor(Color.parseColor(themeColors.accent))
+
+            findViewById<TextView>(R.id.tvNoteLabel)?.setTextColor(Color.parseColor(themeColors.muted))
+            tvParsedNote.setTextColor(Color.parseColor(themeColors.text))
+            findViewById<TextView>(R.id.tvDateLabel)?.setTextColor(Color.parseColor(themeColors.muted))
+            tvParsedDate.setTextColor(Color.parseColor(themeColors.muted))
+
+            val cancelBtnBg = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = dpToPx(14f)
+                setColor(Color.parseColor(if (themeColors.isDark) themeColors.innerCardBg else "#F1F5F9"))
+                setStroke(dpToPx(1f).toInt(), Color.parseColor(themeColors.line))
+            }
+            btnCancel.background = cancelBtnBg
+            btnCancel.setTextColor(Color.parseColor(if (themeColors.isDark) "#CBD5E1" else "#475569"))
+
+            val confirmBtnBg = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = dpToPx(14f)
+                setColor(Color.parseColor(themeColors.accent))
+            }
+            btnConfirm.background = confirmBtnBg
+            btnConfirm.setTextColor(Color.parseColor(themeColors.onAccent))
+
+            tvSuccessBanner.setTextColor(Color.parseColor(themeColors.accent))
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error applying theme", e)
+        }
+    }
+
+    private fun updateTabBarTabs(mode: String) {
+        val activeBg = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadius = dpToPx(12f)
+            setColor(Color.parseColor(themeColors.accentSoft))
+            setStroke(dpToPx(1f).toInt(), Color.parseColor(themeColors.accent))
+        }
+        val inactiveBg = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadius = dpToPx(12f)
+            setColor(Color.parseColor(themeColors.innerCardBg))
+            setStroke(dpToPx(1f).toInt(), Color.parseColor(themeColors.line))
+        }
+
+        if (mode == "voice") {
+            btnTabVoice.background = activeBg
+            btnTabVoice.setTextColor(Color.parseColor(themeColors.accent))
+            btnTabType.background = inactiveBg
+            btnTabType.setTextColor(Color.parseColor(themeColors.muted))
+        } else {
+            btnTabType.background = activeBg
+            btnTabType.setTextColor(Color.parseColor(themeColors.accent))
+            btnTabVoice.background = inactiveBg
+            btnTabVoice.setTextColor(Color.parseColor(themeColors.muted))
         }
     }
 
@@ -232,10 +462,7 @@ class QuickAddOverlayActivity : Activity() {
                 stopVoiceRecognition()
                 voiceSection.visibility = View.GONE
                 textSection.visibility = View.VISIBLE
-                btnTabVoice.setBackgroundResource(R.drawable.tab_inactive_bg)
-                btnTabVoice.setTextColor(Color.parseColor("#6B7280"))
-                btnTabType.setBackgroundResource(R.drawable.tab_active_bg)
-                btnTabType.setTextColor(Color.parseColor("#3C6E47"))
+                updateTabBarTabs("text")
 
                 etExpenseInput.requestFocus()
                 etExpenseInput.postDelayed({
@@ -246,10 +473,7 @@ class QuickAddOverlayActivity : Activity() {
                 hideKeyboard()
                 textSection.visibility = View.GONE
                 voiceSection.visibility = View.VISIBLE
-                btnTabType.setBackgroundResource(R.drawable.tab_inactive_bg)
-                btnTabType.setTextColor(Color.parseColor("#6B7280"))
-                btnTabVoice.setBackgroundResource(R.drawable.tab_active_bg)
-                btnTabVoice.setTextColor(Color.parseColor("#3C6E47"))
+                updateTabBarTabs("voice")
 
                 startVoiceRecognition()
             }

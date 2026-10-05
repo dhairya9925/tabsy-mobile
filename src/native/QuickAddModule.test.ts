@@ -74,3 +74,20 @@ test('QuickAddModule pending expenses get and clear return valid values', async 
   const clearPending = await QuickAddModule.clearPendingExpenses();
   assert.strictEqual(clearPending, true);
 });
+
+test('QuickAddModule syncTheme executes cleanly with theme config', async () => {
+  const syncThemeRes = await QuickAddModule.syncTheme({
+    paletteId: 'sproutNight',
+    isDark: true,
+    cardBg: '#15241D',
+    innerCardBg: '#1D2E25',
+    line: '#24382D',
+    text: '#F0F6F2',
+    muted: '#8AA194',
+    accent: '#86C49A',
+    onAccent: '#0E1813',
+    accentSoft: '#1D3B2E',
+  });
+  assert.strictEqual(syncThemeRes, true);
+});
+

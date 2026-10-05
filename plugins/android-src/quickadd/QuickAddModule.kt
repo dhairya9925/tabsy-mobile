@@ -158,5 +158,16 @@ class QuickAddModule(private val reactContext: ReactApplicationContext) :
             promise.reject("CLEAR_PENDING_ERROR", e.message, e)
         }
     }
+
+    @ReactMethod
+    fun syncTheme(themeJson: String, promise: Promise) {
+        try {
+            val prefs = reactContext.getSharedPreferences(QuickAddService.PREFS_NAME, android.content.Context.MODE_PRIVATE)
+            prefs.edit().putString("theme_config", themeJson).apply()
+            promise.resolve(true)
+        } catch (e: Exception) {
+            promise.reject("SYNC_THEME_ERROR", e.message, e)
+        }
+    }
 }
 

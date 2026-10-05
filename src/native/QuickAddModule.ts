@@ -1,5 +1,18 @@
 import { secureStorage } from '../utils/secureStorage';
 
+export interface QuickAddThemeConfig {
+  paletteId: string;
+  isDark: boolean;
+  cardBg: string;
+  innerCardBg: string;
+  line: string;
+  text: string;
+  muted: string;
+  accent: string;
+  onAccent: string;
+  accentSoft: string;
+}
+
 export interface QuickAddModuleInterface {
   isSupported(): boolean;
   startQuickAddService(): Promise<boolean>;
@@ -16,6 +29,7 @@ export interface QuickAddModuleInterface {
   clearAuthSession(): Promise<boolean>;
   getPendingExpenses(): Promise<string>;
   clearPendingExpenses(): Promise<boolean>;
+  syncTheme(themeConfig: QuickAddThemeConfig): Promise<boolean>;
   addActionListener(listener: (mode: 'voice' | 'text') => void): () => void;
 }
 
@@ -282,6 +296,18 @@ export const QuickAddModule: QuickAddModuleInterface = {
         return Boolean(await nativeModule.clearPendingExpenses());
       } catch (err) {
         console.warn('[QuickAddModule] clearPendingExpenses native call failed:', err);
+      }
+    }
+    return true;
+  },
+
+  async syncTheme(themeConfig: QuickAddThemeConfig): Promise<boolean> {
+    const nativeModule = getNativeModule();
+    if (nativeModule?.syncTheme) {
+      try {
+        return Boolean(await nativeModule.syncTheme(JSON.stringify(themeConfig)));
+      } catch (err) {
+        console.warn('[QuickAddModule] syncTheme native call failed:', err);
       }
     }
     return true;
