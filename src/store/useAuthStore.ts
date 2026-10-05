@@ -3,6 +3,7 @@ import { authApi, LoginPayload, SignupPayload } from '../api/auth';
 import { UserProfile } from '../types';
 import { secureStorage } from '../utils/secureStorage';
 import { QuickAddModule } from '../native/QuickAddModule';
+import { resolveApiBaseUrl } from '../api/client';
 
 
 interface AuthState {
@@ -39,6 +40,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           isAuthenticated: true,
         });
 
+        // Sync token to native quick-add preferences
+        QuickAddModule.syncAuthSession(storedToken, resolveApiBaseUrl()).catch(() => {});
+
         // Background profile refresh
         authApi.getMe()
           .then((freshUser) => {
@@ -65,6 +69,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       await secureStorage.setAuthToken(response.access_token);
       await secureStorage.setCachedUser(response.user);
 
+      // Sync token to native quick-add preferences
+      QuickAddModule.syncAuthSession(response.access_token, resolveApiBaseUrl()).catch(() => {});
+
       set({
         token: response.access_token,
         user: response.user,
@@ -83,6 +90,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const response = await authApi.signup(payload);
       await secureStorage.setAuthToken(response.access_token);
       await secureStorage.setCachedUser(response.user);
+
+      // Sync token to native quick-add preferences
+      QuickAddModule.syncAuthSession(response.access_token, resolveApiBaseUrl()).catch(() => {});
 
       set({
         token: response.access_token,
@@ -105,6 +115,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } finally {
       try {
         await QuickAddModule.stopQuickAddService();
+        await QuickAddModule.clearAuthSession();
       } catch {
         // Non-blocking cleanup
       }

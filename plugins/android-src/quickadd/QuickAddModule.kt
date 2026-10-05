@@ -109,4 +109,54 @@ class QuickAddModule(private val reactContext: ReactApplicationContext) :
         }
         reactContext.sendBroadcast(intent)
     }
+
+    @ReactMethod
+    fun syncAuthSession(token: String, apiUrl: String, promise: Promise) {
+        try {
+            val prefs = reactContext.getSharedPreferences(QuickAddService.PREFS_NAME, android.content.Context.MODE_PRIVATE)
+            prefs.edit()
+                .putString("auth_token", token)
+                .putString("api_url", apiUrl)
+                .apply()
+            promise.resolve(true)
+        } catch (e: Exception) {
+            promise.reject("SYNC_AUTH_ERROR", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun clearAuthSession(promise: Promise) {
+        try {
+            val prefs = reactContext.getSharedPreferences(QuickAddService.PREFS_NAME, android.content.Context.MODE_PRIVATE)
+            prefs.edit()
+                .remove("auth_token")
+                .apply()
+            promise.resolve(true)
+        } catch (e: Exception) {
+            promise.reject("CLEAR_AUTH_ERROR", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun getPendingExpenses(promise: Promise) {
+        try {
+            val prefs = reactContext.getSharedPreferences(QuickAddService.PREFS_NAME, android.content.Context.MODE_PRIVATE)
+            val pendingJson = prefs.getString("pending_expenses", "[]") ?: "[]"
+            promise.resolve(pendingJson)
+        } catch (e: Exception) {
+            promise.reject("GET_PENDING_ERROR", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun clearPendingExpenses(promise: Promise) {
+        try {
+            val prefs = reactContext.getSharedPreferences(QuickAddService.PREFS_NAME, android.content.Context.MODE_PRIVATE)
+            prefs.edit().remove("pending_expenses").apply()
+            promise.resolve(true)
+        } catch (e: Exception) {
+            promise.reject("CLEAR_PENDING_ERROR", e.message, e)
+        }
+    }
 }
+

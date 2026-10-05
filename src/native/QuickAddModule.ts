@@ -12,6 +12,10 @@ export interface QuickAddModuleInterface {
   openOverlay(mode?: 'voice' | 'text'): Promise<boolean>;
   updateOverlayState(amount: string, category: string): Promise<boolean>;
   dismissOverlay(): Promise<boolean>;
+  syncAuthSession(token: string, apiUrl: string): Promise<boolean>;
+  clearAuthSession(): Promise<boolean>;
+  getPendingExpenses(): Promise<string>;
+  clearPendingExpenses(): Promise<boolean>;
   addActionListener(listener: (mode: 'voice' | 'text') => void): () => void;
 }
 
@@ -233,6 +237,54 @@ export const QuickAddModule: QuickAddModuleInterface = {
       }
     }
     return false;
+  },
+
+  async syncAuthSession(token: string, apiUrl: string): Promise<boolean> {
+    const nativeModule = getNativeModule();
+    if (nativeModule?.syncAuthSession) {
+      try {
+        return Boolean(await nativeModule.syncAuthSession(token, apiUrl));
+      } catch (err) {
+        console.warn('[QuickAddModule] syncAuthSession native call failed:', err);
+      }
+    }
+    return true;
+  },
+
+  async clearAuthSession(): Promise<boolean> {
+    const nativeModule = getNativeModule();
+    if (nativeModule?.clearAuthSession) {
+      try {
+        return Boolean(await nativeModule.clearAuthSession());
+      } catch (err) {
+        console.warn('[QuickAddModule] clearAuthSession native call failed:', err);
+      }
+    }
+    return true;
+  },
+
+  async getPendingExpenses(): Promise<string> {
+    const nativeModule = getNativeModule();
+    if (nativeModule?.getPendingExpenses) {
+      try {
+        return (await nativeModule.getPendingExpenses()) || '[]';
+      } catch (err) {
+        console.warn('[QuickAddModule] getPendingExpenses native call failed:', err);
+      }
+    }
+    return '[]';
+  },
+
+  async clearPendingExpenses(): Promise<boolean> {
+    const nativeModule = getNativeModule();
+    if (nativeModule?.clearPendingExpenses) {
+      try {
+        return Boolean(await nativeModule.clearPendingExpenses());
+      } catch (err) {
+        console.warn('[QuickAddModule] clearPendingExpenses native call failed:', err);
+      }
+    }
+    return true;
   },
 
   addActionListener(listener: (mode: 'voice' | 'text') => void): () => void {

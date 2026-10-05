@@ -17,6 +17,8 @@ function withQuickAdd(config) {
       'android.permission.POST_NOTIFICATIONS',
       'android.permission.SYSTEM_ALERT_WINDOW',
       'android.permission.RECEIVE_BOOT_COMPLETED',
+      'android.permission.RECORD_AUDIO',
+      'android.permission.VIBRATE',
     ];
 
     requiredPermissions.forEach((permission) => {
@@ -29,6 +31,26 @@ function withQuickAdd(config) {
         });
       }
     });
+
+    if (!androidManifest.queries) {
+      androidManifest.queries = [];
+    }
+    const hasSpeechQuery = androidManifest.queries.some(
+      (q) => q.intent && q.intent.some((i) => i.action && i.action.some((a) => a.$['android:name'] === 'android.speech.RecognitionService'))
+    );
+    if (!hasSpeechQuery) {
+      androidManifest.queries.push({
+        intent: [
+          {
+            action: [
+              {
+                $: { 'android:name': 'android.speech.RecognitionService' },
+              },
+            ],
+          },
+        ],
+      });
+    }
 
     const application = androidManifest.application[0];
 
@@ -66,7 +88,7 @@ function withQuickAdd(config) {
       application.activity.push({
         $: {
           'android:name': 'com.tabsy.app.quickadd.QuickAddOverlayActivity',
-          'android:theme': '@android:style/Theme.Translucent.NoTitleBar',
+          'android:theme': '@style/Theme.Tabsy.TranslucentDialog',
           'android:exported': 'false',
           'android:launchMode': 'singleInstance',
         },

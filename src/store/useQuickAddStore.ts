@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { QuickAddModule } from '../native/QuickAddModule';
 import { secureStorage } from '../utils/secureStorage';
+import { resolveApiBaseUrl } from '../api/client';
+import { expensesApi } from '../api/expenses';
 
 export const QUICK_ADD_ENABLED_KEY = 'tabsy_quick_add_enabled';
 
@@ -18,6 +20,7 @@ export interface QuickAddState {
   requestOverlayPermission: () => Promise<boolean>;
   requestNotificationPermission: () => Promise<boolean>;
   openOverlay: (mode?: 'voice' | 'text') => Promise<boolean>;
+  flushPendingExpenses: () => Promise<void>;
   setError: (error: string | null) => void;
 }
 
@@ -53,6 +56,9 @@ export const useQuickAddStore = create<QuickAddState>((set, get) => ({
         hasNotificationPermission: notifPerm,
         isCheckingPermissions: false,
       });
+
+      // Auto-flush pending offline expenses
+      await get().flushPendingExpenses();
 
       // If user had enabled it previously and service isn't running, start it
       if (isEnabled && !serviceRunning && QuickAddModule.isSupported()) {
@@ -90,6 +96,10 @@ export const useQuickAddStore = create<QuickAddState>((set, get) => ({
 
     try {
       if (enabled) {
+        const token = await secureStorage.getAuthToken();
+        if (token) {
+          await QuickAddModule.syncAuthSession(token, resolveApiBaseUrl());
+        }
         // Start foreground service
         const started = await QuickAddModule.startQuickAddService();
         await secureStorage.setItem(QUICK_ADD_ENABLED_KEY, 'true');
@@ -133,5 +143,31 @@ export const useQuickAddStore = create<QuickAddState>((set, get) => ({
 
   openOverlay: async (mode: 'voice' | 'text' = 'text'): Promise<boolean> => {
     return QuickAddModule.openOverlay(mode);
+  },
+
+  flushPendingExpenses: async () => {
+    try {
+      const pendingJson = await QuickAddModule.getPendingExpenses();
+      if (!pendingJson || pendingJson === '[]') return;
+
+      const items = JSON.parse(pendingJson);
+      if (Array.isArray(items) && items.length > 0) {
+        for (const item of items) {
+          try {
+            await expensesApi.createPersonalExpense({
+              amount: Number(item.amount),
+              category: item.category || 'General',
+              note: item.note || undefined,
+              expense_date: item.expense_date,
+            });
+          } catch (syncErr) {
+            console.warn('[useQuickAddStore] Error syncing offline expense:', syncErr);
+          }
+        }
+        await QuickAddModule.clearPendingExpenses();
+      }
+    } catch (err) {
+      console.warn('[useQuickAddStore] flushPendingExpenses error:', err);
+    }
   },
 }));

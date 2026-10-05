@@ -58,3 +58,19 @@ test('QuickAddModule.addActionListener adds and removes listener cleanly', () =>
   unsubscribe();
   assert.strictEqual(called, false);
 });
+
+test('QuickAddModule auth session sync and clear execute cleanly', async () => {
+  const syncRes = await QuickAddModule.syncAuthSession('mock_token', 'http://localhost:8000');
+  assert.strictEqual(syncRes, true);
+
+  const clearRes = await QuickAddModule.clearAuthSession();
+  assert.strictEqual(clearRes, true);
+});
+
+test('QuickAddModule pending expenses get and clear return valid values', async () => {
+  const pending = await QuickAddModule.getPendingExpenses();
+  assert.strictEqual(typeof pending, 'string');
+
+  const clearPending = await QuickAddModule.clearPendingExpenses();
+  assert.strictEqual(clearPending, true);
+});
