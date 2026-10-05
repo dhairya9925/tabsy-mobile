@@ -55,10 +55,13 @@ export class ErrorBoundary extends Component<Props, State> {
                 An unexpected view error occurred. Your saved expenses and account data remain completely safe.
               </SproutText>
 
-              {__DEV__ && this.state.error && (
+              {this.state.error && (
                 <View style={styles.devErrorBox}>
                   <SproutText variant="monoSm" color={colors.negative} style={styles.devErrorText}>
                     {this.state.error.message}
+                  </SproutText>
+                  <SproutText variant="monoSm" color={colors.negative} style={styles.devErrorText}>
+                    {this.state.error.stack}
                   </SproutText>
                 </View>
               )}
