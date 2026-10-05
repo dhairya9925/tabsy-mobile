@@ -27,6 +27,8 @@ import { colors } from '../theme';
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 
+import { NativeOverlayListener } from '../components/ai/NativeOverlayListener';
+
 export const RootNavigator: React.FC = () => {
   const isInitialized = useAuthStore((s) => s.isInitialized);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -38,7 +40,12 @@ export const RootNavigator: React.FC = () => {
   return (
     <ErrorBoundary>
       <NavigationContainer linking={linking}>
-        {isAuthenticated && <OfflineSyncBanner />}
+        {isAuthenticated && (
+          <>
+            <OfflineSyncBanner />
+            <NativeOverlayListener />
+          </>
+        )}
         <RootStack.Navigator
           screenOptions={{
             headerShown: false,

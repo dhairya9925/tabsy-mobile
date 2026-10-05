@@ -96,8 +96,9 @@ class QuickAddService : Service() {
     }
 
     private fun buildNotification(): Notification {
-        // Voice action pending intent
-        val voiceIntent = Intent(Intent.ACTION_VIEW, Uri.parse("tabsy://quick-add?mode=voice")).apply {
+        // Voice action pending intent - route through our invisible Activity
+        val voiceIntent = Intent(this, QuickAddOverlayActivity::class.java).apply {
+            putExtra("mode", "voice")
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         val voicePendingIntent = PendingIntent.getActivity(
@@ -108,7 +109,8 @@ class QuickAddService : Service() {
         )
 
         // Type action pending intent
-        val typeIntent = Intent(Intent.ACTION_VIEW, Uri.parse("tabsy://quick-add?mode=text")).apply {
+        val typeIntent = Intent(this, QuickAddOverlayActivity::class.java).apply {
+            putExtra("mode", "text")
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         val typePendingIntent = PendingIntent.getActivity(
@@ -140,20 +142,26 @@ class QuickAddService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Use our custom monochrome notification icon; fall back to a safe system icon
         val iconRes = resources.getIdentifier("ic_notification", "drawable", packageName).takeIf { it != 0 }
             ?: android.R.drawable.ic_input_add
+            
+        val micIcon = resources.getIdentifier("ic_mic", "drawable", packageName).takeIf { it != 0 } ?: 0
+        val kbIcon = resources.getIdentifier("ic_keyboard", "drawable", packageName).takeIf { it != 0 } ?: 0
+        val closeIcon = resources.getIdentifier("ic_close", "drawable", packageName).takeIf { it != 0 } ?: 0
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(iconRes)
-            .setContentTitle("📊 Tabsy")
-            .setContentText("Tap to quick-add an expense")
+            .setContentTitle("Tabsy Quick Add")
+            .setContentText("Tap 🎤 to speak or ⌨️ to type an expense")
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setColor(android.graphics.Color.parseColor("#3C6E47"))
             .setContentIntent(contentPendingIntent)
-            .addAction(0, "🎤 Voice", voicePendingIntent)
-            .addAction(0, "⌨️ Type", typePendingIntent)
-            .addAction(0, "✕ Stop", stopPendingIntent)
+            .addAction(micIcon, "Voice", voicePendingIntent)
+            .addAction(kbIcon, "Type", typePendingIntent)
+            .addAction(closeIcon, "Stop", stopPendingIntent)
+            .setStyle(androidx.media.app.NotificationCompat.MediaStyle()
+                .setShowActionsInCompactView(0, 1))
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .build()
     }

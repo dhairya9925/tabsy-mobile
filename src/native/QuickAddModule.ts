@@ -10,6 +10,8 @@ export interface QuickAddModuleInterface {
   hasNotificationPermission(): Promise<boolean>;
   requestNotificationPermission(): Promise<boolean>;
   openOverlay(mode?: 'voice' | 'text'): Promise<boolean>;
+  updateOverlayState(amount: string, category: string): Promise<boolean>;
+  dismissOverlay(): Promise<boolean>;
   addActionListener(listener: (mode: 'voice' | 'text') => void): () => void;
 }
 
@@ -205,6 +207,30 @@ export const QuickAddModule: QuickAddModuleInterface = {
       }
     } catch {
       // In-app fallback handled by navigation
+    }
+    return false;
+  },
+
+  async updateOverlayState(amount: string, category: string): Promise<boolean> {
+    const nativeModule = getNativeModule();
+    if (nativeModule?.updateOverlayState) {
+      try {
+        return Boolean(await nativeModule.updateOverlayState(amount, category));
+      } catch (err) {
+        console.warn('[QuickAddModule] updateOverlayState native call failed:', err);
+      }
+    }
+    return false;
+  },
+
+  async dismissOverlay(): Promise<boolean> {
+    const nativeModule = getNativeModule();
+    if (nativeModule?.dismissOverlay) {
+      try {
+        return Boolean(await nativeModule.dismissOverlay());
+      } catch (err) {
+        console.warn('[QuickAddModule] dismissOverlay native call failed:', err);
+      }
     }
     return false;
   },

@@ -1,4 +1,4 @@
-const { withAndroidManifest, withDangerousMod } = require('@expo/config-plugins');
+const { withAndroidManifest, withDangerousMod, withAppBuildGradle } = require('@expo/config-plugins');
 const fs = require('fs');
 const path = require('path');
 
@@ -53,6 +53,18 @@ function withQuickAdd(config) {
             },
           },
         ],
+      });
+    }
+
+    const overlayServiceExists = application.service.some(
+      (s) => s.$['android:name'] === 'com.tabsy.app.quickadd.QuickAddOverlayService'
+    );
+    if (!overlayServiceExists) {
+      application.service.push({
+        $: {
+          'android:name': 'com.tabsy.app.quickadd.QuickAddOverlayService',
+          'android:exported': 'false',
+        },
       });
     }
 
@@ -129,12 +141,36 @@ function withQuickAdd(config) {
         }
       }
 
-      // Also copy the notification icon drawable
-      const iconSrc = path.join(config.modRequest.projectRoot, 'plugins', 'android-src', 'res', 'drawable', 'ic_notification.xml');
-      const iconDestDir = path.join(config.modRequest.platformProjectRoot, 'app', 'src', 'main', 'res', 'drawable');
-      if (fs.existsSync(iconSrc)) {
-        fs.mkdirSync(iconDestDir, { recursive: true });
-        fs.copyFileSync(iconSrc, path.join(iconDestDir, 'ic_notification.xml'));
+      // Also copy all drawables (notification icons, etc)
+      const drawableSrcDir = path.join(config.modRequest.projectRoot, 'plugins', 'android-src', 'res', 'drawable');
+      const drawableDestDir = path.join(config.modRequest.platformProjectRoot, 'app', 'src', 'main', 'res', 'drawable');
+      
+      if (fs.existsSync(drawableSrcDir)) {
+        fs.mkdirSync(drawableDestDir, { recursive: true });
+        const drawableFiles = fs.readdirSync(drawableSrcDir);
+        for (const file of drawableFiles) {
+          if (file.endsWith('.xml')) {
+            const srcFile = path.join(drawableSrcDir, file);
+            const destFile = path.join(drawableDestDir, file);
+            fs.copyFileSync(srcFile, destFile);
+          }
+        }
+      }
+
+      // Also copy layouts
+      const layoutSrcDir = path.join(config.modRequest.projectRoot, 'plugins', 'android-src', 'res', 'layout');
+      const layoutDestDir = path.join(config.modRequest.platformProjectRoot, 'app', 'src', 'main', 'res', 'layout');
+      
+      if (fs.existsSync(layoutSrcDir)) {
+        fs.mkdirSync(layoutDestDir, { recursive: true });
+        const layoutFiles = fs.readdirSync(layoutSrcDir);
+        for (const file of layoutFiles) {
+          if (file.endsWith('.xml')) {
+            const srcFile = path.join(layoutSrcDir, file);
+            const destFile = path.join(layoutDestDir, file);
+            fs.copyFileSync(srcFile, destFile);
+          }
+        }
       }
 
       return config;
@@ -158,6 +194,17 @@ function withQuickAdd(config) {
     }
     
     config.modResults.contents = mainApp;
+    return config;
+  });
+
+  // 4. Inject androidx.media dependency
+  config = withAppBuildGradle(config, (config) => {
+    if (!config.modResults.contents.includes('androidx.media:media')) {
+      config.modResults.contents = config.modResults.contents.replace(
+        /dependencies\s*\{/,
+        "dependencies {\n    implementation 'androidx.media:media:1.6.0'"
+      );
+    }
     return config;
   });
 
