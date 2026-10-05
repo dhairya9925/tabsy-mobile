@@ -100,4 +100,13 @@ class QuickAddModule(private val reactContext: ReactApplicationContext) :
             promise.reject("OPEN_OVERLAY_ERROR", e.message, e)
         }
     }
+
+    @ReactMethod
+    fun updateOverlayState(amount: String, category: String) {
+        val intent = Intent("com.tabsy.app.quickadd.UPDATE_STATE").apply {
+            putExtra("amount", amount)
+            putExtra("category", category)
+        }
+        reactContext.sendBroadcast(intent)
+    }
 }
