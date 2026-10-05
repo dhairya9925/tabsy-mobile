@@ -56,12 +56,7 @@ export const RootNavigator: React.FC = () => {
   return (
     <ErrorBoundary>
       <NavigationContainer linking={linking} theme={navTheme}>
-        {isAuthenticated && (
-          <>
-            <OfflineSyncBanner />
-            <NativeOverlayListener />
-          </>
-        )}
+        {isAuthenticated && <NativeOverlayListener />}
         <RootStack.Navigator
           key={`root-stack-${themeVersion}`}
           screenOptions={{
@@ -196,6 +191,7 @@ export const RootNavigator: React.FC = () => {
         )}
 
       </RootStack.Navigator>
+      {isAuthenticated && <OfflineSyncBanner />}
     </NavigationContainer>
     </ErrorBoundary>
   );

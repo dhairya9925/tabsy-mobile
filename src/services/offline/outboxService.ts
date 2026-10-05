@@ -176,13 +176,20 @@ class OutboxService {
           action.lastError = errorMsg;
           errors.push({ id: action.id, error: errorMsg });
 
-          // If network-level error, pause replay until next reconnect
-          if (err.message === 'Network Error' || !err.response) {
+          const isNetworkError =
+            errorMsg === 'Network Error' ||
+            errorMsg === 'Network connection failed' ||
+            errorMsg.toLowerCase().includes('network') ||
+            errorMsg.toLowerCase().includes('timeout') ||
+            errorMsg.toLowerCase().includes('econnrefused');
+
+          // If genuine network-level error, pause replay until next reconnect
+          if (isNetworkError) {
             await this.saveToStorage();
             break;
           }
 
-          // If server validation error (4xx) and retried 3 times, fail action
+          // If server rejected the request with 4xx or invalid data after 3 retries, drop to avoid blocking
           if (action.retryCount >= 3) {
             failedCount++;
             this.queue = this.queue.filter((a) => a.id !== action.id);
@@ -201,29 +208,60 @@ class OutboxService {
   }
 
   /**
+   * Helper to ensure date is in YYYY-MM-DD ISO format as required by the backend schemas.
+   */
+  private sanitizeIsoDate(dateVal?: any): string {
+    if (typeof dateVal === 'string' && /^\d{4}-\d{2}-\d{2}/.test(dateVal)) {
+      return dateVal.split('T')[0];
+    }
+    if (dateVal instanceof Date && !isNaN(dateVal.getTime())) {
+      return dateVal.toISOString().split('T')[0];
+    }
+    return new Date().toISOString().split('T')[0];
+  }
+
+  /**
    * Dispatches a single outbox action to its respective API route.
    */
   private async dispatchAction(action: OutboxAction): Promise<any> {
     switch (action.type) {
       case 'create_personal_expense': {
         const payload = action.payload;
-        const backendPayload = {
-          amount: payload.amount,
-          category: payload.category,
-          note: payload.note || payload.description || null,
-          expense_date: payload.expense_date || payload.date,
+        const backendPayload: any = {
+          amount: Math.round(Number(payload.amount) * 100) / 100,
+          category: String(payload.category || 'other').trim(),
+          note: (payload.note || payload.description) ? String(payload.note || payload.description).trim() : null,
+          expense_date: this.sanitizeIsoDate(payload.expense_date || payload.date),
         };
         const res: any = await apiClient.post('/api/v1/expenses/personal', backendPayload);
         return res;
       }
       case 'create_friend_expense': {
         const { friendId, payload } = action.payload;
-        const res: any = await apiClient.post(`/api/v1/friends/${friendId}/expenses`, payload);
+        const backendPayload: any = {
+          amount: Math.round(Number(payload.amount) * 100) / 100,
+          category: String(payload.category || 'food').trim(),
+          note: (payload.note || payload.description) ? String(payload.note || payload.description).trim() : null,
+          expense_date: this.sanitizeIsoDate(payload.expense_date || payload.date),
+        };
+        if (payload.paid_by) backendPayload.paid_by = payload.paid_by;
+        if (payload.split_type) backendPayload.split_type = payload.split_type;
+        const res: any = await apiClient.post(`/api/v1/friends/${friendId}/expenses`, backendPayload);
         return res;
       }
       case 'create_group_expense': {
         const { groupId, payload } = action.payload;
-        const res: any = await apiClient.post(`/api/v1/groups/${groupId}/expenses`, payload);
+        const backendPayload: any = {
+          amount: Math.round(Number(payload.amount) * 100) / 100,
+          category: String(payload.category || 'general').trim(),
+          note: (payload.note || payload.description) ? String(payload.note || payload.description).trim() : null,
+          expense_date: this.sanitizeIsoDate(payload.expense_date || payload.date),
+        };
+        if (payload.paid_by) backendPayload.paid_by = payload.paid_by;
+        if (payload.status) backendPayload.status = payload.status;
+        if (payload.receipt_url) backendPayload.receipt_url = payload.receipt_url;
+        if (Array.isArray(payload.splits)) backendPayload.splits = payload.splits;
+        const res: any = await apiClient.post(`/api/v1/groups/${groupId}/expenses`, backendPayload);
         return res;
       }
       default:

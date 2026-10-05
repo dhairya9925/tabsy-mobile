@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, StyleSheet } from 'react-native';
 import Svg, { Path, Circle, G } from 'react-native-svg';
 import { CategorySlice } from '../../types';
-import { colors, chartColors, fontFamilies } from '../../theme';
+import { colors, chartColors, fontFamilies, useTheme } from '../../theme';
 import { SproutText } from '../SproutText';
 import { formatCurrencyExact } from '../../utils/formatters';
 
@@ -29,10 +29,11 @@ function easeOutCubic(t: number): number {
 export const DonutPieChart: React.FC<DonutPieChartProps> = ({
   slices,
   total,
-  size = 196,
-  strokeWidth = 20,
+  size = 184,
+  strokeWidth = 15,
   centerSubtitle = 'this month',
 }) => {
+  const { colors: themeColors, chartColors: themeChartColors } = useTheme();
   const radius = size / 2;
   const outerR = radius - 4;
   const innerR = outerR - strokeWidth;
@@ -139,15 +140,15 @@ export const DonutPieChart: React.FC<DonutPieChartProps> = ({
             cy={cy}
             r={midR}
             fill="none"
-            stroke={chartColors.track}
+            stroke={themeChartColors?.track || themeColors.line}
             strokeWidth={strokeWidth}
           />
         </Svg>
         <View style={styles.centerOverlay}>
-          <SproutText style={[styles.centerAmount, { color: colors.muted }]}>
+          <SproutText style={[styles.centerAmount, { color: themeColors.muted }]}>
             ₹0.00
           </SproutText>
-          <SproutText variant="caption" color={colors.muted} style={styles.subtext}>
+          <SproutText variant="caption" color={themeColors.muted} style={styles.subtext}>
             No spend yet
           </SproutText>
         </View>
@@ -171,10 +172,10 @@ export const DonutPieChart: React.FC<DonutPieChartProps> = ({
           />
         </Svg>
         <View style={styles.centerOverlay}>
-          <SproutText style={styles.centerAmount}>
+          <SproutText style={[styles.centerAmount, { color: themeColors.text }]}>
             {formatCurrencyExact(renderedTotal)}
           </SproutText>
-          <SproutText variant="eyebrow" color={colors.muted} style={styles.subtext}>
+          <SproutText variant="eyebrow" color={themeColors.muted} style={styles.subtext}>
             {centerSubtitle.toUpperCase()}
           </SproutText>
         </View>
@@ -232,7 +233,7 @@ export const DonutPieChart: React.FC<DonutPieChartProps> = ({
           cy={cy}
           r={midR}
           fill="none"
-          stroke={chartColors.track}
+          stroke={themeChartColors?.track || themeColors.line}
           strokeWidth={strokeWidth}
         />
         <G>
@@ -247,10 +248,10 @@ export const DonutPieChart: React.FC<DonutPieChartProps> = ({
       </Svg>
 
       <View style={styles.centerOverlay}>
-        <SproutText style={styles.centerAmount}>
+        <SproutText style={[styles.centerAmount, { color: themeColors.text }]}>
           {formatCurrencyExact(renderedTotal)}
         </SproutText>
-        <SproutText variant="eyebrow" color={colors.muted} style={styles.subtext}>
+        <SproutText variant="eyebrow" color={themeColors.muted} style={styles.subtext}>
           {centerSubtitle.toUpperCase()}
         </SproutText>
       </View>

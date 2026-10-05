@@ -165,15 +165,15 @@ export const THEME_PALETTES = {
       goldBackground: '#262214',
     },
     chartColors: {
-      personal: '#86C49A',
-      groupShare: '#94A3B8',
-      food: '#F0BF67',
-      transport: '#5EEAD4',
-      shopping: '#F472B6',
-      bills: '#60A5FA',
-      entertainment: '#C084FC',
-      other: '#8AA194',
-      track: '#1F3127',
+      personal: '#86C49A',      // Soft mint sage
+      groupShare: '#7E988A',    // Muted slate sage
+      food: '#C89D57',          // Warm ochre (tasteful amber, not neon yellow)
+      transport: '#5A967F',     // Muted eucalyptus teal-sage
+      shopping: '#B97C83',      // Dusty rose
+      bills: '#6E8EA8',         // Soft slate blue
+      entertainment: '#8F7D9E', // Muted wisteria lavender
+      other: '#7A8C80',         // Soft sage grey
+      track: '#1B2C23',         // Subtle card track
       selectedWash: '#1F3529',
     },
     statusColors: {
@@ -235,12 +235,12 @@ export const THEME_PALETTES = {
     },
     chartColors: {
       personal: '#A5D2C8',
-      groupShare: '#93C5FD',
-      food: '#FCD34D',
-      transport: '#67E8F9',
-      shopping: '#FDA4AF',
-      bills: '#93C5FD',
-      entertainment: '#D8B4FE',
+      groupShare: '#7E9BA3',
+      food: '#C89D57',
+      transport: '#5A967F',
+      shopping: '#B97C83',
+      bills: '#6E8EA8',
+      entertainment: '#8F7D9E',
       other: '#7E9BA3',
       track: '#213A42',
       selectedWash: '#223D47',
@@ -304,12 +304,12 @@ export const THEME_PALETTES = {
     },
     chartColors: {
       personal: '#C6D980',
-      groupShare: '#ED9A73',
-      food: '#FBBF24',
-      transport: '#A3E635',
-      shopping: '#FB7185',
-      bills: '#60A5FA',
-      entertainment: '#E879F9',
+      groupShare: '#C28268',
+      food: '#C89D57',
+      transport: '#7E9E54',
+      shopping: '#B97C83',
+      bills: '#6E8EA8',
+      entertainment: '#8F7D9E',
       other: '#A3958B',
       track: '#36302A',
       selectedWash: '#3A322B',

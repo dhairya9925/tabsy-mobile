@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { CategorySlice } from '../../types';
-import { chartColors, radii } from '../../theme';
+import { chartColors, radii, useTheme } from '../../theme';
 
 interface CategoryAllocationBarProps {
   slices: CategorySlice[];
@@ -21,8 +21,9 @@ function easeOutCubic(t: number): number {
 
 export const CategoryAllocationBar: React.FC<CategoryAllocationBarProps> = ({
   slices,
-  height = 8,
+  height = 5,
 }) => {
+  const { colors: themeColors, chartColors: themeChartColors } = useTheme();
   const [renderedSlices, setRenderedSlices] = useState<CategorySlice[]>(slices);
   const prevSlicesRef = useRef<CategorySlice[]>(slices);
   const animFrameRef = useRef<number | null>(null);
@@ -101,11 +102,11 @@ export const CategoryAllocationBar: React.FC<CategoryAllocationBarProps> = ({
   const validSlices = renderedSlices.filter((s) => s.percentage > 0.05);
 
   if (validSlices.length === 0) {
-    return <View style={[styles.emptyBar, { height }]} />;
+    return <View style={[styles.emptyBar, { height, backgroundColor: themeChartColors?.track || themeColors.line }]} />;
   }
 
   return (
-    <View style={[styles.container, { height }]}>
+    <View style={[styles.container, { height, backgroundColor: themeChartColors?.track || themeColors.line }]}>
       {validSlices.map((slice, index) => {
         const isFirst = index === 0;
         const isLast = index === validSlices.length - 1;
@@ -138,7 +139,6 @@ const styles = StyleSheet.create({
     width: '100%',
     borderRadius: radii.full,
     overflow: 'hidden',
-    backgroundColor: chartColors.track,
   },
   segment: {
     height: '100%',
@@ -146,6 +146,5 @@ const styles = StyleSheet.create({
   emptyBar: {
     width: '100%',
     borderRadius: radii.full,
-    backgroundColor: chartColors.track,
   },
 });

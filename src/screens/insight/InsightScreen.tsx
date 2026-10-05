@@ -300,10 +300,12 @@ export const InsightScreen: React.FC = () => {
           />
         </View>
 
-        {/* Allocation Bar */}
-        <View style={styles.allocationBarContainer}>
-          <CategoryAllocationBar slices={categorySlices} />
-        </View>
+        {/* Allocation Bar (Shown when multiple categories compare distributions) */}
+        {categorySlices.length > 1 && (
+          <View style={styles.allocationBarContainer}>
+            <CategoryAllocationBar slices={categorySlices} height={5} />
+          </View>
+        )}
 
         {/* Donut Chart */}
         <View style={styles.donutWrapper}>
