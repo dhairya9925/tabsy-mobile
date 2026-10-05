@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   StyleSheet,
@@ -113,39 +113,7 @@ export const QuickAddOverlay: React.FC = () => {
     offlineQueue.processQueue(queryClient);
   }, [initialMode, queryClient]);
 
-  // If initialMode was voice, auto-request start if appropriate
-  useEffect(() => {
-    if (initialMode === 'voice') {
-      setActiveTab('voice');
-    }
-  }, [initialMode]);
-
-  const handleClose = () => {
-    haptics.selection();
-    if (isListening) {
-      cancelListening();
-    }
-    cancelConfirmation();
-    navigation.goBack();
-  };
-
-  const handleSendText = async () => {
-    const trimmed = inputText.trim();
-    if (!trimmed || isLoading || isConfirming) return;
-
-    setSubmitError(null);
-    setInputText('');
-    Keyboard.dismiss();
-
-    try {
-      await sendMessage({ text: trimmed });
-    } catch (err: any) {
-      haptics.error();
-      setSubmitError(err?.message || 'Failed to parse expense');
-    }
-  };
-
-  const handleVoiceToggle = async () => {
+  const handleVoiceToggle = useCallback(async () => {
     setSubmitError(null);
 
     if (!isSupported) {
@@ -172,6 +140,47 @@ export const QuickAddOverlay: React.FC = () => {
       await haptics.impact('medium');
       analytics.track('ai_stt_started');
       await startListening();
+    }
+  }, [isSupported, isListening, stopListening, durationSeconds, sendMessage, startListening]);
+
+  const autoStartVoiceTriggeredRef = useRef(false);
+
+  // If initialMode was voice, auto-request start if appropriate
+  useEffect(() => {
+    if (initialMode === 'voice') {
+      setActiveTab('voice');
+      if (!autoStartVoiceTriggeredRef.current && isSupported) {
+        autoStartVoiceTriggeredRef.current = true;
+        const timer = setTimeout(() => {
+          handleVoiceToggle();
+        }, 400);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [initialMode, isSupported, handleVoiceToggle]);
+
+  const handleClose = () => {
+    haptics.selection();
+    if (isListening) {
+      cancelListening();
+    }
+    cancelConfirmation();
+    navigation.goBack();
+  };
+
+  const handleSendText = async () => {
+    const trimmed = inputText.trim();
+    if (!trimmed || isLoading || isConfirming) return;
+
+    setSubmitError(null);
+    setInputText('');
+    Keyboard.dismiss();
+
+    try {
+      await sendMessage({ text: trimmed });
+    } catch (err: any) {
+      haptics.error();
+      setSubmitError(err?.message || 'Failed to parse expense');
     }
   };
 

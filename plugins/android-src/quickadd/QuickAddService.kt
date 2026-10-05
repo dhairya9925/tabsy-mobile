@@ -160,8 +160,8 @@ class QuickAddService : Service() {
             .addAction(micIcon, "Voice", voicePendingIntent)
             .addAction(kbIcon, "Type", typePendingIntent)
             .addAction(closeIcon, "Stop", stopPendingIntent)
-            .setStyle(androidx.media.app.NotificationCompat.MediaStyle()
-                .setShowActionsInCompactView(0, 1))
+            .setStyle(NotificationCompat.BigTextStyle()
+                .bigText("Tap 🎤 to speak or ⌨️ to type an expense"))
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .build()
     }

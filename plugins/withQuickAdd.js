@@ -56,18 +56,6 @@ function withQuickAdd(config) {
       });
     }
 
-    const overlayServiceExists = application.service.some(
-      (s) => s.$['android:name'] === 'com.tabsy.app.quickadd.QuickAddOverlayService'
-    );
-    if (!overlayServiceExists) {
-      application.service.push({
-        $: {
-          'android:name': 'com.tabsy.app.quickadd.QuickAddOverlayService',
-          'android:exported': 'false',
-        },
-      });
-    }
-
     if (!application.activity) {
       application.activity = [];
     }
