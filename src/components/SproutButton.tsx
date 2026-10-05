@@ -7,7 +7,7 @@ import {
   ViewStyle,
   StyleProp,
 } from 'react-native';
-import { colors, radii, spacing } from '../theme';
+import { useTheme, radii, spacing } from '../theme';
 import { SproutText } from './SproutText';
 
 export interface SproutButtonProps extends TouchableOpacityProps {
@@ -28,6 +28,8 @@ export const SproutButton: React.FC<SproutButtonProps> = ({
   style,
   ...rest
 }) => {
+  const { colors } = useTheme();
+
   const isPrimary = variant === 'primary';
   const isOutline = variant === 'outline';
   const isClay = variant === 'clay';

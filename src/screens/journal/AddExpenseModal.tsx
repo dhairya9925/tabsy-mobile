@@ -41,6 +41,7 @@ import {
   Car,
   ShoppingBag,
   ReceiptText,
+  Film,
   MoreHorizontal,
   Check,
   CheckCheck,
@@ -118,6 +119,12 @@ const DEFAULT_SPROUT_CATEGORIES: SproutCategoryItem[] = [
     name: 'Bills & Utilities',
     shortLabel: 'Bills',
     icon: (c, s = 14) => <ReceiptText size={s} color={c} strokeWidth={1.8} />,
+  },
+  {
+    id: 'entertainment',
+    name: 'Entertainment',
+    shortLabel: 'Fun',
+    icon: (c, s = 14) => <Film size={s} color={c} strokeWidth={1.8} />,
   },
   {
     id: 'other',

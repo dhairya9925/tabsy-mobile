@@ -12,6 +12,8 @@ import {
   ReceiptText,
   Sparkles,
   Clock,
+  Film,
+  MoreHorizontal,
 } from 'lucide-react-native';
 
 export interface ExpenseRowProps {
@@ -19,24 +21,31 @@ export interface ExpenseRowProps {
   onPress?: () => void;
 }
 
-export function getCategoryIcon(name?: string | null) {
+export function getCategoryIcon(name?: string | null, color?: string, size: number = 18) {
   const lower = (name || '').toLowerCase();
+  const iconColor = color || colors.accent;
   if (lower.includes('coffee') || lower.includes('cafe') || lower.includes('chai') || lower.includes('tea')) {
-    return <Coffee size={18} color={colors.accent} strokeWidth={1.7} />;
+    return <Coffee size={size} color={iconColor} strokeWidth={1.7} />;
   }
-  if (lower.includes('cab') || lower.includes('uber') || lower.includes('ola') || lower.includes('car') || lower.includes('travel') || lower.includes('transit')) {
-    return <Car size={18} color={colors.accent} strokeWidth={1.7} />;
+  if (lower.includes('cab') || lower.includes('uber') || lower.includes('ola') || lower.includes('car') || lower.includes('travel') || lower.includes('transit') || lower.includes('transport')) {
+    return <Car size={size} color={iconColor} strokeWidth={1.7} />;
   }
-  if (lower.includes('food') || lower.includes('dining') || lower.includes('dinner') || lower.includes('lunch') || lower.includes('restaurant')) {
-    return <Utensils size={18} color={colors.accent} strokeWidth={1.7} />;
+  if (lower.includes('food') || lower.includes('dining') || lower.includes('dinner') || lower.includes('lunch') || lower.includes('restaurant') || lower.includes('sabji') || lower.includes('grocer')) {
+    return <Utensils size={size} color={iconColor} strokeWidth={1.7} />;
   }
-  if (lower.includes('shop') || lower.includes('grocer') || lower.includes('store') || lower.includes('market')) {
-    return <ShoppingBag size={18} color={colors.accent} strokeWidth={1.7} />;
+  if (lower.includes('shop') || lower.includes('store') || lower.includes('market') || lower.includes('cloth')) {
+    return <ShoppingBag size={size} color={iconColor} strokeWidth={1.7} />;
   }
-  if (lower.includes('bill') || lower.includes('util') || lower.includes('rent') || lower.includes('recharge')) {
-    return <ReceiptText size={18} color={colors.accent} strokeWidth={1.7} />;
+  if (lower.includes('bill') || lower.includes('util') || lower.includes('rent') || lower.includes('recharge') || lower.includes('electric') || lower.includes('wifi')) {
+    return <ReceiptText size={size} color={iconColor} strokeWidth={1.7} />;
   }
-  return <Sparkles size={18} color={colors.accent} strokeWidth={1.7} />;
+  if (lower.includes('entertain') || lower.includes('movie') || lower.includes('cinema') || lower.includes('music') || lower.includes('game') || lower.includes('netflix') || lower.includes('spotify') || lower.includes('fun')) {
+    return <Film size={size} color={iconColor} strokeWidth={1.7} />;
+  }
+  if (lower.includes('other')) {
+    return <MoreHorizontal size={size} color={iconColor} strokeWidth={1.7} />;
+  }
+  return <Sparkles size={size} color={iconColor} strokeWidth={1.7} />;
 }
 
 export const ExpenseRow: React.FC<ExpenseRowProps> = ({ expense, onPress }) => {

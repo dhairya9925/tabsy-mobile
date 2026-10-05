@@ -6,7 +6,7 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
-import { colors, fontFamilies, radii, spacing } from '../theme';
+import { useTheme, colors, fontFamilies, radii, spacing } from '../theme';
 import { SproutText } from './SproutText';
 
 export interface FieldRowProps extends TextInputProps {
@@ -30,6 +30,8 @@ export const FieldRow: React.FC<FieldRowProps> = ({
   placeholder,
   ...rest
 }) => {
+  const { colors } = useTheme();
+
   const content = (
     <View
       style={[

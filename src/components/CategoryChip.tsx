@@ -1,6 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, StyleSheet, View } from 'react-native';
-import { colors, radii, spacing, shadows } from '../theme';
+import { useTheme, radii, spacing, shadows } from '../theme';
 import { SproutText } from './SproutText';
 import { getCategoryIcon } from './ExpenseRow';
 
@@ -17,22 +17,27 @@ export const CategoryChip: React.FC<CategoryChipProps> = ({
   isSelected,
   onSelect,
 }) => {
+  const { colors } = useTheme();
+
   return (
     <TouchableOpacity
-      activeOpacity={0.8}
+      activeOpacity={0.75}
       onPress={() => onSelect(id)}
       style={[
         styles.chip,
-        isSelected && styles.chipSelected,
+        {
+          backgroundColor: isSelected ? colors.accent : colors.surface,
+          borderColor: isSelected ? colors.accent : colors.line,
+        },
       ]}
     >
       <View style={styles.iconContainer}>
-        {getCategoryIcon(name)}
+        {getCategoryIcon(name, isSelected ? colors.onAccent : colors.muted, 15)}
       </View>
       <SproutText
         variant="caption"
         color={isSelected ? colors.onAccent : colors.text}
-        weight="700"
+        weight={isSelected ? '700' : '600'}
         numberOfLines={1}
         style={styles.label}
       >
@@ -44,26 +49,23 @@ export const CategoryChip: React.FC<CategoryChipProps> = ({
 
 const styles = StyleSheet.create({
   chip: {
-    width: 80,
-    height: 64,
-    borderRadius: radii.md,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.line,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: spacing.xs,
-    marginRight: spacing.sm,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    marginRight: 8,
     ...shadows.card,
   },
-  chipSelected: {
-    backgroundColor: colors.accent,
-    borderColor: colors.accent,
-  },
   iconContainer: {
-    marginBottom: 4,
+    marginRight: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   label: {
-    fontSize: 11,
+    fontSize: 12,
   },
 });
+

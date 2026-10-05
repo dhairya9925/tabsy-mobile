@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
-import { colors, fontFamilies, radii, spacing, shadows } from '../../theme';
+import { useTheme, fontFamilies, radii, spacing, shadows } from '../../theme';
 import {
   SproutText,
   SproutButton,
@@ -25,37 +25,84 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'EditExpenseModal'>;
 
+const DEFAULT_CATEGORIES: Category[] = [
+  { id: 'food', name: 'Food & Dining' },
+  { id: 'transport', name: 'Transport' },
+  { id: 'shopping', name: 'Shopping' },
+  { id: 'bills', name: 'Bills & Utilities' },
+  { id: 'entertainment', name: 'Entertainment' },
+  { id: 'other', name: 'Other' },
+];
+
 export const EditExpenseModal: React.FC<Props> = ({ route, navigation }) => {
   const { expense } = route.params;
+  const { colors } = useTheme();
 
   const [amountStr, setAmountStr] = useState(String(expense.amount));
   const [description, setDescription] = useState(expense.description || expense.note || '');
   const [dateStr, setDateStr] = useState(expense.date || expense.expense_date || '');
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [selectedCategoryName, setSelectedCategoryName] = useState<string>(
-    typeof expense.category === 'string' ? expense.category : 'General'
-  );
+
+  const initialCategoryName = typeof expense.category === 'string'
+    ? expense.category
+    : (expense.category as any)?.name || 'Food & Dining';
+
+  const [selectedCategoryName, setSelectedCategoryName] = useState<string>(initialCategoryName);
+
+  const [categories, setCategories] = useState<Category[]>(() => {
+    const list = [...DEFAULT_CATEGORIES];
+    const exists = list.some(
+      (c) => c.name.toLowerCase() === initialCategoryName.toLowerCase()
+    );
+    if (!exists && initialCategoryName && initialCategoryName.toLowerCase() !== 'general') {
+      list.splice(list.length - 1, 0, {
+        id: initialCategoryName.toLowerCase().replace(/\s+/g, '_'),
+        name: initialCategoryName,
+      });
+    }
+    return list;
+  });
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     expensesApi.getCategories()
-      .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
-          setCategories(data);
-        } else {
-          setCategories([
-            { id: 'food', name: 'Food & Dining' },
-            { id: 'transport', name: 'Transport' },
-            { id: 'shopping', name: 'Shopping' },
-            { id: 'bills', name: 'Bills & Utilities' },
-            { id: 'other', name: 'Other' },
-          ]);
+      .then((customCats) => {
+        if (Array.isArray(customCats) && customCats.length > 0) {
+          setCategories((prev) => {
+            const map = new Map<string, Category>();
+            // Add defaults first
+            DEFAULT_CATEGORIES.forEach((c) => map.set(c.name.toLowerCase(), c));
+            // Add custom categories from server
+            customCats.forEach((c) => {
+              if (c.name && !map.has(c.name.toLowerCase())) {
+                map.set(c.name.toLowerCase(), {
+                  id: c.id || c.name.toLowerCase().replace(/\s+/g, '_'),
+                  name: c.name,
+                });
+              }
+            });
+            // Ensure expense's category is present
+            if (initialCategoryName && initialCategoryName.toLowerCase() !== 'general' && !map.has(initialCategoryName.toLowerCase())) {
+              map.set(initialCategoryName.toLowerCase(), {
+                id: initialCategoryName.toLowerCase().replace(/\s+/g, '_'),
+                name: initialCategoryName,
+              });
+            }
+            const combined = Array.from(map.values());
+            // Keep 'Other' at the end
+            const otherIdx = combined.findIndex((c) => c.name.toLowerCase() === 'other');
+            if (otherIdx > -1 && otherIdx < combined.length - 1) {
+              const [other] = combined.splice(otherIdx, 1);
+              combined.push(other);
+            }
+            return combined;
+          });
         }
       })
       .catch(() => {});
-  }, []);
+  }, [initialCategoryName]);
 
   const handleUpdate = async () => {
     setErrorMessage('');
@@ -87,7 +134,7 @@ export const EditExpenseModal: React.FC<Props> = ({ route, navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.keyboardContainer}
@@ -128,13 +175,13 @@ export const EditExpenseModal: React.FC<Props> = ({ route, navigation }) => {
               AMOUNT
             </SproutText>
             <View style={styles.amountInputRow}>
-              <SproutText variant="amount" color={colors.accent} style={styles.currencyPrefix}>
+              <SproutText variant="amount" color={colors.accent} style={[styles.currencyPrefix, { color: colors.accent }]}>
                 ₹
               </SproutText>
               <TextInput
-                style={styles.amountInput}
+                style={[styles.amountInput, { color: colors.text }]}
                 placeholder="0"
-                placeholderTextColor={colors.line}
+                placeholderTextColor={colors.muted}
                 value={amountStr}
                 onChangeText={setAmountStr}
                 keyboardType="numeric"
@@ -158,7 +205,7 @@ export const EditExpenseModal: React.FC<Props> = ({ route, navigation }) => {
                   key={cat.id}
                   id={cat.id}
                   name={cat.name}
-                  isSelected={selectedCategoryName.toLowerCase() === cat.name.toLowerCase()}
+                  isSelected={selectedCategoryName.trim().toLowerCase() === cat.name.trim().toLowerCase()}
                   onSelect={() => setSelectedCategoryName(cat.name)}
                 />
               ))}
@@ -186,7 +233,7 @@ export const EditExpenseModal: React.FC<Props> = ({ route, navigation }) => {
         </ScrollView>
 
         {/* Bottom Save Action */}
-        <View style={styles.bottomBar}>
+        <View style={[styles.bottomBar, { backgroundColor: colors.background, borderTopColor: colors.line }]}>
           <SproutButton
             label="Update Expense"
             isLoading={isSubmitting}
@@ -201,7 +248,6 @@ export const EditExpenseModal: React.FC<Props> = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   keyboardContainer: {
     flex: 1,
@@ -239,13 +285,11 @@ const styles = StyleSheet.create({
   currencyPrefix: {
     fontSize: 48,
     marginRight: 4,
-    color: colors.accent,
   },
   amountInput: {
     fontSize: 48,
     fontFamily: fontFamilies.bold,
     fontWeight: '700',
-    color: colors.text,
     minWidth: 80,
     textAlign: 'center',
     padding: 0,
@@ -257,14 +301,14 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   categoryScroll: {
-    paddingVertical: 4,
+    paddingVertical: 6,
+    paddingRight: spacing.sm,
   },
   bottomBar: {
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.lg,
     paddingTop: spacing.sm,
-    backgroundColor: colors.background,
     borderTopWidth: 1,
-    borderTopColor: colors.line,
   },
 });
+

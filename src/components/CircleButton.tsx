@@ -1,6 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
-import { colors, radii } from '../theme';
+import { useTheme, radii } from '../theme';
 
 export interface CircleButtonProps {
   onPress?: () => void;
@@ -16,11 +16,14 @@ export const CircleButton: React.FC<CircleButtonProps> = ({
   onPress,
   icon,
   size = 44,
-  backgroundColor = colors.surface,
+  backgroundColor,
   style,
   disabled,
   accessibilityLabel,
 }) => {
+  const { colors } = useTheme();
+  const resolvedBg = backgroundColor ?? colors.surface;
+
   return (
     <TouchableOpacity
       activeOpacity={0.8}
@@ -34,7 +37,7 @@ export const CircleButton: React.FC<CircleButtonProps> = ({
           width: size,
           height: size,
           borderRadius: size / 2,
-          backgroundColor,
+          backgroundColor: resolvedBg,
         },
         style,
       ]}
