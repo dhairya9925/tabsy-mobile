@@ -4,6 +4,7 @@ import { UserProfile } from '../types';
 import { secureStorage } from '../utils/secureStorage';
 import { QuickAddModule } from '../native/QuickAddModule';
 import { resolveApiBaseUrl } from '../api/client';
+import { cacheService, CACHE_KEYS } from '../services/offline/cacheService';
 
 
 interface AuthState {
@@ -40,6 +41,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           isAuthenticated: true,
         });
 
+        if (cachedUser) {
+          cacheService.set(CACHE_KEYS.USER_PROFILE, cachedUser).catch(() => {});
+        }
+
         // Sync token to native quick-add preferences
         QuickAddModule.syncAuthSession(storedToken, resolveApiBaseUrl()).catch(() => {});
 
@@ -48,6 +53,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           .then((freshUser) => {
             set({ user: freshUser });
             secureStorage.setCachedUser(freshUser);
+            cacheService.set(CACHE_KEYS.USER_PROFILE, freshUser).catch(() => {});
           })
           .catch(() => {
             // Keep cached user if offline
@@ -68,6 +74,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const response = await authApi.login(payload);
       await secureStorage.setAuthToken(response.access_token);
       await secureStorage.setCachedUser(response.user);
+      await cacheService.set(CACHE_KEYS.USER_PROFILE, response.user);
 
       // Sync token to native quick-add preferences
       QuickAddModule.syncAuthSession(response.access_token, resolveApiBaseUrl()).catch(() => {});
@@ -90,6 +97,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const response = await authApi.signup(payload);
       await secureStorage.setAuthToken(response.access_token);
       await secureStorage.setCachedUser(response.user);
+      await cacheService.set(CACHE_KEYS.USER_PROFILE, response.user);
 
       // Sync token to native quick-add preferences
       QuickAddModule.syncAuthSession(response.access_token, resolveApiBaseUrl()).catch(() => {});
@@ -120,6 +128,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         // Non-blocking cleanup
       }
       await secureStorage.clearAll();
+      await cacheService.invalidate(CACHE_KEYS.USER_PROFILE);
 
       set({
         token: null,
@@ -133,5 +142,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   setUser: (user: UserProfile) => {
     set({ user });
     secureStorage.setCachedUser(user);
+    cacheService.set(CACHE_KEYS.USER_PROFILE, user).catch(() => {});
   },
 }));

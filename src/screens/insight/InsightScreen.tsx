@@ -24,6 +24,8 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { getCategoryIcon } from '../../components/ExpenseRow';
 import { dashboardApi } from '../../api/dashboard';
 import { DashboardData } from '../../types';
+import { cacheService, CACHE_KEYS } from '../../services/offline/cacheService';
+import { localAnalyticsEngine } from '../../utils/localAnalyticsEngine';
 import {
   computeCategoryBreakdown,
   computeSixMonthTrend,
@@ -105,10 +107,34 @@ export const InsightScreen: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [categoryViewMode, setCategoryViewMode] = useState<'all' | 'personal'>('all');
 
+  const dataRef = useRef(data);
+  dataRef.current = data;
+
+  // Immediate cache prefill on mount: if cached data exists, display immediately with zero waiting spinner
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        const cached =
+          (await cacheService.get<DashboardData>(CACHE_KEYS.INSIGHT_DASHBOARD_DATA)) ||
+          (await cacheService.get<DashboardData>(CACHE_KEYS.DASHBOARD_SUMMARY));
+        if (isMounted && cached) {
+          setData(cached);
+          setIsLoading(false);
+        }
+      } catch {
+        // Non-blocking
+      }
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const loadData = useCallback(async (isPullToRefresh = false) => {
     if (isPullToRefresh) {
       setIsRefreshing(true);
-    } else {
+    } else if (!dataRef.current) {
       setIsLoading(true);
     }
     setError(null);
@@ -127,6 +153,13 @@ export const InsightScreen: React.FC = () => {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Persist computed analytics whenever data or view mode changes
+  useEffect(() => {
+    if (data) {
+      localAnalyticsEngine.computeAndCache(data, categoryViewMode).catch(() => {});
+    }
+  }, [data, categoryViewMode]);
 
   // Calculations based on dashboard data
   const personalExpenses = useMemo(() => data?.personalExpenses || [], [data]);

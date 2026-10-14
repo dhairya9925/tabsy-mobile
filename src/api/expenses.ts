@@ -11,6 +11,7 @@ import { outboxService } from '../services/offline/outboxService';
 import { networkService } from '../services/offline/networkService';
 import { QuickAddModule } from '../native/QuickAddModule';
 import { filterExpensesLocally } from '../utils/journalGrouping';
+import { buildDashboardSummaryFromLocalCache } from '../utils/localDashboardBuilder';
 
 export const expensesApi = {
   async getPersonalExpenses(params?: {
@@ -337,9 +338,11 @@ export const expensesApi = {
   },
 
   async getDashboardSummary(): Promise<DashboardSummary> {
+    const cached = await cacheService.get<DashboardSummary>(CACHE_KEYS.DASHBOARD_SUMMARY);
+
     if (!networkService.isOnline()) {
-      const cached = await cacheService.get<DashboardSummary>(CACHE_KEYS.DASHBOARD_SUMMARY);
       if (cached) return cached;
+      return await buildDashboardSummaryFromLocalCache();
     }
 
     try {
@@ -348,8 +351,8 @@ export const expensesApi = {
       await cacheService.set(CACHE_KEYS.DASHBOARD_SUMMARY, summary);
       return summary;
     } catch (err) {
-      const cached = await cacheService.get<DashboardSummary>(CACHE_KEYS.DASHBOARD_SUMMARY);
-      return cached || ({} as DashboardSummary);
+      if (cached) return cached;
+      return await buildDashboardSummaryFromLocalCache();
     }
   },
 

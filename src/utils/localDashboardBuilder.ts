@@ -1,8 +1,11 @@
 import { cacheService, CACHE_KEYS } from '../services/offline/cacheService';
 import {
   DashboardData,
+  DashboardSummary,
   PersonalExpense,
   Group,
+  GroupExpense,
+  GroupUserSplitItem,
   FriendBalance,
   GroupBalanceSummary,
   DashboardFriendBalance,
@@ -12,17 +15,18 @@ import { roundMoney } from './money';
 
 /**
  * Constructs a fallback DashboardData structure using solely local cached data
- * (personal expenses, groups, friend balances, and group balances).
+ * (personal expenses, groups, group expenses, friend balances, and group balances).
  * This ensures the analytics and rhythm screens can operate completely offline.
  */
 export async function buildDashboardFromLocalCache(): Promise<DashboardData> {
-  const [personalExpenses, groups, friendBalances, groupBalances, groupMemberCounts] =
+  const [personalExpenses, groups, friendBalances, groupBalances, groupMemberCounts, userProfile] =
     await Promise.all([
       cacheService.get<PersonalExpense[]>(CACHE_KEYS.PERSONAL_EXPENSES),
       cacheService.get<Group[]>(CACHE_KEYS.GROUPS_LIST),
       cacheService.get<FriendBalance[]>(CACHE_KEYS.FRIEND_BALANCES),
       cacheService.get<Record<string, number>>(CACHE_KEYS.GROUP_BALANCES),
       cacheService.get<Record<string, number>>(CACHE_KEYS.GROUP_MEMBER_COUNTS),
+      cacheService.get<any>(CACHE_KEYS.USER_PROFILE),
     ]);
 
   const now = new Date();
@@ -58,6 +62,51 @@ export async function buildDashboardFromLocalCache(): Promise<DashboardData> {
     memberCount: groupMemberCounts?.[g.id] ?? 1,
     userNetBalance: groupBalances?.[g.id] ?? 0,
   }));
+
+  // Aggregate group expenses and user splits from cache
+  const currentUserId = userProfile?.id;
+  const groupUserSplits: GroupUserSplitItem[] = [];
+  let groupShareTotal = 0;
+  let groupSharePrevMonthTotal = 0;
+
+  if (allGroups.length > 0) {
+    const groupExpenseResults = await Promise.all(
+      allGroups.map((g) => cacheService.get<GroupExpense[]>(CACHE_KEYS.GROUP_EXPENSES(g.id)))
+    );
+
+    groupExpenseResults.forEach((expenses, idx) => {
+      const group = allGroups[idx];
+      if (Array.isArray(expenses)) {
+        expenses.forEach((exp) => {
+          const expDate = exp.expense_date || exp.created_at || '';
+          if (Array.isArray(exp.splits)) {
+            exp.splits.forEach((split, splitIdx) => {
+              const isUserSplit = currentUserId ? split.user_id === currentUserId : true;
+              if (isUserSplit) {
+                const splitAmount = roundMoney(Number(split.amount || 0));
+                groupUserSplits.push({
+                  id: split.id || `${exp.id}-${splitIdx}`,
+                  expense_date: expDate,
+                  category: exp.category || 'other',
+                  amount: splitAmount,
+                  group_id: group.id,
+                });
+
+                if (expDate.startsWith(currentMonth)) {
+                  groupShareTotal += splitAmount;
+                } else if (expDate.startsWith(prevMonth)) {
+                  groupSharePrevMonthTotal += splitAmount;
+                }
+              }
+            });
+          }
+        });
+      }
+    });
+  }
+
+  groupShareTotal = roundMoney(groupShareTotal);
+  groupSharePrevMonthTotal = roundMoney(groupSharePrevMonthTotal);
 
   // Friend balances
   const allFriendBalances: FriendBalance[] = Array.isArray(friendBalances) ? friendBalances : [];
@@ -95,10 +144,6 @@ export async function buildDashboardFromLocalCache(): Promise<DashboardData> {
   netOwed = roundMoney(netOwed);
   netOwes = roundMoney(netOwes);
   const netBalance = roundMoney(netOwed - netOwes);
-
-  // Group share totals (fallback to 0 if individual group splits are not loaded)
-  const groupShareTotal = 0;
-  const groupSharePrevMonthTotal = 0;
 
   const unifiedTotal = roundMoney(personalTotal + groupShareTotal);
   const unifiedPrevMonthTotal = roundMoney(personalPrevMonthTotal + groupSharePrevMonthTotal);
@@ -142,7 +187,7 @@ export async function buildDashboardFromLocalCache(): Promise<DashboardData> {
     groupShareTotal,
     groupSharePrevMonthTotal,
     groupBalances: groupBalanceSummaries,
-    groupUserSplits: [],
+    groupUserSplits,
     friendBalances: dashboardFriendBalances,
     unifiedTotal,
     unifiedPrevMonthTotal,
@@ -154,5 +199,21 @@ export async function buildDashboardFromLocalCache(): Promise<DashboardData> {
     monthlyTransactionCount: personalExpenseCount,
     recentActivity,
     lastExpenseDate,
+  };
+}
+
+/**
+ * Builds a DashboardSummary structure for RhythmScreen from cached local data.
+ */
+export async function buildDashboardSummaryFromLocalCache(): Promise<DashboardSummary> {
+  const data = await buildDashboardFromLocalCache();
+  return {
+    total_spent: data.unifiedTotal,
+    monthly_spent: data.personalTotal,
+    weekly_spent: data.personalTotal,
+    net_balance: data.netBalance,
+    to_receive: data.netOwed,
+    to_pay: data.netOwes,
+    recent_expenses: data.personalExpenses.slice(0, 5),
   };
 }

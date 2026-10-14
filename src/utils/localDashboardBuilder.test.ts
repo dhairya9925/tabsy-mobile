@@ -93,3 +93,58 @@ test('buildDashboardFromLocalCache aggregates friend and group balances correctl
   assert.equal(data.netBalance, 250);
   assert.equal(data.unsettledCount, 3);
 });
+
+test('buildDashboardFromLocalCache aggregates group expense user splits and group share totals', async () => {
+  const now = new Date();
+  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const prevMonth = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
+
+  await cacheService.set(CACHE_KEYS.USER_PROFILE, { id: 'user-me', email: 'me@tabsy.app' });
+  await cacheService.set(CACHE_KEYS.GROUPS_LIST, [{ id: 'grp-1', name: 'Apartment' }]);
+
+  const mockGroupExpenses: any[] = [
+    {
+      id: 'ge-1',
+      expense_date: `${currentMonth}-08`,
+      category: 'Utilities',
+      splits: [
+        { user_id: 'user-me', amount: 400 },
+        { user_id: 'user-roommate', amount: 400 },
+      ],
+    },
+    {
+      id: 'ge-2',
+      expense_date: `${prevMonth}-12`,
+      category: 'Groceries',
+      splits: [
+        { user_id: 'user-me', amount: 600 },
+        { user_id: 'user-roommate', amount: 600 },
+      ],
+    },
+  ];
+  await cacheService.set(CACHE_KEYS.GROUP_EXPENSES('grp-1'), mockGroupExpenses);
+
+  const data = await buildDashboardFromLocalCache();
+
+  assert.equal(data.groupUserSplits.length, 2);
+  assert.equal(data.groupShareTotal, 400);
+  assert.equal(data.groupSharePrevMonthTotal, 600);
+  assert.equal(data.unifiedTotal, 400); // 0 personal + 400 group share
+});
+
+test('buildDashboardSummaryFromLocalCache provides complete summary for RhythmScreen', async () => {
+  const now = new Date();
+  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  await cacheService.set(CACHE_KEYS.PERSONAL_EXPENSES, [
+    { id: 'p1', amount: 1500, expense_date: `${currentMonth}-01`, category: 'Food' },
+  ]);
+
+  const { buildDashboardSummaryFromLocalCache } = await import('./localDashboardBuilder');
+  const summary = await buildDashboardSummaryFromLocalCache();
+
+  assert.equal(summary.monthly_spent, 1500);
+  assert.equal(summary.total_spent, 1500);
+  assert.equal(summary.recent_expenses?.length, 1);
+});
+

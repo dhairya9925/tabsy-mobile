@@ -27,6 +27,7 @@ export const CACHE_KEYS = {
     `cache:monthly_ledger:${groupId}:${year}-${String(month).padStart(2, '0')}`,
   STREAK_DATES: 'cache:streak_dates',
   USER_PROFILE: 'cache:user_profile',
+  COMPUTED_ANALYTICS: (mode: string) => `cache:computed_analytics:${mode}`,
 };
 
 export const cacheService = {
