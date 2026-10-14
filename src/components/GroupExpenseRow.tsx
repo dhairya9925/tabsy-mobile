@@ -5,6 +5,7 @@ import { SproutText } from './SproutText';
 import { GroupExpense } from '../types';
 import { formatCurrency } from '../utils/formatters';
 import { getCategoryIcon } from './ExpenseRow';
+import { Clock } from 'lucide-react-native';
 
 export interface GroupExpenseRowProps {
   expense: GroupExpense;
@@ -90,6 +91,14 @@ export const GroupExpenseRow: React.FC<GroupExpenseRowProps> = ({
         <SproutText style={[styles.foot, { color: footColor }]}>
           {footText}
         </SproutText>
+        {expense.is_pending_sync && (
+          <View style={styles.pendingBadge}>
+            <Clock size={8.5} color="#7A3E2D" strokeWidth={2.4} style={{ marginRight: 2 }} />
+            <SproutText style={styles.pendingText} weight="700">
+              Pending
+            </SproutText>
+          </View>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -141,5 +150,18 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilies.medium,
     fontSize: 9,
     marginTop: 2,
+  },
+  pendingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.clay,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 4,
+    marginTop: 2,
+  },
+  pendingText: {
+    fontSize: 8.5,
+    color: '#7A3E2D',
   },
 });

@@ -8,6 +8,18 @@ const OUTBOX_STORAGE_KEY = 'tabsy_outbox_queue';
 
 type OutboxListener = (queue: OutboxAction[], isSyncing: boolean) => void;
 
+/**
+ * Checks whether an ID represents a temporary entity created offline.
+ */
+export function isOfflineId(id?: string | null): boolean {
+  if (!id || typeof id !== 'string') return false;
+  return (
+    id.startsWith('temp-') ||
+    id.startsWith('offline-') ||
+    id.startsWith('local-')
+  );
+}
+
 class OutboxService {
   private queue: OutboxAction[] = [];
   private isSyncing: boolean = false;
@@ -29,6 +41,9 @@ class OutboxService {
       const saved = await appStorage.getItem<OutboxAction[]>(OUTBOX_STORAGE_KEY);
       this.queue = Array.isArray(saved) ? saved : [];
       this.isLoaded = true;
+      if (this.deduplicateQueue()) {
+        await this.saveToStorage();
+      }
       this.notifyListeners();
     } catch {
       this.queue = [];
@@ -76,7 +91,8 @@ class OutboxService {
 
   /**
    * Enqueues an action to be dispatched when online.
-   * Returns the generated temporary ID.
+   * Automatically resolves conflicts and deduplicates redundant actions.
+   * Returns the assigned temporary ID.
    */
   public async enqueue<T = any>(
     type: OutboxActionType,
@@ -98,6 +114,7 @@ class OutboxService {
     };
 
     this.queue.push(action);
+    this.deduplicateQueue();
     await this.saveToStorage();
     this.notifyListeners();
 
@@ -179,6 +196,249 @@ class OutboxService {
   }
 
   /**
+   * Helper to check whether an ID was generated offline.
+   */
+  public isOfflineId(id?: string | null): boolean {
+    return isOfflineId(id);
+  }
+
+  /**
+   * Resolves the target entity ID that an action affects.
+   * For creations and payments, returns the assigned tempId or payload ID.
+   * For updates and deletes, returns the targeted expenseId or categoryId.
+   */
+  public getTargetEntityId(action: OutboxAction): string | undefined {
+    const type = action.type;
+    const payload = action.payload;
+
+    if (type.startsWith('create_') || type === 'record_friend_payment') {
+      return action.tempId || payload?.id || payload?.tempId;
+    }
+
+    if (type.startsWith('update_') || type.startsWith('delete_')) {
+      if (payload?.expenseId) return payload.expenseId;
+      if (payload?.categoryId) return payload.categoryId;
+      if (payload?.id) return payload.id;
+      return action.tempId;
+    }
+
+    return action.tempId || payload?.id;
+  }
+
+  /**
+   * Merges an update payload directly into a pending create action.
+   */
+  private mergeUpdateIntoCreate(createAction: OutboxAction, updateAction: OutboxAction): OutboxAction {
+    const updatePayload = updateAction.payload?.payload || {};
+
+    if (createAction.type === 'create_personal_expense') {
+      return {
+        ...createAction,
+        payload: {
+          ...createAction.payload,
+          ...updatePayload,
+        },
+      };
+    }
+
+    if (
+      createAction.type === 'create_friend_expense' ||
+      createAction.type === 'create_group_expense' ||
+      createAction.type === 'create_category'
+    ) {
+      return {
+        ...createAction,
+        payload: {
+          ...createAction.payload,
+          payload: {
+            ...(createAction.payload?.payload || {}),
+            ...updatePayload,
+          },
+        },
+      };
+    }
+
+    return createAction;
+  }
+
+  /**
+   * Merges a subsequent update action into an earlier update action for the same entity.
+   */
+  private mergeUpdateIntoUpdate(baseAction: OutboxAction, newAction: OutboxAction): OutboxAction {
+    const basePayload = baseAction.payload?.payload || {};
+    const newPayload = newAction.payload?.payload || {};
+
+    return {
+      ...baseAction,
+      payload: {
+        ...baseAction.payload,
+        ...newAction.payload,
+        payload: {
+          ...basePayload,
+          ...newPayload,
+        },
+      },
+      lastError: null,
+    };
+  }
+
+  /**
+   * Deduplicates and resolves conflicts in the outbox queue:
+   * 1. Offline creates cancelled by later offline deletes are both purged.
+   * 2. Standalone deletes for temporary IDs (which do not exist on server) are purged.
+   * 3. Offline creates followed by offline updates have updates merged directly into the create.
+   * 4. Updates for server entities followed by a delete discard the obsolete updates.
+   * 5. Consecutive/multiple updates for the same entity are consolidated into one with merged payloads.
+   * 6. Duplicate deletes for the same entity are deduplicated.
+   * 
+   * Returns true if the queue was modified.
+   */
+  public deduplicateQueue(): boolean {
+    if (this.queue.length === 0) return false;
+
+    const initialQueue = this.queue;
+    const initialLength = initialQueue.length;
+
+    // Group action indices by targetEntityId
+    const entityActions = new Map<string, number[]>();
+    const unmappedIndices: number[] = [];
+
+    for (let i = 0; i < initialQueue.length; i++) {
+      const action = initialQueue[i];
+      const targetId = this.getTargetEntityId(action);
+      if (!targetId) {
+        unmappedIndices.push(i);
+      } else {
+        const existing = entityActions.get(targetId) || [];
+        existing.push(i);
+        entityActions.set(targetId, existing);
+      }
+    }
+
+    // Map of kept action indices to (possibly merged) action
+    const keepActions = new Map<number, OutboxAction>();
+
+    // Always keep unmapped actions
+    for (const idx of unmappedIndices) {
+      keepActions.set(idx, initialQueue[idx]);
+    }
+
+    for (const [targetId, indices] of entityActions.entries()) {
+      const isTemp = this.isOfflineId(targetId);
+      const actions = indices.map((idx) => initialQueue[idx]);
+
+      const hasCreate = actions.some((a) => a.type.startsWith('create_') || a.type === 'record_friend_payment');
+      const deleteIndices = actions
+        .map((a, i) => (a.type.startsWith('delete_') ? i : -1))
+        .filter((i) => i !== -1);
+      const hasDelete = deleteIndices.length > 0;
+
+      // Rule 1: Temporary entity created and then deleted offline -> cancel all actions
+      if ((isTemp || hasCreate) && hasDelete) {
+        continue;
+      }
+
+      // Rule 1b: Standalone delete for a temporary ID -> drop it (server doesn't have it)
+      if (isTemp && hasDelete && !hasCreate) {
+        continue;
+      }
+
+      // Rule 2: Server entity with updates followed by delete -> discard updates before delete
+      if (hasDelete && !hasCreate && !isTemp) {
+        // Keep only the last delete action, at its position
+        const lastDeleteActionIndex = indices[deleteIndices[deleteIndices.length - 1]];
+        keepActions.set(lastDeleteActionIndex, initialQueue[lastDeleteActionIndex]);
+        continue;
+      }
+
+      // Rule 4: Temporary entity created followed by updates -> merge updates into create
+      if (hasCreate) {
+        const createIndexInActions = actions.findIndex(
+          (a) => a.type.startsWith('create_') || a.type === 'record_friend_payment'
+        );
+        let mergedCreateAction = actions[createIndexInActions];
+        const createGlobalIndex = indices[createIndexInActions];
+
+        for (let i = 0; i < actions.length; i++) {
+          if (i === createIndexInActions) continue;
+          const act = actions[i];
+          if (act.type.startsWith('update_')) {
+            mergedCreateAction = this.mergeUpdateIntoCreate(mergedCreateAction, act);
+          }
+        }
+
+        keepActions.set(createGlobalIndex, mergedCreateAction);
+        continue;
+      }
+
+      // Rule 3: Multiple updates for the same server entity -> consolidate into single update
+      const updateIndices = actions
+        .map((a, i) => (a.type.startsWith('update_') ? i : -1))
+        .filter((i) => i !== -1);
+
+      if (updateIndices.length > 1) {
+        const firstGlobalIndex = indices[updateIndices[0]];
+        let mergedAction = actions[updateIndices[0]];
+
+        for (let i = 1; i < updateIndices.length; i++) {
+          const nextAction = actions[updateIndices[i]];
+          mergedAction = this.mergeUpdateIntoUpdate(mergedAction, nextAction);
+        }
+
+        keepActions.set(firstGlobalIndex, mergedAction);
+
+        // Keep any non-update actions that might exist for this entity
+        for (let i = 0; i < actions.length; i++) {
+          if (!actions[i].type.startsWith('update_')) {
+            keepActions.set(indices[i], actions[i]);
+          }
+        }
+        continue;
+      }
+
+      // If no conflict or deduplication, keep all original actions for this entity
+      for (const idx of indices) {
+        keepActions.set(idx, initialQueue[idx]);
+      }
+    }
+
+    // Reconstruct queue in original preserved index order
+    const sortedKeptIndices = Array.from(keepActions.keys()).sort((a, b) => a - b);
+    const newQueue = sortedKeptIndices.map((idx) => keepActions.get(idx)!);
+
+    let changed = newQueue.length !== initialLength;
+    if (!changed) {
+      for (let i = 0; i < newQueue.length; i++) {
+        if (newQueue[i] !== initialQueue[i]) {
+          changed = true;
+          break;
+        }
+      }
+    }
+
+    if (changed) {
+      this.queue = newQueue;
+    }
+
+    return changed;
+  }
+
+  /**
+   * Public asynchronous wrapper to run deduplication and persist if changed.
+   */
+  public async runDeduplication(): Promise<boolean> {
+    if (!this.isLoaded) {
+      await this.loadFromStorage();
+    }
+    const changed = this.deduplicateQueue();
+    if (changed) {
+      await this.saveToStorage();
+      this.notifyListeners();
+    }
+    return changed;
+  }
+
+  /**
    * Replays all queued actions in FIFO order against the backend.
    */
   public async processQueue(): Promise<SyncResult> {
@@ -187,6 +447,9 @@ class OutboxService {
     }
     if (!this.isLoaded) {
       await this.loadFromStorage();
+    }
+    if (this.deduplicateQueue()) {
+      await this.saveToStorage();
     }
     if (this.queue.length === 0) {
       return { syncedCount: 0, failedCount: 0, errors: [] };

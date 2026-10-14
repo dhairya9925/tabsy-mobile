@@ -2,7 +2,7 @@ import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { appStorage } from './storage';
 import { cacheService, CACHE_KEYS } from './cacheService';
-import { outboxService } from './outboxService';
+import { outboxService, isOfflineId } from './outboxService';
 import { networkService } from './networkService';
 import { friendsApi } from '../../api/friends';
 import { dashboardApi } from '../../api/dashboard';
@@ -398,6 +398,248 @@ test('categoriesApi: offline create, update, and delete operations', async () =>
   assert.equal(cachedCats3[0].id, 'cat-orig');
   assert.equal(outboxService.getQueue().length, 0);
 });
+
+test('isOfflineId correctly distinguishes offline temp IDs from server IDs', () => {
+  assert.equal(isOfflineId('temp-exp-12345'), true);
+  assert.equal(isOfflineId('temp-cat-67890'), true);
+  assert.equal(isOfflineId('offline-123'), true);
+  assert.equal(isOfflineId('local-456'), true);
+  assert.equal(isOfflineId('srv-12345'), false);
+  assert.equal(isOfflineId('e10'), false);
+  assert.equal(isOfflineId('550e8400-e29b-41d4-a716-446655440000'), false);
+  assert.equal(isOfflineId(null), false);
+  assert.equal(isOfflineId(undefined), false);
+});
+
+test('outboxService.getTargetEntityId correctly extracts entity IDs for all action types', () => {
+  assert.equal(
+    outboxService.getTargetEntityId({
+      id: 'a1',
+      type: 'create_personal_expense',
+      tempId: 'temp-exp-1',
+      payload: { id: 'temp-exp-1', amount: 100 },
+      createdAt: 1,
+      retryCount: 0,
+    }),
+    'temp-exp-1'
+  );
+
+  assert.equal(
+    outboxService.getTargetEntityId({
+      id: 'a2',
+      type: 'update_personal_expense',
+      payload: { expenseId: 'srv-exp-2', payload: { amount: 200 } },
+      createdAt: 2,
+      retryCount: 0,
+    }),
+    'srv-exp-2'
+  );
+
+  assert.equal(
+    outboxService.getTargetEntityId({
+      id: 'a3',
+      type: 'delete_personal_expense',
+      payload: { expenseId: 'srv-exp-3' },
+      createdAt: 3,
+      retryCount: 0,
+    }),
+    'srv-exp-3'
+  );
+
+  assert.equal(
+    outboxService.getTargetEntityId({
+      id: 'a4',
+      type: 'update_group_expense',
+      payload: { groupId: 'grp-1', expenseId: 'srv-exp-4', payload: { amount: 300 } },
+      createdAt: 4,
+      retryCount: 0,
+    }),
+    'srv-exp-4'
+  );
+
+  assert.equal(
+    outboxService.getTargetEntityId({
+      id: 'a5',
+      type: 'delete_category',
+      payload: { categoryId: 'cat-5' },
+      createdAt: 5,
+      retryCount: 0,
+    }),
+    'cat-5'
+  );
+});
+
+test('deduplicateQueue Rule 1: temporary create + delete cancels out completely', async () => {
+  networkService.setSimulatedOnline(false);
+
+  const tempId = 'temp-exp-cancel-1';
+  await outboxService.enqueue('create_personal_expense', {
+    id: tempId,
+    amount: 100,
+    category: 'food',
+    note: 'Temp snack',
+  }, tempId);
+
+  assert.equal(outboxService.getPendingCount(), 1);
+
+  // Enqueue delete for that temporary entity
+  await outboxService.enqueue('delete_personal_expense', {
+    expenseId: tempId,
+  });
+
+  // Both the create and the delete should be automatically purged by deduplicateQueue
+  assert.equal(outboxService.getPendingCount(), 0);
+  assert.equal(outboxService.getQueue().length, 0);
+});
+
+test('deduplicateQueue Rule 1b: standalone delete of temporary ID is purged', async () => {
+  networkService.setSimulatedOnline(false);
+
+  // Directly enqueue a delete for a temp ID that has no prior create
+  await outboxService.enqueue('delete_personal_expense', {
+    expenseId: 'temp-exp-orphan-99',
+  });
+
+  // Temporary delete alone is discarded because server has no record of temporary ID
+  assert.equal(outboxService.getPendingCount(), 0);
+});
+
+test('deduplicateQueue Rule 2: server entity updates followed by delete discards updates', async () => {
+  networkService.setSimulatedOnline(false);
+
+  const srvId = 'srv-exp-100';
+
+  // 1. First update to amount
+  await outboxService.enqueue('update_personal_expense', {
+    expenseId: srvId,
+    payload: { amount: 150 },
+  });
+
+  // 2. Second update to note
+  await outboxService.enqueue('update_personal_expense', {
+    expenseId: srvId,
+    payload: { note: 'Revised note' },
+  });
+
+  // 3. User deletes the expense
+  await outboxService.enqueue('delete_personal_expense', {
+    expenseId: srvId,
+  });
+
+  const queue = outboxService.getQueue();
+  // The obsolete updates should be discarded, keeping only the final delete action
+  assert.equal(queue.length, 1);
+  assert.equal(queue[0].type, 'delete_personal_expense');
+  assert.equal(queue[0].payload.expenseId, srvId);
+});
+
+test('deduplicateQueue Rule 3: multiple updates for same server entity are consolidated', async () => {
+  networkService.setSimulatedOnline(false);
+
+  const srvId = 'srv-exp-200';
+
+  // 1. Update amount
+  await outboxService.enqueue('update_personal_expense', {
+    expenseId: srvId,
+    payload: { amount: 100 },
+  });
+
+  // 2. Update note
+  await outboxService.enqueue('update_personal_expense', {
+    expenseId: srvId,
+    payload: { note: 'Groceries' },
+  });
+
+  // 3. Update category & amount again
+  await outboxService.enqueue('update_personal_expense', {
+    expenseId: srvId,
+    payload: { category: 'groceries', amount: 125 },
+  });
+
+  const queue = outboxService.getQueue();
+  // 3 updates should be consolidated into 1 single update
+  assert.equal(queue.length, 1);
+  assert.equal(queue[0].type, 'update_personal_expense');
+  assert.equal(queue[0].payload.expenseId, srvId);
+  assert.deepEqual(queue[0].payload.payload, {
+    amount: 125,
+    note: 'Groceries',
+    category: 'groceries',
+  });
+});
+
+test('deduplicateQueue Rule 4: temporary create followed by update merges update into create', async () => {
+  networkService.setSimulatedOnline(false);
+
+  const tempId = 'temp-exp-merge-1';
+
+  // 1. Create personal expense offline
+  await outboxService.enqueue('create_personal_expense', {
+    id: tempId,
+    amount: 200,
+    category: 'food',
+    note: 'Lunch',
+    expense_date: '2026-10-15',
+  }, tempId);
+
+  // 2. User modifies the expense offline before syncing
+  await outboxService.enqueue('update_personal_expense', {
+    expenseId: tempId,
+    payload: { amount: 260, note: 'Lunch with team' },
+  });
+
+  const queue = outboxService.getQueue();
+  // Should have only 1 create action with merged values
+  assert.equal(queue.length, 1);
+  assert.equal(queue[0].type, 'create_personal_expense');
+  assert.equal(queue[0].tempId, tempId);
+  assert.equal(queue[0].payload.amount, 260);
+  assert.equal(queue[0].payload.note, 'Lunch with team');
+  assert.equal(queue[0].payload.category, 'food');
+  assert.equal(queue[0].payload.expense_date, '2026-10-15');
+});
+
+test('deduplicateQueue: multi-entity complex queue compaction preserves relative ordering', async () => {
+  networkService.setSimulatedOnline(false);
+
+  const tempA = 'temp-exp-A';
+  const srvB = 'srv-exp-B';
+  const tempC = 'temp-exp-C';
+  const srvD = 'srv-exp-D';
+
+  await outboxService.enqueue('create_personal_expense', { id: tempA, amount: 50 }, tempA);
+  await outboxService.enqueue('update_personal_expense', { expenseId: srvB, payload: { amount: 100 } });
+  await outboxService.enqueue('create_personal_expense', { id: tempC, amount: 200, note: 'Initial' }, tempC);
+  await outboxService.enqueue('update_personal_expense', { expenseId: srvD, payload: { note: 'Will be deleted' } });
+  await outboxService.enqueue('update_personal_expense', { expenseId: srvB, payload: { note: 'Dinner' } });
+  await outboxService.enqueue('update_personal_expense', { expenseId: tempC, payload: { note: 'Updated note' } });
+  await outboxService.enqueue('delete_personal_expense', { expenseId: tempA });
+  await outboxService.enqueue('delete_personal_expense', { expenseId: srvD });
+
+  const queue = outboxService.getQueue();
+
+  // Exactly 3 actions should remain:
+  // 1. srvB: Consolidated update (amount: 100, note: 'Dinner')
+  // 2. tempC: Merged create (amount: 200, note: 'Updated note')
+  // 3. srvD: Delete
+  assert.equal(queue.length, 3);
+
+  // First action: srvB update
+  assert.equal(queue[0].type, 'update_personal_expense');
+  assert.equal(queue[0].payload.expenseId, srvB);
+  assert.deepEqual(queue[0].payload.payload, { amount: 100, note: 'Dinner' });
+
+  // Second action: tempC create with merged note
+  assert.equal(queue[1].type, 'create_personal_expense');
+  assert.equal(queue[1].tempId, tempC);
+  assert.equal(queue[1].payload.amount, 200);
+  assert.equal(queue[1].payload.note, 'Updated note');
+
+  // Third action: srvD delete
+  assert.equal(queue[2].type, 'delete_personal_expense');
+  assert.equal(queue[2].payload.expenseId, srvD);
+});
+
 
 
 

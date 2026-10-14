@@ -12,6 +12,7 @@ import {
   MoreHorizontal,
   CheckCircle2,
   Trash2,
+  Clock,
 } from 'lucide-react-native';
 
 interface FriendExpenseRowProps {
@@ -87,18 +88,29 @@ export const FriendExpenseRow: React.FC<FriendExpenseRowProps> = ({
       </View>
 
       <View style={styles.rightCol}>
-        <SproutText
-          variant="body"
-          color={isPayment ? colors.text : netEffect >= 0 ? colors.accent : colors.negative}
-          weight="700"
-          style={styles.amountText}
-        >
-          {isPayment
-            ? formatCurrencyExact(expense.amount)
-            : netEffect >= 0
-            ? `+${formatCurrencyExact(netEffect)}`
-            : `-${formatCurrencyExact(Math.abs(netEffect))}`}
-        </SproutText>
+        <View style={styles.amountCol}>
+          <SproutText
+            variant="body"
+            color={isPayment ? colors.text : netEffect >= 0 ? colors.accent : colors.negative}
+            weight="700"
+            style={styles.amountText}
+          >
+            {isPayment
+              ? formatCurrencyExact(expense.amount)
+              : netEffect >= 0
+              ? `+${formatCurrencyExact(netEffect)}`
+              : `-${formatCurrencyExact(Math.abs(netEffect))}`}
+          </SproutText>
+
+          {expense.is_pending_sync && (
+            <View style={styles.pendingBadge}>
+              <Clock size={8.5} color="#7A3E2D" strokeWidth={2.4} style={{ marginRight: 2 }} />
+              <SproutText style={styles.pendingText} weight="700">
+                Pending
+              </SproutText>
+            </View>
+          )}
+        </View>
 
         {onDelete && (
           <TouchableOpacity
@@ -147,9 +159,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
+  amountCol: {
+    alignItems: 'flex-end',
+  },
   amountText: {
     fontFamily: fontFamilies.medium,
     fontSize: 13,
+  },
+  pendingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.clay,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 4,
+    marginTop: 2,
+  },
+  pendingText: {
+    fontSize: 8.5,
+    color: '#7A3E2D',
   },
   deleteBtn: {
     padding: 4,
