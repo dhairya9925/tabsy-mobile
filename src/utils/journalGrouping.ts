@@ -177,3 +177,75 @@ export function groupExpensesByMonth(
 
   return Array.from(sectionsMap.values());
 }
+
+export interface ExpenseFilterParams {
+  category?: string;
+  search?: string;
+  start_date?: string;
+  end_date?: string;
+}
+
+/**
+ * Filters a local array of personal expenses based on category, search text, and date ranges.
+ * Used for offline search and filtering when network is unreachable.
+ */
+export function filterExpensesLocally(
+  expenses: PersonalExpense[],
+  params?: ExpenseFilterParams
+): PersonalExpense[] {
+  if (!params || Object.keys(params).length === 0) {
+    return expenses;
+  }
+
+  const normalizedCategory = params.category?.trim().toLowerCase();
+  const normalizedSearch = params.search?.trim().toLowerCase();
+  const startDate = params.start_date?.trim();
+  const endDate = params.end_date?.trim();
+
+  return expenses.filter((e) => {
+    // 1. Category filter
+    if (normalizedCategory && normalizedCategory !== 'all') {
+      const expCat = (
+        typeof e.category === 'string'
+          ? e.category
+          : (e.category as any)?.name || ''
+      )
+        .trim()
+        .toLowerCase();
+      if (expCat !== normalizedCategory) {
+        return false;
+      }
+    }
+
+    // 2. Search query filter (matches note/description, category, or numeric amount)
+    if (normalizedSearch) {
+      const note = (e.note || e.description || '').toLowerCase();
+      const cat = (
+        typeof e.category === 'string'
+          ? e.category
+          : (e.category as any)?.name || ''
+      ).toLowerCase();
+      const amountStr = String(e.amount || '');
+      const matchesSearch =
+        note.includes(normalizedSearch) ||
+        cat.includes(normalizedSearch) ||
+        amountStr.includes(normalizedSearch);
+
+      if (!matchesSearch) {
+        return false;
+      }
+    }
+
+    // 3. Date range filters (YYYY-MM-DD)
+    const expDate = (e.expense_date || e.date || '').split('T')[0];
+    if (startDate && expDate && expDate < startDate) {
+      return false;
+    }
+    if (endDate && expDate && expDate > endDate) {
+      return false;
+    }
+
+    return true;
+  });
+}
+

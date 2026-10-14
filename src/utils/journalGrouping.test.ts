@@ -6,6 +6,7 @@ import {
   formatMonthChipLabel,
   extractAvailableMonths,
   groupExpensesByMonth,
+  filterExpensesLocally,
 } from './journalGrouping';
 import { PersonalExpense } from '../types';
 
@@ -134,4 +135,44 @@ test('month navigation stepping finds chronological prev and next correctly', ()
   // August has no prev (earliest month)
   assert.strictEqual(idxAug < months.length - 1, false);
 });
+
+test('filterExpensesLocally filters by category, search text, and date range', () => {
+  // 1. Unfiltered
+  assert.strictEqual(filterExpensesLocally(mockExpenses).length, 4);
+  assert.strictEqual(filterExpensesLocally(mockExpenses, {}).length, 4);
+
+  // 2. Category filter
+  const foodOnly = filterExpensesLocally(mockExpenses, { category: 'Food' });
+  assert.strictEqual(foodOnly.length, 2);
+  assert.strictEqual(foodOnly[0].category, 'food');
+  assert.strictEqual(foodOnly[1].category, 'food');
+
+  // Category 'all' should return everything
+  assert.strictEqual(filterExpensesLocally(mockExpenses, { category: 'all' }).length, 4);
+
+  // 3. Search query filter
+  const searchShopping = filterExpensesLocally(mockExpenses, { search: 'shop' });
+  assert.strictEqual(searchShopping.length, 1);
+  assert.strictEqual(searchShopping[0].id, 'exp-2');
+
+  const searchAmount = filterExpensesLocally(mockExpenses, { search: '2000' });
+  assert.strictEqual(searchAmount.length, 1);
+  assert.strictEqual(searchAmount[0].id, 'exp-3');
+
+  // 4. Date range filter
+  const augustOnly = filterExpensesLocally(mockExpenses, {
+    start_date: '2026-08-01',
+    end_date: '2026-08-31',
+  });
+  assert.strictEqual(augustOnly.length, 2);
+
+  // 5. Combined filters
+  const combined = filterExpensesLocally(mockExpenses, {
+    category: 'food',
+    start_date: '2026-09-01',
+  });
+  assert.strictEqual(combined.length, 1);
+  assert.strictEqual(combined[0].id, 'exp-1');
+});
+
 

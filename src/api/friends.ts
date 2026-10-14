@@ -17,52 +17,74 @@ import { networkService } from '../services/offline/networkService';
 
 export const friendsApi = {
   getFriends: async (): Promise<FriendRecord[]> => {
+    const cached = await cacheService.get<FriendRecord[]>(CACHE_KEYS.FRIENDS_LIST);
+    const hasCached = Array.isArray(cached);
+
     if (!networkService.isOnline()) {
-      const cached = await cacheService.get<FriendRecord[]>(CACHE_KEYS.FRIENDS_LIST);
-      if (Array.isArray(cached) && cached.length > 0) return cached;
+      return hasCached ? cached! : [];
     }
 
     try {
       const res: any = await apiClient.get('/api/v1/friends/?status=accepted');
       const friends = Array.isArray(res) ? res : [];
-      if (friends.length > 0) {
-        await cacheService.set(CACHE_KEYS.FRIENDS_LIST, friends);
-      }
+      await cacheService.set(CACHE_KEYS.FRIENDS_LIST, friends);
       return friends;
     } catch (err) {
-      const cached = await cacheService.get<FriendRecord[]>(CACHE_KEYS.FRIENDS_LIST);
-      if (Array.isArray(cached) && cached.length > 0) return cached;
-      return [];
+      return hasCached ? cached! : [];
     }
   },
 
   getPendingRequests: async (): Promise<FriendRecord[]> => {
-    const res: any = await apiClient.get('/api/v1/friends/?status=pending');
-    return Array.isArray(res) ? res : [];
+    const cached = await cacheService.get<FriendRecord[]>(CACHE_KEYS.PENDING_FRIEND_REQUESTS);
+    const hasCached = Array.isArray(cached);
+
+    if (!networkService.isOnline()) {
+      return hasCached ? cached! : [];
+    }
+
+    try {
+      const res: any = await apiClient.get('/api/v1/friends/?status=pending');
+      const requests = Array.isArray(res) ? res : [];
+      await cacheService.set(CACHE_KEYS.PENDING_FRIEND_REQUESTS, requests, 5 * 60 * 1000);
+      return requests;
+    } catch (err) {
+      return hasCached ? cached! : [];
+    }
   },
 
   getSentRequests: async (): Promise<FriendRecord[]> => {
-    const res: any = await apiClient.get('/api/v1/friends/?status=sent');
-    return Array.isArray(res) ? res : [];
+    const cached = await cacheService.get<FriendRecord[]>(CACHE_KEYS.SENT_FRIEND_REQUESTS);
+    const hasCached = Array.isArray(cached);
+
+    if (!networkService.isOnline()) {
+      return hasCached ? cached! : [];
+    }
+
+    try {
+      const res: any = await apiClient.get('/api/v1/friends/?status=sent');
+      const requests = Array.isArray(res) ? res : [];
+      await cacheService.set(CACHE_KEYS.SENT_FRIEND_REQUESTS, requests, 5 * 60 * 1000);
+      return requests;
+    } catch (err) {
+      return hasCached ? cached! : [];
+    }
   },
 
   getFriendBalances: async (): Promise<FriendBalance[]> => {
+    const cached = await cacheService.get<FriendBalance[]>(CACHE_KEYS.FRIEND_BALANCES);
+    const hasCached = Array.isArray(cached);
+
     if (!networkService.isOnline()) {
-      const cached = await cacheService.get<FriendBalance[]>(CACHE_KEYS.FRIEND_BALANCES);
-      if (Array.isArray(cached) && cached.length > 0) return cached;
+      return hasCached ? cached! : [];
     }
 
     try {
       const res: any = await apiClient.get('/api/v1/friends/balances');
       const balances = Array.isArray(res) ? res : [];
-      if (balances.length > 0) {
-        await cacheService.set(CACHE_KEYS.FRIEND_BALANCES, balances);
-      }
+      await cacheService.set(CACHE_KEYS.FRIEND_BALANCES, balances);
       return balances;
     } catch (err) {
-      const cached = await cacheService.get<FriendBalance[]>(CACHE_KEYS.FRIEND_BALANCES);
-      if (Array.isArray(cached) && cached.length > 0) return cached;
-      return [];
+      return hasCached ? cached! : [];
     }
   },
 
@@ -105,13 +127,43 @@ export const friendsApi = {
   },
 
   getFriendProfile: async (friendId: string): Promise<FriendProfile> => {
-    const res: any = await apiClient.get(`/api/v1/friends/${friendId}/profile`);
-    return res;
+    const cacheKey = CACHE_KEYS.FRIEND_PROFILE(friendId);
+    const cached = await cacheService.get<FriendProfile>(cacheKey);
+
+    if (!networkService.isOnline()) {
+      if (cached) return cached;
+      throw new Error('Offline — no cached friend profile');
+    }
+
+    try {
+      const res: any = await apiClient.get(`/api/v1/friends/${friendId}/profile`);
+      if (res) {
+        await cacheService.set(cacheKey, res);
+      }
+      return res;
+    } catch (err) {
+      if (cached) return cached;
+      throw err;
+    }
   },
 
   getFriendExpenses: async (friendId: string): Promise<FriendExpenseFeedItem[]> => {
-    const res: any = await apiClient.get(`/api/v1/friends/${friendId}/expenses`);
-    return Array.isArray(res) ? res : [];
+    const cacheKey = CACHE_KEYS.FRIEND_EXPENSES(friendId);
+    const cached = await cacheService.get<FriendExpenseFeedItem[]>(cacheKey);
+    const hasCached = Array.isArray(cached);
+
+    if (!networkService.isOnline()) {
+      return hasCached ? cached! : [];
+    }
+
+    try {
+      const res: any = await apiClient.get(`/api/v1/friends/${friendId}/expenses`);
+      const expenses = Array.isArray(res) ? res : [];
+      await cacheService.set(cacheKey, expenses);
+      return expenses;
+    } catch (err) {
+      return hasCached ? cached! : [];
+    }
   },
 
   createFriendExpense: async (
@@ -123,6 +175,7 @@ export const friendsApi = {
       await outboxService.enqueue('create_friend_expense', { friendId, payload: data }, tempId);
       await cacheService.invalidate(CACHE_KEYS.FRIENDS_LIST);
       await cacheService.invalidate(CACHE_KEYS.FRIEND_BALANCES);
+      await cacheService.invalidate(CACHE_KEYS.FRIEND_EXPENSES(friendId));
       return {
         id: tempId,
         friend_id: friendId,
@@ -140,6 +193,7 @@ export const friendsApi = {
       const res: any = await apiClient.post(`/api/v1/friends/${friendId}/expenses`, data);
       await cacheService.invalidate(CACHE_KEYS.FRIENDS_LIST);
       await cacheService.invalidate(CACHE_KEYS.FRIEND_BALANCES);
+      await cacheService.invalidate(CACHE_KEYS.FRIEND_EXPENSES(friendId));
       return res;
     } catch (err: any) {
       if (err.message === 'Network Error' || !err.response) {

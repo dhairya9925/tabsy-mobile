@@ -26,6 +26,7 @@ import { friendsApi } from '../../api/friends';
 import { useAuthStore } from '../../store/useAuthStore';
 import { Group, FriendRecord, FriendBalance } from '../../types';
 import { formatCurrency } from '../../utils/formatters';
+import { cacheService, CACHE_KEYS } from '../../services/offline/cacheService';
 import { Users, UserPlus, KeyRound, UserCheck, Settings, Plus } from 'lucide-react-native';
 
 export const GroupsListScreen: React.FC = () => {
@@ -66,6 +67,14 @@ export const GroupsListScreen: React.FC = () => {
         const balancesMap: Record<string, number> = {};
         const countsMap: Record<string, number> = {};
 
+        // Optimistically prefill from cached maps if available
+        const [cachedBalances, cachedCounts] = await Promise.all([
+          cacheService.get<Record<string, number>>(CACHE_KEYS.GROUP_BALANCES),
+          cacheService.get<Record<string, number>>(CACHE_KEYS.GROUP_MEMBER_COUNTS),
+        ]);
+        if (cachedBalances) setGroupBalances(cachedBalances);
+        if (cachedCounts) setMemberCounts(cachedCounts);
+
         await Promise.all(
           gList.map(async (g) => {
             try {
@@ -90,6 +99,8 @@ export const GroupsListScreen: React.FC = () => {
 
         setGroupBalances(balancesMap);
         setMemberCounts(countsMap);
+        cacheService.set(CACHE_KEYS.GROUP_BALANCES, balancesMap).catch(() => {});
+        cacheService.set(CACHE_KEYS.GROUP_MEMBER_COUNTS, countsMap).catch(() => {});
       } else {
         const [friendsData, pendingData, sentData, balancesData] = await Promise.all([
           friendsApi.getFriends().catch(() => []),

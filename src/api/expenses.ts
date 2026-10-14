@@ -10,6 +10,7 @@ import { cacheService, CACHE_KEYS } from '../services/offline/cacheService';
 import { outboxService } from '../services/offline/outboxService';
 import { networkService } from '../services/offline/networkService';
 import { QuickAddModule } from '../native/QuickAddModule';
+import { filterExpensesLocally } from '../utils/journalGrouping';
 
 export const expensesApi = {
   async getPersonalExpenses(params?: {
@@ -20,10 +21,13 @@ export const expensesApi = {
   }): Promise<PersonalExpense[]> {
     const isUnfiltered = !params || Object.keys(params).length === 0;
 
-    // Fast-path: If offline and unfiltered, immediately return cached expenses
-    if (isUnfiltered && !networkService.isOnline()) {
+    // Fast-path: If offline, immediately return cached expenses (filtered if params specified)
+    if (!networkService.isOnline()) {
       const cached = await cacheService.get<PersonalExpense[]>(CACHE_KEYS.PERSONAL_EXPENSES);
-      if (Array.isArray(cached)) return cached;
+      if (Array.isArray(cached)) {
+        return isUnfiltered ? cached : filterExpensesLocally(cached, params);
+      }
+      return [];
     }
 
     try {
@@ -65,12 +69,10 @@ export const expensesApi = {
 
       return freshExpenses;
     } catch (err) {
-      // If network failed, fall back to local cache
-      if (isUnfiltered) {
-        const cached = await cacheService.get<PersonalExpense[]>(CACHE_KEYS.PERSONAL_EXPENSES);
-        if (Array.isArray(cached) && cached.length > 0) {
-          return cached;
-        }
+      // If network failed, fall back to local cache (filtered or unfiltered)
+      const cached = await cacheService.get<PersonalExpense[]>(CACHE_KEYS.PERSONAL_EXPENSES);
+      if (Array.isArray(cached) && cached.length > 0) {
+        return isUnfiltered ? cached : filterExpensesLocally(cached, params);
       }
       throw err;
     }
@@ -185,27 +187,27 @@ export const expensesApi = {
   },
 
   async getCategories(): Promise<Category[]> {
+    const cached = await cacheService.get<Category[]>(CACHE_KEYS.CATEGORIES);
+    const hasCached = Array.isArray(cached);
+
     if (!networkService.isOnline()) {
-      const cached = await cacheService.get<Category[]>(CACHE_KEYS.CATEGORIES);
-      if (Array.isArray(cached) && cached.length > 0) {
+      if (hasCached) {
         QuickAddModule.syncCategories(cached.map((c) => ({ name: c.name }))).catch(() => {});
         return cached;
       }
+      return [];
     }
 
     try {
       const res: any = await apiClient.get('/api/v1/categories/');
       const categories = Array.isArray(res) ? res : [];
-      if (categories.length > 0) {
-        await cacheService.set(CACHE_KEYS.CATEGORIES, categories);
-        QuickAddModule.syncCategories(categories.map((c) => ({ name: c.name }))).catch(() => {});
-      }
+      await cacheService.set(CACHE_KEYS.CATEGORIES, categories);
+      QuickAddModule.syncCategories(categories.map((c) => ({ name: c.name }))).catch(() => {});
       return categories;
     } catch (err) {
-      const cached = await cacheService.get<Category[]>(CACHE_KEYS.CATEGORIES);
-      if (Array.isArray(cached) && cached.length > 0) {
-        QuickAddModule.syncCategories(cached.map((c) => ({ name: c.name }))).catch(() => {});
-        return cached;
+      if (hasCached) {
+        QuickAddModule.syncCategories(cached!.map((c) => ({ name: c.name }))).catch(() => {});
+        return cached!;
       }
       return [];
     }
@@ -241,9 +243,16 @@ export const expensesApi = {
    * Fetches logged activity dates to compute user streaks across personal, friend, and group expenses.
    */
   async getStreakActivityDates(): Promise<string[]> {
+    const cached = await cacheService.get<string[]>(CACHE_KEYS.STREAK_DATES);
+    const hasCached = Array.isArray(cached);
+
+    if (!networkService.isOnline()) {
+      if (hasCached) return cached;
+    }
+
     try {
       const dates = new Set<string>();
-      
+
       // 1. Personal expenses
       const personalExpenses = await this.getPersonalExpenses();
       if (Array.isArray(personalExpenses)) {
@@ -266,9 +275,11 @@ export const expensesApi = {
         }
       }
 
-      return Array.from(dates);
+      const dateList = Array.from(dates);
+      await cacheService.set(CACHE_KEYS.STREAK_DATES, dateList);
+      return dateList;
     } catch {
-      return [];
+      return hasCached ? cached! : [];
     }
   },
 };

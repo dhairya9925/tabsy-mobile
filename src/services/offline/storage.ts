@@ -8,15 +8,15 @@ const isWeb =
   typeof window !== 'undefined' &&
   typeof (window as any).document !== 'undefined';
 
-const isReactNative =
-  !isWeb &&
-  typeof navigator !== 'undefined' &&
-  (navigator as any)?.product === 'ReactNative';
+const isNode =
+  typeof process !== 'undefined' &&
+  Boolean(process.versions?.node);
 
 let AsyncStorageModule: any = null;
-if (isReactNative) {
+if (!isWeb && !isNode) {
   try {
-    AsyncStorageModule = require('@react-native-async-storage/async-storage').default;
+    const mod = require('@react-native-async-storage/async-storage');
+    AsyncStorageModule = mod?.default ?? mod;
   } catch {
     AsyncStorageModule = null;
   }

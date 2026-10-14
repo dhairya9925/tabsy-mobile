@@ -13,8 +13,20 @@ export const CACHE_KEYS = {
   FRIEND_BALANCES: 'cache:friend_balances',
   CATEGORIES: 'cache:categories',
   DASHBOARD_SUMMARY: 'cache:dashboard_summary',
+  INSIGHT_DASHBOARD_DATA: 'cache:insight_dashboard_data',
+  PENDING_FRIEND_REQUESTS: 'cache:pending_friend_requests',
+  SENT_FRIEND_REQUESTS: 'cache:sent_friend_requests',
+  FRIEND_PROFILE: (friendId: string) => `cache:friend_profile:${friendId}`,
+  FRIEND_EXPENSES: (friendId: string) => `cache:friend_expenses:${friendId}`,
+  GROUP_DETAIL: (groupId: string) => `cache:group_detail:${groupId}`,
+  GROUP_MEMBERS: (groupId: string) => `cache:group_members:${groupId}`,
+  GROUP_EXPENSES: (groupId: string) => `cache:group_expenses:${groupId}`,
+  GROUP_SETTLEMENT: (groupId: string, month: number, year: number) =>
+    `cache:group_settlement:${groupId}:${year}-${String(month).padStart(2, '0')}`,
   MONTHLY_LEDGER: (groupId: string, year: number, month: number) =>
     `cache:monthly_ledger:${groupId}:${year}-${String(month).padStart(2, '0')}`,
+  STREAK_DATES: 'cache:streak_dates',
+  USER_PROFILE: 'cache:user_profile',
 };
 
 export const cacheService = {

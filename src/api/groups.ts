@@ -26,68 +26,110 @@ import { networkService } from '../services/offline/networkService';
 export const groupsApi = {
   /** List all groups the authenticated user belongs to */
   async getGroups(): Promise<Group[]> {
+    const cached = await cacheService.get<Group[]>(CACHE_KEYS.GROUPS_LIST);
+    const hasCached = Array.isArray(cached);
+
     if (!networkService.isOnline()) {
-      const cached = await cacheService.get<Group[]>(CACHE_KEYS.GROUPS_LIST);
-      if (Array.isArray(cached) && cached.length > 0) return cached;
+      return hasCached ? cached! : [];
     }
 
     try {
       const res: any = await apiClient.get('/api/v1/groups/');
       const groups = Array.isArray(res) ? res : [];
-      if (groups.length > 0) {
-        await cacheService.set(CACHE_KEYS.GROUPS_LIST, groups);
-      }
+      await cacheService.set(CACHE_KEYS.GROUPS_LIST, groups);
       return groups;
     } catch (err) {
-      const cached = await cacheService.get<Group[]>(CACHE_KEYS.GROUPS_LIST);
-      if (Array.isArray(cached) && cached.length > 0) return cached;
-      return [];
+      return hasCached ? cached! : [];
     }
   },
 
   /** Get single group details */
   async getGroup(id: string): Promise<Group> {
-    const res: any = await apiClient.get(`/api/v1/groups/${id}`);
-    return res;
+    const cacheKey = CACHE_KEYS.GROUP_DETAIL(id);
+    const cached = await cacheService.get<Group>(cacheKey);
+
+    if (!networkService.isOnline()) {
+      if (cached) return cached;
+      const groups = await cacheService.get<Group[]>(CACHE_KEYS.GROUPS_LIST);
+      const found = groups?.find((g) => g.id === id);
+      if (found) return found;
+      throw new Error('Offline — group not found');
+    }
+
+    try {
+      const res: any = await apiClient.get(`/api/v1/groups/${id}`);
+      if (res) {
+        await cacheService.set(cacheKey, res);
+      }
+      return res;
+    } catch (err) {
+      if (cached) return cached;
+      const groups = await cacheService.get<Group[]>(CACHE_KEYS.GROUPS_LIST);
+      const found = groups?.find((g) => g.id === id);
+      if (found) return found;
+      throw err;
+    }
   },
 
   /** Create a new group */
   async createGroup(payload: GroupCreate): Promise<Group> {
     const res: any = await apiClient.post('/api/v1/groups/', payload);
+    await cacheService.invalidate(CACHE_KEYS.GROUPS_LIST);
     return res;
   },
 
   /** Update group name, description, type */
   async updateGroup(id: string, payload: GroupUpdate): Promise<Group> {
     const res: any = await apiClient.patch(`/api/v1/groups/${id}`, payload);
+    await cacheService.invalidate(CACHE_KEYS.GROUPS_LIST);
+    await cacheService.invalidate(CACHE_KEYS.GROUP_DETAIL(id));
     return res;
   },
 
   /** Delete a group */
   async deleteGroup(id: string): Promise<void> {
     await apiClient.delete(`/api/v1/groups/${id}`);
+    await cacheService.invalidate(CACHE_KEYS.GROUPS_LIST);
+    await cacheService.invalidate(CACHE_KEYS.GROUP_DETAIL(id));
   },
 
   /** List members of a group with joined profile details */
   async getGroupMembers(id: string): Promise<GroupMember[]> {
-    const res: any = await apiClient.get(`/api/v1/groups/${id}/members`);
-    return Array.isArray(res) ? res : [];
+    const cacheKey = CACHE_KEYS.GROUP_MEMBERS(id);
+    const cached = await cacheService.get<GroupMember[]>(cacheKey);
+    const hasCached = Array.isArray(cached);
+
+    if (!networkService.isOnline()) {
+      return hasCached ? cached! : [];
+    }
+
+    try {
+      const res: any = await apiClient.get(`/api/v1/groups/${id}/members`);
+      const members = Array.isArray(res) ? res : [];
+      await cacheService.set(cacheKey, members);
+      return members;
+    } catch (err) {
+      return hasCached ? cached! : [];
+    }
   },
 
   /** Add a member to a group by email or user ID */
   async addGroupMember(id: string, payload: GroupMemberAdd): Promise<GroupMember> {
     const res: any = await apiClient.post(`/api/v1/groups/${id}/members`, payload);
+    await cacheService.invalidate(CACHE_KEYS.GROUP_MEMBERS(id));
     return res;
   },
 
   /** Remove a member from a group */
   async removeGroupMember(id: string, userId: string): Promise<void> {
     await apiClient.delete(`/api/v1/groups/${id}/members/${userId}`);
+    await cacheService.invalidate(CACHE_KEYS.GROUP_MEMBERS(id));
   },
 
   /** Update member role (admin / member) */
   async updateMemberRole(id: string, userId: string, role: string): Promise<GroupMember> {
     const res: any = await apiClient.patch(`/api/v1/groups/${id}/members/${userId}`, { role });
+    await cacheService.invalidate(CACHE_KEYS.GROUP_MEMBERS(id));
     return res;
   },
 
@@ -95,13 +137,28 @@ export const groupsApi = {
   async joinGroup(idOrCode: string): Promise<GroupMember> {
     const trimmed = idOrCode.trim();
     const res: any = await apiClient.post('/api/v1/groups/join', { code: trimmed });
+    await cacheService.invalidate(CACHE_KEYS.GROUPS_LIST);
     return res;
   },
 
   /** Get group expenses with splits and payer profiles */
   async getGroupExpenses(id: string): Promise<GroupExpense[]> {
-    const res: any = await apiClient.get(`/api/v1/groups/${id}/expenses`);
-    return Array.isArray(res) ? res : [];
+    const cacheKey = CACHE_KEYS.GROUP_EXPENSES(id);
+    const cached = await cacheService.get<GroupExpense[]>(cacheKey);
+    const hasCached = Array.isArray(cached);
+
+    if (!networkService.isOnline()) {
+      return hasCached ? cached! : [];
+    }
+
+    try {
+      const res: any = await apiClient.get(`/api/v1/groups/${id}/expenses`);
+      const expenses = Array.isArray(res) ? res : [];
+      await cacheService.set(cacheKey, expenses);
+      return expenses;
+    } catch (err) {
+      return hasCached ? cached! : [];
+    }
   },
 
   /** Create a group expense with splits */
@@ -110,6 +167,7 @@ export const groupsApi = {
       const tempId = outboxService.generateTempId('temp-grp-exp');
       await outboxService.enqueue('create_group_expense', { groupId: id, payload }, tempId);
       await cacheService.invalidate(CACHE_KEYS.GROUPS_LIST);
+      await cacheService.invalidate(CACHE_KEYS.GROUP_EXPENSES(id));
       await cacheService.invalidatePattern(`cache:monthly_ledger:${id}`);
       return {
         id: tempId,
@@ -128,6 +186,7 @@ export const groupsApi = {
     try {
       const res: any = await apiClient.post(`/api/v1/groups/${id}/expenses`, payload);
       await cacheService.invalidate(CACHE_KEYS.GROUPS_LIST);
+      await cacheService.invalidate(CACHE_KEYS.GROUP_EXPENSES(id));
       await cacheService.invalidatePattern(`cache:monthly_ledger:${id}`);
       return res;
     } catch (err: any) {
@@ -169,22 +228,20 @@ export const groupsApi = {
   /** Get simplified peer-to-peer group balances */
   async getGroupBalances(id: string): Promise<GroupBalance[]> {
     const cacheKey = `cache:group_balances:${id}`;
+    const cached = await cacheService.get<GroupBalance[]>(cacheKey);
+    const hasCached = Array.isArray(cached);
+
     if (!networkService.isOnline()) {
-      const cached = await cacheService.get<GroupBalance[]>(cacheKey);
-      if (Array.isArray(cached) && cached.length > 0) return cached;
+      return hasCached ? cached! : [];
     }
 
     try {
       const res: any = await apiClient.get(`/api/v1/groups/${id}/balances`);
       const balances = Array.isArray(res) ? res : [];
-      if (balances.length > 0) {
-        await cacheService.set(cacheKey, balances);
-      }
+      await cacheService.set(cacheKey, balances);
       return balances;
     } catch (err) {
-      const cached = await cacheService.get<GroupBalance[]>(cacheKey);
-      if (Array.isArray(cached) && cached.length > 0) return cached;
-      return [];
+      return hasCached ? cached! : [];
     }
   },
 
@@ -196,24 +253,62 @@ export const groupsApi = {
 
   /** Get monthly settlement status for a specific month and year */
   async getMonthlySettlement(groupId: string, month: number, year: number): Promise<MonthlySettlement | null> {
+    const cacheKey = CACHE_KEYS.GROUP_SETTLEMENT(groupId, month, year);
+    const cached = await cacheService.get<MonthlySettlement>(cacheKey);
+
+    if (!networkService.isOnline()) {
+      return cached || null;
+    }
+
     try {
       const res: any = await apiClient.get(`/api/v1/groups/${groupId}/settlements/${month}/${year}`);
+      if (res) {
+        await cacheService.set(cacheKey, res);
+      }
       return res || null;
     } catch {
-      return null;
+      return cached || null;
     }
   },
 
   /** Get expenses included in a specific monthly settlement */
   async getMonthlySettlementExpenses(groupId: string, month: number, year: number): Promise<SettlementExpense[]> {
-    const res: any = await apiClient.get(`/api/v1/groups/${groupId}/settlements/${month}/${year}/expenses`);
-    return Array.isArray(res) ? res : [];
+    const cacheKey = `${CACHE_KEYS.GROUP_SETTLEMENT(groupId, month, year)}:expenses`;
+    const cached = await cacheService.get<SettlementExpense[]>(cacheKey);
+    const hasCached = Array.isArray(cached);
+
+    if (!networkService.isOnline()) {
+      return hasCached ? cached! : [];
+    }
+
+    try {
+      const res: any = await apiClient.get(`/api/v1/groups/${groupId}/settlements/${month}/${year}/expenses`);
+      const expenses = Array.isArray(res) ? res : [];
+      await cacheService.set(cacheKey, expenses);
+      return expenses;
+    } catch {
+      return hasCached ? cached! : [];
+    }
   },
 
   /** Get member finalization statuses for a settlement */
   async getMemberMonthlyStatus(groupId: string, settlementId: string): Promise<MemberMonthlyStatus[]> {
-    const res: any = await apiClient.get(`/api/v1/groups/${groupId}/settlements/${settlementId}/member-status`);
-    return Array.isArray(res) ? res : [];
+    const cacheKey = `cache:group_settlement_status:${groupId}:${settlementId}`;
+    const cached = await cacheService.get<MemberMonthlyStatus[]>(cacheKey);
+    const hasCached = Array.isArray(cached);
+
+    if (!networkService.isOnline()) {
+      return hasCached ? cached! : [];
+    }
+
+    try {
+      const res: any = await apiClient.get(`/api/v1/groups/${groupId}/settlements/${settlementId}/member-status`);
+      const statuses = Array.isArray(res) ? res : [];
+      await cacheService.set(cacheKey, statuses);
+      return statuses;
+    } catch {
+      return hasCached ? cached! : [];
+    }
   },
 
   /** Create or initialize a monthly settlement */
