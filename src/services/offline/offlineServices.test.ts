@@ -640,6 +640,32 @@ test('deduplicateQueue: multi-entity complex queue compaction preserves relative
   assert.equal(queue[2].payload.expenseId, srvD);
 });
 
+test('networkService emits immediately and notifies subscribers upon status change', () => {
+  const transitions: boolean[] = [];
+  networkService.setSimulatedOnline(true);
+
+  const unsub = networkService.subscribe((online) => {
+    transitions.push(online);
+  });
+
+  // Immediately emits current state
+  assert.deepEqual(transitions, [true]);
+
+  networkService.setSimulatedOnline(false);
+  assert.deepEqual(transitions, [true, false]);
+
+  networkService.setSimulatedOnline(true);
+  assert.deepEqual(transitions, [true, false, true]);
+
+  unsub();
+  networkService.setSimulatedOnline(false);
+  // No new events after unsub
+  assert.deepEqual(transitions, [true, false, true]);
+
+  // Reset
+  networkService.setSimulatedOnline(true);
+});
+
 
 
 

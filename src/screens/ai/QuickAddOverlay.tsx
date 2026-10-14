@@ -34,7 +34,9 @@ import {
   AlertCircle,
   Square,
   PlusCircle,
+  WifiOff,
 } from 'lucide-react-native';
+import { networkService } from '../../services/offline/networkService';
 
 
 export const QuickAddOverlay: React.FC = () => {
@@ -51,6 +53,11 @@ export const QuickAddOverlay: React.FC = () => {
   const [inputText, setInputText] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isOnline, setIsOnline] = useState<boolean>(networkService.isOnline());
+
+  useEffect(() => {
+    return networkService.subscribe(setIsOnline);
+  }, []);
 
   // Store hooks
   const isLoading = useAIStore((s) => s.isLoading);
@@ -116,6 +123,12 @@ export const QuickAddOverlay: React.FC = () => {
   const handleVoiceToggle = useCallback(async () => {
     setSubmitError(null);
 
+    if (!isOnline) {
+      await haptics.error();
+      setSubmitError('AI features require an internet connection. Use manual entry.');
+      return;
+    }
+
     if (!isSupported) {
       await haptics.selection();
       setActiveTab('text');
@@ -141,7 +154,7 @@ export const QuickAddOverlay: React.FC = () => {
       analytics.track('ai_stt_started');
       await startListening();
     }
-  }, [isSupported, isListening, stopListening, durationSeconds, sendMessage, startListening]);
+  }, [isOnline, isSupported, isListening, stopListening, durationSeconds, sendMessage, startListening]);
 
   const autoStartVoiceTriggeredRef = useRef(false);
 
@@ -171,6 +184,12 @@ export const QuickAddOverlay: React.FC = () => {
   const handleSendText = async () => {
     const trimmed = inputText.trim();
     if (!trimmed || isLoading || isConfirming) return;
+
+    if (!isOnline) {
+      haptics.error();
+      setSubmitError('AI features require an internet connection. Use manual entry.');
+      return;
+    }
 
     setSubmitError(null);
     setInputText('');
@@ -249,6 +268,37 @@ export const QuickAddOverlay: React.FC = () => {
                 </TouchableOpacity>
               </View>
 
+              {/* Offline Warning Banner */}
+              {!isOnline && (
+                <View style={styles.offlineWarningBanner} accessible={true} accessibilityRole="alert">
+                  <WifiOff size={16} color={colors.negative} style={{ marginRight: 8 }} />
+                  <View style={{ flex: 1 }}>
+                    <SproutText variant="caption" weight="700" style={{ color: colors.negative }}>
+                      AI Features Offline
+                    </SproutText>
+                    <SproutText variant="caption" style={{ color: colors.muted, fontSize: 11 }}>
+                      Internet connection required for AI speech & text parsing.
+                    </SproutText>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.manualFallbackBtn}
+                    onPress={() => {
+                      analytics.track('ai_fallback_triggered', { source: 'quick_add_offline_banner' });
+                      handleClose();
+                      navigation.navigate('AddExpenseModal');
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Open manual expense form"
+                    activeOpacity={0.7}
+                  >
+                    <PlusCircle size={12} color={colors.accent} style={{ marginRight: 3 }} />
+                    <SproutText variant="caption" color={colors.accent} weight="700" style={{ fontSize: 11 }}>
+                      Manual Add
+                    </SproutText>
+                  </TouchableOpacity>
+                </View>
+              )}
+
               {/* Success Feedback View */}
               {isSuccess ? (
                 <View style={styles.successContainer}>
@@ -306,22 +356,22 @@ export const QuickAddOverlay: React.FC = () => {
                     <View style={styles.textInputRow}>
                       <TextInput
                         style={styles.textInput}
-                        placeholder="e.g. Spent 350 on groceries"
+                        placeholder={!isOnline ? "AI offline. Use Manual Add above" : "e.g. Spent 350 on groceries"}
                         placeholderTextColor={colors.muted}
                         value={inputText}
                         onChangeText={setInputText}
                         onSubmitEditing={handleSendText}
                         returnKeyType="send"
                         autoFocus={initialMode === 'text'}
-                        editable={!isLoading && !isConfirming}
+                        editable={!isLoading && !isConfirming && isOnline}
                       />
                       <TouchableOpacity
                         style={[
                           styles.sendBtn,
-                          (!inputText.trim() || isLoading) && styles.sendBtnDisabled,
+                          (!inputText.trim() || isLoading || !isOnline) && styles.sendBtnDisabled,
                         ]}
                         onPress={handleSendText}
-                        disabled={!inputText.trim() || isLoading}
+                        disabled={!inputText.trim() || isLoading || !isOnline}
                         activeOpacity={0.8}
                       >
                         <Send size={16} color={colors.surface} />
@@ -342,6 +392,7 @@ export const QuickAddOverlay: React.FC = () => {
                           style={[
                             styles.micButton,
                             isListening && styles.micButtonActive,
+                            !isOnline && styles.micButtonDisabled,
                           ]}
                           onPress={handleVoiceToggle}
                           activeOpacity={0.8}
@@ -659,6 +710,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: spacing.sm,
+  },
+  offlineWarningBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.clay,
+    borderRadius: radii.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs + 2,
+    marginBottom: spacing.sm,
+    borderWidth: 1,
+    borderColor: '#F0C4B4',
+  },
+  micButtonDisabled: {
+    backgroundColor: colors.muted,
+    opacity: 0.6,
   },
   errorBanner: {
     flexDirection: 'row',

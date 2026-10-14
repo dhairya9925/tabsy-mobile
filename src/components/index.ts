@@ -37,5 +37,6 @@ export * from './WhoOwesWhomSection';
 export * from './JoinGroupPopup';
 export * from './ShareGroupSheet';
 export * from './OfflineSyncBanner';
+export * from './OfflineBanner';
 export * from './TabsyLogo';
 export * from './CategoryPickerSheet';

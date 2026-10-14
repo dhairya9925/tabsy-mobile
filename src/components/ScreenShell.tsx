@@ -12,6 +12,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { StatusBar } from 'expo-status-bar';
 import { colors, spacing } from '../theme';
 import { useThemeStore } from '../store/useThemeStore';
+import { OfflineBanner } from './OfflineBanner';
 
 export interface ScreenShellProps {
   children: React.ReactNode;
@@ -20,6 +21,7 @@ export interface ScreenShellProps {
   isRefreshing?: boolean;
   style?: ViewStyle;
   contentContainerStyle?: ViewStyle;
+  showOfflineBanner?: boolean;
 }
 
 export const ScreenShell: React.FC<ScreenShellProps> = ({
@@ -29,6 +31,7 @@ export const ScreenShell: React.FC<ScreenShellProps> = ({
   isRefreshing = false,
   style,
   contentContainerStyle,
+  showOfflineBanner = false,
 }) => {
   const isDark = useThemeStore((s) => s.isDark);
   const insets = useSafeAreaInsets();
@@ -49,10 +52,14 @@ export const ScreenShell: React.FC<ScreenShellProps> = ({
         ) : undefined
       }
     >
+      {showOfflineBanner && <OfflineBanner compact />}
       {children}
     </ScrollView>
   ) : (
-    <View style={[styles.staticContent, { paddingBottom: Math.max(insets.bottom, spacing.md) }, contentContainerStyle]}>{children}</View>
+    <View style={[styles.staticContent, { paddingBottom: Math.max(insets.bottom, spacing.md) }, contentContainerStyle]}>
+      {showOfflineBanner && <OfflineBanner compact />}
+      {children}
+    </View>
   );
 
   return (

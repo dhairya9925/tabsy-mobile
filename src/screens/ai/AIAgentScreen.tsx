@@ -37,7 +37,9 @@ import {
   RotateCcw,
   AlertCircle,
   PlusCircle,
+  WifiOff,
 } from 'lucide-react-native';
+import { networkService } from '../../services/offline/networkService';
 
 
 export const AIAgentScreen: React.FC = () => {
@@ -46,8 +48,13 @@ export const AIAgentScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const [inputText, setInputText] = useState('');
   const [successToast, setSuccessToast] = useState<string | null>(null);
+  const [isOnline, setIsOnline] = useState<boolean>(networkService.isOnline());
   const flatListRef = useRef<FlatList<ChatMessage>>(null);
   const textInputRef = useRef<TextInput>(null);
+
+  useEffect(() => {
+    return networkService.subscribe(setIsOnline);
+  }, []);
 
   const {
     messages,
@@ -95,6 +102,11 @@ export const AIAgentScreen: React.FC = () => {
     const textToSend = inputText.trim();
     if (!textToSend || isLoading) return;
 
+    if (!isOnline) {
+      setError('AI assistant requires an active internet connection.');
+      return;
+    }
+
     setInputText('');
     await sendMessage({ text: textToSend });
   };
@@ -102,6 +114,11 @@ export const AIAgentScreen: React.FC = () => {
   const handleStartRecord = async () => {
     if (isLoading) return;
     setError(null);
+
+    if (!isOnline) {
+      setError('AI voice recording requires an active internet connection.');
+      return;
+    }
 
     if (!isSupported) {
       await haptics.selection();
@@ -273,6 +290,36 @@ export const AIAgentScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
 
+        {/* Offline Warning Banner */}
+        {!isOnline && (
+          <View style={styles.offlineWarningBanner} accessible={true} accessibilityRole="alert">
+            <WifiOff size={16} color={colors.negative} style={{ marginRight: 8 }} />
+            <View style={{ flex: 1 }}>
+              <SproutText variant="caption" weight="700" style={{ color: colors.negative }}>
+                AI Features Offline
+              </SproutText>
+              <SproutText variant="caption" style={{ color: colors.muted, fontSize: 11 }}>
+                Internet connection required for AI speech & text parsing.
+              </SproutText>
+            </View>
+            <TouchableOpacity
+              style={styles.manualFallbackBtn}
+              onPress={() => {
+                analytics.track('ai_fallback_triggered', { source: 'offline_banner' });
+                (navigation as any).navigate('AddExpenseModal');
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Open manual expense form"
+              activeOpacity={0.7}
+            >
+              <PlusCircle size={13} color={colors.accent} style={{ marginRight: 4 }} />
+              <SproutText variant="caption" color={colors.accent} weight="700">
+                Manual Add
+              </SproutText>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Error Alert Bar */}
         {displayError ? (
           <View style={styles.errorBanner} accessible={true} accessibilityRole="alert">
@@ -315,22 +362,28 @@ export const AIAgentScreen: React.FC = () => {
           <View style={styles.inputWrapper}>
             <TextInput
               ref={textInputRef}
-              style={styles.textInput}
-              placeholder={isListening ? 'Listening...' : 'Type expense (e.g. 250 lunch with Sam)...'}
+              style={[styles.textInput, !isOnline && styles.textInputDisabled]}
+              placeholder={
+                !isOnline
+                  ? 'AI disabled offline. Tap Manual Add above...'
+                  : isListening
+                  ? 'Listening...'
+                  : 'Type expense (e.g. 250 lunch with Sam)...'
+              }
               placeholderTextColor={colors.muted}
               value={isListening && interimTranscript ? interimTranscript : inputText}
               onChangeText={setInputText}
               onSubmitEditing={handleSendText}
               returnKeyType="send"
-              editable={!isLoading && !isListening}
+              editable={!isLoading && !isListening && isOnline}
               multiline={false}
             />
 
             {inputText.trim().length > 0 ? (
               <TouchableOpacity
-                style={styles.sendButton}
+                style={[styles.sendButton, !isOnline && styles.sendButtonDisabled]}
                 onPress={handleSendText}
-                disabled={isLoading}
+                disabled={isLoading || !isOnline}
                 activeOpacity={0.8}
               >
                 <Send size={18} color={colors.onAccent} strokeWidth={2.4} />
@@ -345,7 +398,7 @@ export const AIAgentScreen: React.FC = () => {
             onStartRecord={handleStartRecord}
             onStopRecord={handleStopRecord}
             onCancelRecord={cancelListening}
-            disabled={isLoading}
+            disabled={isLoading || !isOnline}
           />
         </View>
       </KeyboardAvoidingView>
@@ -520,5 +573,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 6,
+  },
+  offlineWarningBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.clay,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0C4B4',
+  },
+  textInputDisabled: {
+    opacity: 0.65,
+  },
+  sendButtonDisabled: {
+    opacity: 0.5,
   },
 });

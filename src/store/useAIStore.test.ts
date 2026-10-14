@@ -418,3 +418,26 @@ test('useAIStore confirmExpense queues to offlineQueue when network error occurs
   }
 });
 
+test('useAIStore sendMessage should reject gracefully when offline and prompt user to use manual entry', async () => {
+  const { networkService } = await import('../services/offline/networkService');
+  networkService.setSimulatedOnline(false);
+
+  try {
+    useAIStore.getState().clearChat();
+    await useAIStore.getState().sendMessage({ text: 'Spent 500 on groceries' });
+
+    const state = useAIStore.getState();
+    assert.strictEqual(state.isLoading, false);
+    assert.strictEqual(state.error, 'AI assistant requires an active internet connection.');
+    assert.strictEqual(state.pendingConfirmation, null);
+
+    // Messages should include initial greeting, user message, and offline assistant reply
+    assert.strictEqual(state.messages.length, 3);
+    const lastMsg = state.messages[state.messages.length - 1];
+    assert.strictEqual(lastMsg.role, 'assistant');
+    assert.match(lastMsg.content, /requires an active internet connection/i);
+  } finally {
+    networkService.setSimulatedOnline(true);
+  }
+});
+

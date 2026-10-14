@@ -8,6 +8,7 @@ import { useAuthStore } from './useAuthStore';
 import { haptics } from '../utils/haptics';
 import { analytics } from '../utils/analytics';
 import { offlineQueue } from '../utils/offlineQueue';
+import { networkService } from '../services/offline/networkService';
 
 
 export interface ChatMessage {
@@ -85,6 +86,24 @@ export const useAIStore = create<AIState>((set, get) => ({
       messages: [...state.messages, userMessage],
       pendingConfirmation: null, // Reset previous pending confirmation on new prompt
     }));
+
+    // Offline guard: AI features require an internet connection
+    if (!networkService.isOnline()) {
+      const offlineMsgId = `assistant_${Date.now()}`;
+      const offlineMsg: ChatMessage = {
+        id: offlineMsgId,
+        role: 'assistant',
+        content:
+          'Tabsy AI requires an active internet connection to parse speech or text. Connect to the internet or use manual add to record expenses offline.',
+        timestamp: Date.now(),
+      };
+      set((state) => ({
+        messages: [...state.messages, offlineMsg],
+        isLoading: false,
+        error: 'AI assistant requires an active internet connection.',
+      }));
+      return;
+    }
 
     try {
       const response = await aiApi.parseExpense({

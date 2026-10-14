@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Plus, Sparkles } from 'lucide-react-native';
+import { Plus, Sparkles, WifiOff } from 'lucide-react-native';
 import { colors, fontFamilies } from '../theme';
 import { SproutText } from '../components/SproutText';
+import { networkService } from '../services/offline/networkService';
+import { outboxService } from '../services/offline/outboxService';
 
 interface SproutTabBarProps extends BottomTabBarProps {
   onAddPress: () => void;
@@ -20,6 +22,19 @@ export const SproutTabBar: React.FC<SproutTabBarProps> = ({
   onAIPress,
 }) => {
   const insets = useSafeAreaInsets();
+  const [isOnline, setIsOnline] = useState<boolean>(networkService.isOnline());
+  const [pendingCount, setPendingCount] = useState<number>(outboxService.getPendingCount());
+
+  useEffect(() => {
+    const unsubNet = networkService.subscribe(setIsOnline);
+    const unsubOutbox = outboxService.subscribe((queue) => {
+      setPendingCount(queue.length);
+    });
+    return () => {
+      unsubNet();
+      unsubOutbox();
+    };
+  }, []);
 
   return (
     <View
@@ -41,6 +56,11 @@ export const SproutTabBar: React.FC<SproutTabBarProps> = ({
           ]}
         >
           <Sparkles size={23} color={colors.accent} strokeWidth={2.2} />
+          {!isOnline && (
+            <View style={styles.aiOfflineDot} testID="ai-offline-dot">
+              <WifiOff size={9} color="#7A3E2D" strokeWidth={2.4} />
+            </View>
+          )}
         </Pressable>
       )}
 
@@ -80,7 +100,16 @@ export const SproutTabBar: React.FC<SproutTabBarProps> = ({
                 onLongPress={() => navigation.emit({ type: 'tabLongPress', target: route.key })}
                 style={styles.tabItem}
               >
-                {icon}
+                <View style={styles.iconContainer}>
+                  {icon}
+                  {route.name === 'Journal' && pendingCount > 0 && (
+                    <View style={styles.pendingBadge} testID="journal-pending-badge">
+                      <SproutText style={styles.pendingBadgeText}>
+                        {pendingCount > 9 ? '9+' : pendingCount}
+                      </SproutText>
+                    </View>
+                  )}
+                </View>
                 <SproutText style={[styles.tabLabel, { color }, isFocused && styles.tabLabelActive]}>
                   {label}
                 </SproutText>
@@ -135,6 +164,31 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 3,
   },
+  iconContainer: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pendingBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -10,
+    backgroundColor: colors.clay,
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+    borderWidth: 1,
+    borderColor: '#F0C4B4',
+  },
+  pendingBadgeText: {
+    color: '#7A3E2D',
+    fontSize: 9,
+    fontWeight: '700',
+    fontFamily: fontFamilies.bold,
+  },
   tabLabel: {
     fontFamily: fontFamilies.medium,
     fontSize: 8,
@@ -157,6 +211,19 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 4,
     zIndex: 10,
+  },
+  aiOfflineDot: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    backgroundColor: colors.clay,
+    borderRadius: 9,
+    width: 17,
+    height: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: colors.surface,
   },
   aiButtonPressed: {
     transform: [{ scale: 0.93 }],
