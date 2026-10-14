@@ -1,7 +1,17 @@
 export type OutboxActionType =
   | 'create_personal_expense'
+  | 'update_personal_expense'
+  | 'delete_personal_expense'
   | 'create_friend_expense'
-  | 'create_group_expense';
+  | 'update_friend_expense'
+  | 'delete_friend_expense'
+  | 'create_group_expense'
+  | 'update_group_expense'
+  | 'delete_group_expense'
+  | 'record_friend_payment'
+  | 'create_category'
+  | 'update_category'
+  | 'delete_category';
 
 export interface OutboxAction<T = any> {
   id: string;

@@ -170,46 +170,46 @@ export const friendsApi = {
     friendId: string,
     data: FriendExpenseCreate
   ): Promise<any> => {
-    if (!networkService.isOnline()) {
+    const cacheKey = CACHE_KEYS.FRIEND_EXPENSES(friendId);
+
+    const handleOptimisticCreate = async (): Promise<any> => {
       const tempId = outboxService.generateTempId('temp-frd-exp');
       await outboxService.enqueue('create_friend_expense', { friendId, payload: data }, tempId);
-      await cacheService.invalidate(CACHE_KEYS.FRIENDS_LIST);
-      await cacheService.invalidate(CACHE_KEYS.FRIEND_BALANCES);
-      await cacheService.invalidate(CACHE_KEYS.FRIEND_EXPENSES(friendId));
-      return {
+      const optimistic: any = {
         id: tempId,
         friend_id: friendId,
+        user_id: '',
         amount: data.amount,
         category: data.category,
-        note: data.note,
+        note: data.note || null,
         expense_date: data.expense_date,
         paid_by: data.paid_by,
-        split_type: data.split_type,
         created_at: new Date().toISOString(),
+        edited_at: null,
+        expense_splits: [],
+        is_pending_sync: true,
       };
+      const cached = (await cacheService.get<FriendExpenseFeedItem[]>(cacheKey)) || [];
+      await cacheService.set(cacheKey, [optimistic, ...cached]);
+      return optimistic;
+    };
+
+    if (!networkService.isOnline()) {
+      return handleOptimisticCreate();
     }
 
     try {
       const res: any = await apiClient.post(`/api/v1/friends/${friendId}/expenses`, data);
+      const cached = await cacheService.get<FriendExpenseFeedItem[]>(cacheKey);
+      if (Array.isArray(cached) && res) {
+        await cacheService.set(cacheKey, [res, ...cached]);
+      }
       await cacheService.invalidate(CACHE_KEYS.FRIENDS_LIST);
       await cacheService.invalidate(CACHE_KEYS.FRIEND_BALANCES);
-      await cacheService.invalidate(CACHE_KEYS.FRIEND_EXPENSES(friendId));
       return res;
     } catch (err: any) {
       if (err.message === 'Network Error' || !err.response) {
-        const tempId = outboxService.generateTempId('temp-frd-exp');
-        await outboxService.enqueue('create_friend_expense', { friendId, payload: data }, tempId);
-        return {
-          id: tempId,
-          friend_id: friendId,
-          amount: data.amount,
-          category: data.category,
-          note: data.note,
-          expense_date: data.expense_date,
-          paid_by: data.paid_by,
-          split_type: data.split_type,
-          created_at: new Date().toISOString(),
-        };
+        return handleOptimisticCreate();
       }
       throw err;
     }
@@ -220,18 +220,139 @@ export const friendsApi = {
     expenseId: string,
     data: FriendExpenseUpdate
   ): Promise<any> => {
-    const res: any = await apiClient.patch(
-      `/api/v1/friends/${friendId}/expenses/${expenseId}`,
-      data
-    );
-    return res;
+    const cacheKey = CACHE_KEYS.FRIEND_EXPENSES(friendId);
+
+    const handleOptimisticUpdate = async (): Promise<any> => {
+      // 1. If pending create in outbox, merge updates
+      const updatedPending = await outboxService.updatePendingPayload(
+        (a) => a.type === 'create_friend_expense' && a.tempId === expenseId,
+        (current: any) => ({
+          ...current,
+          payload: { ...(current.payload || {}), ...data },
+        })
+      );
+
+      // If not pending create, enqueue update
+      if (!updatedPending) {
+        const updatedExisting = await outboxService.updatePendingPayload(
+          (a) =>
+            a.type === 'update_friend_expense' &&
+            a.payload?.friendId === friendId &&
+            a.payload?.expenseId === expenseId,
+          (current: any) => ({
+            ...current,
+            payload: { ...(current.payload || {}), ...data },
+          })
+        );
+        if (!updatedExisting) {
+          await outboxService.enqueue('update_friend_expense', {
+            friendId,
+            expenseId,
+            payload: data,
+          });
+        }
+      }
+
+      // 2. Update local cache
+      const cached = (await cacheService.get<FriendExpenseFeedItem[]>(cacheKey)) || [];
+      const existing = cached.find((item) => item.id === expenseId);
+      const optimistic: any = {
+        ...(existing || {
+          id: expenseId,
+          friend_id: friendId,
+          user_id: '',
+          created_at: new Date().toISOString(),
+        }),
+        ...data,
+        edited_at: new Date().toISOString(),
+        is_pending_sync: true,
+      };
+
+      const refreshed = cached.some((item) => item.id === expenseId)
+        ? cached.map((item) => (item.id === expenseId ? optimistic : item))
+        : [optimistic, ...cached];
+
+      await cacheService.set(cacheKey, refreshed);
+      return optimistic;
+    };
+
+    if (!networkService.isOnline()) {
+      return handleOptimisticUpdate();
+    }
+
+    try {
+      const res: any = await apiClient.patch(
+        `/api/v1/friends/${friendId}/expenses/${expenseId}`,
+        data
+      );
+      const cached = await cacheService.get<FriendExpenseFeedItem[]>(cacheKey);
+      if (Array.isArray(cached)) {
+        const refreshed = cached.map((item) => (item.id === expenseId ? { ...item, ...res } : item));
+        await cacheService.set(cacheKey, refreshed);
+      }
+      await cacheService.invalidate(CACHE_KEYS.FRIENDS_LIST);
+      await cacheService.invalidate(CACHE_KEYS.FRIEND_BALANCES);
+      return res;
+    } catch (err: any) {
+      if (err.message === 'Network Error' || !err.response) {
+        return handleOptimisticUpdate();
+      }
+      throw err;
+    }
   },
 
   deleteFriendExpense: async (
     friendId: string,
     expenseId: string
   ): Promise<void> => {
-    await apiClient.delete(`/api/v1/friends/${friendId}/expenses/${expenseId}`);
+    const cacheKey = CACHE_KEYS.FRIEND_EXPENSES(friendId);
+
+    const handleOptimisticDelete = async (): Promise<void> => {
+      // 1. If this was a pending offline creation, simply remove it from outbox
+      const removedCreations = await outboxService.removeMatching(
+        (a) => a.tempId === expenseId || (a.type === 'create_friend_expense' && a.tempId === expenseId)
+      );
+
+      // Clean up any pending updates for this expenseId
+      await outboxService.removeMatching(
+        (a) =>
+          a.type === 'update_friend_expense' &&
+          a.payload?.friendId === friendId &&
+          a.payload?.expenseId === expenseId
+      );
+
+      // If it wasn't a local creation, enqueue delete_friend_expense
+      if (removedCreations === 0) {
+        await outboxService.enqueue('delete_friend_expense', { friendId, expenseId });
+      }
+
+      // 2. Remove from local cache
+      const cached = await cacheService.get<FriendExpenseFeedItem[]>(cacheKey);
+      if (Array.isArray(cached)) {
+        const filtered = cached.filter((item) => item.id !== expenseId);
+        await cacheService.set(cacheKey, filtered);
+      }
+    };
+
+    if (!networkService.isOnline()) {
+      return handleOptimisticDelete();
+    }
+
+    try {
+      await apiClient.delete(`/api/v1/friends/${friendId}/expenses/${expenseId}`);
+      const cached = await cacheService.get<FriendExpenseFeedItem[]>(cacheKey);
+      if (Array.isArray(cached)) {
+        const filtered = cached.filter((item) => item.id !== expenseId);
+        await cacheService.set(cacheKey, filtered);
+      }
+      await cacheService.invalidate(CACHE_KEYS.FRIENDS_LIST);
+      await cacheService.invalidate(CACHE_KEYS.FRIEND_BALANCES);
+    } catch (err: any) {
+      if (err.message === 'Network Error' || !err.response) {
+        return handleOptimisticDelete();
+      }
+      throw err;
+    }
   },
 
   recordFriendPayment: async (
@@ -242,16 +363,66 @@ export const friendsApi = {
     if (amount <= 0) throw new Error('Payment amount must be greater than 0');
 
     const formattedDate = toLocalDateString(new Date());
+    const cacheKey = CACHE_KEYS.FRIEND_EXPENSES(friendId);
 
-    const res: any = await apiClient.post(`/api/v1/friends/${friendId}/expenses`, {
-      amount,
-      category: 'payment',
-      note: 'Settlement payment',
-      expense_date: formattedDate,
-      paid_by: payerId || undefined,
-      split_type: 'full',
-    });
+    const handleOptimisticPayment = async (): Promise<any> => {
+      const tempId = outboxService.generateTempId('temp-frd-pmt');
+      const payload = {
+        amount,
+        category: 'payment',
+        note: 'Settlement payment',
+        expense_date: formattedDate,
+        paid_by: payerId || undefined,
+        split_type: 'full' as const,
+      };
 
-    return res;
+      await outboxService.enqueue('record_friend_payment', { friendId, payload }, tempId);
+
+      const optimistic: any = {
+        id: tempId,
+        user_id: '',
+        amount,
+        category: 'payment',
+        note: 'Settlement payment',
+        expense_date: formattedDate,
+        paid_by: payerId || '',
+        created_at: new Date().toISOString(),
+        edited_at: null,
+        expense_splits: [],
+        is_pending_sync: true,
+      };
+
+      const cached = (await cacheService.get<FriendExpenseFeedItem[]>(cacheKey)) || [];
+      await cacheService.set(cacheKey, [optimistic, ...cached]);
+      return optimistic;
+    };
+
+    if (!networkService.isOnline()) {
+      return handleOptimisticPayment();
+    }
+
+    try {
+      const res: any = await apiClient.post(`/api/v1/friends/${friendId}/expenses`, {
+        amount,
+        category: 'payment',
+        note: 'Settlement payment',
+        expense_date: formattedDate,
+        paid_by: payerId || undefined,
+        split_type: 'full',
+      });
+
+      const cached = await cacheService.get<FriendExpenseFeedItem[]>(cacheKey);
+      if (Array.isArray(cached) && res) {
+        await cacheService.set(cacheKey, [res, ...cached]);
+      }
+      await cacheService.invalidate(CACHE_KEYS.FRIENDS_LIST);
+      await cacheService.invalidate(CACHE_KEYS.FRIEND_BALANCES);
+      return res;
+    } catch (err: any) {
+      if (err.message === 'Network Error' || !err.response) {
+        return handleOptimisticPayment();
+      }
+      throw err;
+    }
   },
 };

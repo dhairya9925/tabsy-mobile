@@ -206,4 +206,198 @@ test('expensesApi.getPersonalExpenses returns locally filtered expenses when off
   assert.equal(searched[0].id, 'pe-2');
 });
 
+test('expensesApi: offline update and delete for server item', async () => {
+  networkService.setSimulatedOnline(false);
+
+  const existingExpense = {
+    id: 'exp-server-1',
+    user_id: 'u-1',
+    amount: 500,
+    category: 'Food',
+    expense_date: '2026-10-10',
+    date: '2026-10-10',
+    description: 'Dinner',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    is_pending_sync: false,
+  };
+  await cacheService.set(CACHE_KEYS.PERSONAL_EXPENSES, [existingExpense]);
+
+  // 1. Update while offline
+  const updated = await expensesApi.updatePersonalExpense('exp-server-1', {
+    amount: 650,
+    note: 'Dinner with drinks',
+  });
+
+  assert.equal(updated.amount, 650);
+  assert.equal(updated.is_pending_sync, true);
+
+  // Check outbox has update_personal_expense
+  const queue1 = outboxService.getQueue();
+  assert.equal(queue1.length, 1);
+  assert.equal(queue1[0].type, 'update_personal_expense');
+  assert.equal(queue1[0].payload.expenseId, 'exp-server-1');
+  assert.equal(queue1[0].payload.payload.amount, 650);
+
+  // Check cache was updated
+  const cachedAfterUpdate = await cacheService.get<any[]>(CACHE_KEYS.PERSONAL_EXPENSES);
+  assert.equal(cachedAfterUpdate?.[0]?.amount, 650);
+
+  // 2. Delete while offline
+  await expensesApi.deletePersonalExpense('exp-server-1');
+
+  // Pending update should be discarded and replaced with delete
+  const queue2 = outboxService.getQueue();
+  assert.equal(queue2.length, 1);
+  assert.equal(queue2[0].type, 'delete_personal_expense');
+  assert.equal(queue2[0].payload.expenseId, 'exp-server-1');
+
+  // Cache should have item removed
+  const cachedAfterDelete = await cacheService.get<any[]>(CACHE_KEYS.PERSONAL_EXPENSES);
+  assert.equal(cachedAfterDelete?.length, 0);
+});
+
+test('expensesApi: offline edit and delete of pending created item cancels outbox without server delete', async () => {
+  networkService.setSimulatedOnline(false);
+
+  // 1. Create offline
+  const created = await expensesApi.createPersonalExpense({
+    amount: 150,
+    category: 'coffee',
+    note: 'Morning espresso',
+    expense_date: '2026-10-15',
+  });
+  assert.ok(created.id.startsWith('temp-exp-'));
+  assert.equal(outboxService.getQueue().length, 1);
+  assert.equal(outboxService.getQueue()[0].type, 'create_personal_expense');
+
+  // 2. Edit while still offline -> should merge into pending create
+  const edited = await expensesApi.updatePersonalExpense(created.id, {
+    amount: 180,
+    note: 'Double espresso',
+  });
+  assert.equal(edited.amount, 180);
+
+  // Outbox should still only have 1 item (the creation), with updated payload
+  const queueAfterEdit = outboxService.getQueue();
+  assert.equal(queueAfterEdit.length, 1);
+  assert.equal(queueAfterEdit[0].type, 'create_personal_expense');
+  assert.equal(queueAfterEdit[0].payload.amount, 180);
+
+  // 3. Delete while still offline -> should completely remove from outbox (never sent to server)
+  await expensesApi.deletePersonalExpense(created.id);
+  assert.equal(outboxService.getQueue().length, 0);
+
+  const cached = await cacheService.get<any[]>(CACHE_KEYS.PERSONAL_EXPENSES);
+  assert.equal(cached?.length, 0);
+});
+
+test('friendsApi: offline update, delete, and payment operations', async () => {
+  networkService.setSimulatedOnline(false);
+
+  // 1. Create friend expense offline
+  const created = await friendsApi.createFriendExpense('fr-99', {
+    amount: 1200,
+    category: 'Dinner',
+    note: 'Pizza night',
+    expense_date: '2026-10-12',
+    paid_by: 'me',
+    split_type: 'equal',
+  });
+  assert.ok(created.id.startsWith('temp-frd-exp-'));
+
+  const cachedFeed1 = await friendsApi.getFriendExpenses('fr-99');
+  assert.equal(cachedFeed1.length, 1);
+  assert.equal(cachedFeed1[0].amount, 1200);
+
+  // 2. Update friend expense offline
+  const updated = await friendsApi.updateFriendExpense('fr-99', created.id, {
+    amount: 1400,
+  });
+  assert.equal(updated.amount, 1400);
+
+  // 3. Record payment offline
+  const pmt = await friendsApi.recordFriendPayment('fr-99', 700, 'friend-user-1');
+  assert.ok(pmt.id.startsWith('temp-frd-pmt-'));
+  assert.equal(pmt.amount, 700);
+
+  const cachedFeed2 = await friendsApi.getFriendExpenses('fr-99');
+  assert.equal(cachedFeed2.length, 2);
+
+  // 4. Delete friend expense offline
+  await friendsApi.deleteFriendExpense('fr-99', created.id);
+  const cachedFeed3 = await friendsApi.getFriendExpenses('fr-99');
+  assert.equal(cachedFeed3.length, 1);
+  assert.equal(cachedFeed3[0].id, pmt.id);
+});
+
+test('groupsApi: offline update and delete operations', async () => {
+  networkService.setSimulatedOnline(false);
+
+  // 1. Create group expense offline
+  const created = await groupsApi.createGroupExpense('grp-55', {
+    amount: 3000,
+    category: 'Groceries',
+    note: 'Weekly essentials',
+    expense_date: '2026-10-14',
+    paid_by: 'user-self',
+    splits: [
+      { user_id: 'user-self', amount: 1500 },
+      { user_id: 'user-other', amount: 1500 },
+    ],
+  });
+  assert.ok(created.id.startsWith('temp-grp-exp-'));
+
+  const cachedExpenses1 = await groupsApi.getGroupExpenses('grp-55');
+  assert.equal(cachedExpenses1.length, 1);
+  assert.equal(cachedExpenses1[0].amount, 3000);
+
+  // 2. Update group expense offline
+  const updated = await groupsApi.updateGroupExpense('grp-55', created.id, {
+    amount: 3500,
+  });
+  assert.equal(updated.amount, 3500);
+
+  const cachedExpenses2 = await groupsApi.getGroupExpenses('grp-55');
+  assert.equal(cachedExpenses2[0].amount, 3500);
+
+  // 3. Delete group expense offline
+  await groupsApi.deleteGroupExpense('grp-55', created.id);
+  const cachedExpenses3 = await groupsApi.getGroupExpenses('grp-55');
+  assert.equal(cachedExpenses3.length, 0);
+  assert.equal(outboxService.getQueue().length, 0); // Temporary creation removed from outbox
+});
+
+test('categoriesApi: offline create, update, and delete operations', async () => {
+  networkService.setSimulatedOnline(false);
+
+  // Initial categories
+  await cacheService.set(CACHE_KEYS.CATEGORIES, [
+    { id: 'cat-orig', name: 'Original', is_default: true },
+  ]);
+
+  // 1. Create category offline
+  const created = await categoriesApi.createCategory({ name: 'Hobbies' });
+  assert.ok(created.id.startsWith('temp-cat-'));
+
+  const cachedCats1 = await categoriesApi.getCategories();
+  assert.equal(cachedCats1.length, 2);
+  assert.equal(cachedCats1[1].name, 'Hobbies');
+
+  // 2. Update category offline
+  const updated = await categoriesApi.updateCategory(created.id, { name: 'Gaming & Hobbies' });
+  assert.equal(updated.name, 'Gaming & Hobbies');
+
+  const cachedCats2 = await categoriesApi.getCategories();
+  assert.equal(cachedCats2[1].name, 'Gaming & Hobbies');
+
+  // 3. Delete category offline
+  await categoriesApi.deleteCategory(created.id);
+  const cachedCats3 = await categoriesApi.getCategories();
+  assert.equal(cachedCats3.length, 1);
+  assert.equal(cachedCats3[0].id, 'cat-orig');
+  assert.equal(outboxService.getQueue().length, 0);
+});
+
+
 

@@ -176,6 +176,8 @@ export interface GroupExpense {
   edited_at?: string | null;
   payer_name?: string | null;
   splits: GroupExpenseSplit[];
+  is_pending_sync?: boolean;
+  sync_error?: string | null;
 }
 
 export interface GroupExpenseCreate {
@@ -259,6 +261,8 @@ export interface FriendExpenseFeedItem {
   created_at: string;
   edited_at: string | null;
   expense_splits: FriendExpenseSplit[];
+  is_pending_sync?: boolean;
+  sync_error?: string | null;
 }
 
 export interface FriendExpenseCreate {

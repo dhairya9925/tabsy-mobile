@@ -119,6 +119,57 @@ class OutboxService {
   }
 
   /**
+   * Removes actions from the queue matching the given predicate.
+   * Returns the count of removed items.
+   */
+  public async removeMatching(predicate: (action: OutboxAction) => boolean): Promise<number> {
+    if (!this.isLoaded) {
+      await this.loadFromStorage();
+    }
+    const initialLen = this.queue.length;
+    this.queue = this.queue.filter((a) => !predicate(a));
+    const removedCount = initialLen - this.queue.length;
+    if (removedCount > 0) {
+      await this.saveToStorage();
+      this.notifyListeners();
+    }
+    return removedCount;
+  }
+
+  /**
+   * Updates the payload of the first queued action matching predicate.
+   * Useful to merge offline edits into pending creations before dispatch.
+   */
+  public async updatePendingPayload<T = any>(
+    predicate: (action: OutboxAction) => boolean,
+    updater: Partial<T> | ((currentPayload: T) => T)
+  ): Promise<boolean> {
+    if (!this.isLoaded) {
+      await this.loadFromStorage();
+    }
+    let found = false;
+    this.queue = this.queue.map((action) => {
+      if (!found && predicate(action)) {
+        found = true;
+        const newPayload =
+          typeof updater === 'function'
+            ? (updater as (p: T) => T)(action.payload)
+            : { ...(action.payload || {}), ...updater };
+        return {
+          ...action,
+          payload: newPayload,
+        };
+      }
+      return action;
+    });
+    if (found) {
+      await this.saveToStorage();
+      this.notifyListeners();
+    }
+    return found;
+  }
+
+  /**
    * Clears the entire queue.
    */
   public async clear(): Promise<void> {
@@ -236,6 +287,25 @@ class OutboxService {
         const res: any = await apiClient.post('/api/v1/expenses/personal', backendPayload);
         return res;
       }
+      case 'update_personal_expense': {
+        const { expenseId, payload } = action.payload;
+        const backendPayload: any = {};
+        if (payload.amount !== undefined) backendPayload.amount = Math.round(Number(payload.amount) * 100) / 100;
+        if (payload.category !== undefined) backendPayload.category = String(payload.category).trim();
+        if (payload.note !== undefined || payload.description !== undefined) {
+          backendPayload.note = (payload.note || payload.description) ? String(payload.note || payload.description).trim() : null;
+        }
+        if (payload.expense_date || payload.date) {
+          backendPayload.expense_date = this.sanitizeIsoDate(payload.expense_date || payload.date);
+        }
+        const res: any = await apiClient.patch(`/api/v1/expenses/${expenseId}`, backendPayload);
+        return res;
+      }
+      case 'delete_personal_expense': {
+        const { expenseId } = action.payload;
+        await apiClient.delete(`/api/v1/expenses/${expenseId}`);
+        return { deleted: true, expenseId };
+      }
       case 'create_friend_expense': {
         const { friendId, payload } = action.payload;
         const backendPayload: any = {
@@ -246,6 +316,40 @@ class OutboxService {
         };
         if (payload.paid_by) backendPayload.paid_by = payload.paid_by;
         if (payload.split_type) backendPayload.split_type = payload.split_type;
+        const res: any = await apiClient.post(`/api/v1/friends/${friendId}/expenses`, backendPayload);
+        return res;
+      }
+      case 'update_friend_expense': {
+        const { friendId, expenseId, payload } = action.payload;
+        const backendPayload: any = {};
+        if (payload.amount !== undefined) backendPayload.amount = Math.round(Number(payload.amount) * 100) / 100;
+        if (payload.category !== undefined) backendPayload.category = String(payload.category).trim();
+        if (payload.note !== undefined || payload.description !== undefined) {
+          backendPayload.note = (payload.note || payload.description) ? String(payload.note || payload.description).trim() : null;
+        }
+        if (payload.expense_date || payload.date) {
+          backendPayload.expense_date = this.sanitizeIsoDate(payload.expense_date || payload.date);
+        }
+        if (payload.paid_by !== undefined) backendPayload.paid_by = payload.paid_by;
+        if (payload.split_type !== undefined) backendPayload.split_type = payload.split_type;
+        const res: any = await apiClient.patch(`/api/v1/friends/${friendId}/expenses/${expenseId}`, backendPayload);
+        return res;
+      }
+      case 'delete_friend_expense': {
+        const { friendId, expenseId } = action.payload;
+        await apiClient.delete(`/api/v1/friends/${friendId}/expenses/${expenseId}`);
+        return { deleted: true, friendId, expenseId };
+      }
+      case 'record_friend_payment': {
+        const { friendId, payload } = action.payload;
+        const backendPayload: any = {
+          amount: Math.round(Number(payload.amount) * 100) / 100,
+          category: 'payment',
+          note: payload.note || 'Settlement payment',
+          expense_date: this.sanitizeIsoDate(payload.expense_date || payload.date),
+          split_type: 'full',
+        };
+        if (payload.paid_by) backendPayload.paid_by = payload.paid_by;
         const res: any = await apiClient.post(`/api/v1/friends/${friendId}/expenses`, backendPayload);
         return res;
       }
@@ -263,6 +367,44 @@ class OutboxService {
         if (Array.isArray(payload.splits)) backendPayload.splits = payload.splits;
         const res: any = await apiClient.post(`/api/v1/groups/${groupId}/expenses`, backendPayload);
         return res;
+      }
+      case 'update_group_expense': {
+        const { groupId, expenseId, payload } = action.payload;
+        const backendPayload: any = {};
+        if (payload.amount !== undefined) backendPayload.amount = Math.round(Number(payload.amount) * 100) / 100;
+        if (payload.category !== undefined) backendPayload.category = String(payload.category).trim();
+        if (payload.note !== undefined || payload.description !== undefined) {
+          backendPayload.note = (payload.note || payload.description) ? String(payload.note || payload.description).trim() : null;
+        }
+        if (payload.expense_date || payload.date) {
+          backendPayload.expense_date = this.sanitizeIsoDate(payload.expense_date || payload.date);
+        }
+        if (payload.paid_by !== undefined) backendPayload.paid_by = payload.paid_by;
+        if (payload.status !== undefined) backendPayload.status = payload.status;
+        if (payload.receipt_url !== undefined) backendPayload.receipt_url = payload.receipt_url;
+        if (Array.isArray(payload.splits)) backendPayload.splits = payload.splits;
+        const res: any = await apiClient.patch(`/api/v1/groups/${groupId}/expenses/${expenseId}`, backendPayload);
+        return res;
+      }
+      case 'delete_group_expense': {
+        const { groupId, expenseId } = action.payload;
+        await apiClient.delete(`/api/v1/groups/${groupId}/expenses/${expenseId}`);
+        return { deleted: true, groupId, expenseId };
+      }
+      case 'create_category': {
+        const { payload } = action.payload;
+        const res: any = await apiClient.post('/api/v1/categories/', payload);
+        return res;
+      }
+      case 'update_category': {
+        const { categoryId, payload } = action.payload;
+        const res: any = await apiClient.patch(`/api/v1/categories/${categoryId}`, payload);
+        return res;
+      }
+      case 'delete_category': {
+        const { categoryId } = action.payload;
+        await apiClient.delete(`/api/v1/categories/${categoryId}`);
+        return { deleted: true, categoryId };
       }
       default:
         throw new Error(`Unknown action type: ${(action as any).type}`);
@@ -290,16 +432,104 @@ class OutboxService {
           });
           await cacheService.set(CACHE_KEYS.PERSONAL_EXPENSES, updated);
         }
-      } else if (action.type === 'create_group_expense') {
-        // Invalidate group cache to fetch clean calculated splits
+        await cacheService.invalidate(CACHE_KEYS.DASHBOARD_SUMMARY);
+        await cacheService.invalidate(CACHE_KEYS.INSIGHT_DASHBOARD_DATA);
+        await cacheService.invalidate(CACHE_KEYS.STREAK_DATES);
+      } else if (action.type === 'update_personal_expense') {
+        const expenseId = action.payload?.expenseId;
+        const cached = await cacheService.get<PersonalExpense[]>(CACHE_KEYS.PERSONAL_EXPENSES);
+        if (Array.isArray(cached) && expenseId) {
+          const updated = cached.map((item) => {
+            if (item.id === expenseId) {
+              return {
+                ...item,
+                ...(serverResult || {}),
+                is_pending_sync: false,
+                sync_error: null,
+              };
+            }
+            return item;
+          });
+          await cacheService.set(CACHE_KEYS.PERSONAL_EXPENSES, updated);
+        }
+        await cacheService.invalidate(CACHE_KEYS.DASHBOARD_SUMMARY);
+        await cacheService.invalidate(CACHE_KEYS.INSIGHT_DASHBOARD_DATA);
+        await cacheService.invalidate(CACHE_KEYS.STREAK_DATES);
+      } else if (action.type === 'delete_personal_expense') {
+        const expenseId = action.payload?.expenseId;
+        const cached = await cacheService.get<PersonalExpense[]>(CACHE_KEYS.PERSONAL_EXPENSES);
+        if (Array.isArray(cached) && expenseId) {
+          const filtered = cached.filter((item) => item.id !== expenseId);
+          await cacheService.set(CACHE_KEYS.PERSONAL_EXPENSES, filtered);
+        }
+        await cacheService.invalidate(CACHE_KEYS.DASHBOARD_SUMMARY);
+        await cacheService.invalidate(CACHE_KEYS.INSIGHT_DASHBOARD_DATA);
+        await cacheService.invalidate(CACHE_KEYS.STREAK_DATES);
+      } else if (
+        action.type === 'create_group_expense' ||
+        action.type === 'update_group_expense' ||
+        action.type === 'delete_group_expense'
+      ) {
         const groupId = action.payload?.groupId;
         if (groupId) {
+          if (action.type === 'create_group_expense' && action.tempId && serverResult?.id) {
+            const cachedExpenses = await cacheService.get<any[]>(CACHE_KEYS.GROUP_EXPENSES(groupId));
+            if (Array.isArray(cachedExpenses)) {
+              const updated = cachedExpenses.map((item) =>
+                item.id === action.tempId ? { ...item, ...serverResult, id: serverResult.id, is_pending_sync: false } : item
+              );
+              await cacheService.set(CACHE_KEYS.GROUP_EXPENSES(groupId), updated);
+            }
+          }
           await cacheService.invalidate(CACHE_KEYS.GROUPS_LIST);
+          await cacheService.invalidate(CACHE_KEYS.GROUP_EXPENSES(groupId));
+          await cacheService.invalidate(`cache:group_balances:${groupId}`);
           await cacheService.invalidatePattern(`cache:monthly_ledger:${groupId}`);
         }
-      } else if (action.type === 'create_friend_expense') {
+        await cacheService.invalidate(CACHE_KEYS.DASHBOARD_SUMMARY);
+        await cacheService.invalidate(CACHE_KEYS.INSIGHT_DASHBOARD_DATA);
+      } else if (
+        action.type === 'create_friend_expense' ||
+        action.type === 'update_friend_expense' ||
+        action.type === 'delete_friend_expense' ||
+        action.type === 'record_friend_payment'
+      ) {
+        const friendId = action.payload?.friendId;
         await cacheService.invalidate(CACHE_KEYS.FRIENDS_LIST);
         await cacheService.invalidate(CACHE_KEYS.FRIEND_BALANCES);
+        if (friendId) {
+          if (
+            (action.type === 'create_friend_expense' || action.type === 'record_friend_payment') &&
+            action.tempId &&
+            serverResult?.id
+          ) {
+            const cachedExpenses = await cacheService.get<any[]>(CACHE_KEYS.FRIEND_EXPENSES(friendId));
+            if (Array.isArray(cachedExpenses)) {
+              const updated = cachedExpenses.map((item) =>
+                item.id === action.tempId ? { ...item, ...serverResult, id: serverResult.id, is_pending_sync: false } : item
+              );
+              await cacheService.set(CACHE_KEYS.FRIEND_EXPENSES(friendId), updated);
+            }
+          }
+          await cacheService.invalidate(CACHE_KEYS.FRIEND_EXPENSES(friendId));
+        }
+        await cacheService.invalidate(CACHE_KEYS.DASHBOARD_SUMMARY);
+        await cacheService.invalidate(CACHE_KEYS.INSIGHT_DASHBOARD_DATA);
+      } else if (
+        action.type === 'create_category' ||
+        action.type === 'update_category' ||
+        action.type === 'delete_category'
+      ) {
+        if (action.type === 'create_category' && action.tempId && serverResult?.id) {
+          const cachedCats = await cacheService.get<any[]>(CACHE_KEYS.CATEGORIES);
+          if (Array.isArray(cachedCats)) {
+            const updated = cachedCats.map((c) =>
+              c.id === action.tempId ? { ...c, ...serverResult, id: serverResult.id, is_pending_sync: false } : c
+            );
+            await cacheService.set(CACHE_KEYS.CATEGORIES, updated);
+          }
+        }
+        await cacheService.invalidate(CACHE_KEYS.CATEGORIES);
       }
     } catch (err) {
       console.warn('[outboxService] Error reconciling cache:', err);

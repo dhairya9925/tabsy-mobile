@@ -160,29 +160,152 @@ export const expensesApi = {
     expenseId: string,
     payload: PersonalExpenseUpdate
   ): Promise<PersonalExpense> {
-    const res: any = await apiClient.patch(`/api/v1/expenses/${expenseId}`, payload);
-    const updated: PersonalExpense = {
-      ...res,
-      description: res.note || res.description || res.category,
-      date: res.expense_date || res.date,
+    const handleOptimisticUpdate = async (): Promise<PersonalExpense> => {
+      // 1. If this expense is pending in outbox as create_personal_expense, update that action's payload
+      const updatedPending = await outboxService.updatePendingPayload(
+        (a) => a.type === 'create_personal_expense' && a.tempId === expenseId,
+        payload
+      );
+
+      // If not a pending create, enqueue an update_personal_expense action
+      if (!updatedPending) {
+        const updatedExistingAction = await outboxService.updatePendingPayload(
+          (a) => a.type === 'update_personal_expense' && a.payload?.expenseId === expenseId,
+          (current: any) => ({
+            ...current,
+            payload: { ...(current.payload || {}), ...payload },
+          })
+        );
+        if (!updatedExistingAction) {
+          await outboxService.enqueue('update_personal_expense', { expenseId, payload });
+        }
+      }
+
+      // 2. Update local cache
+      const cached = (await cacheService.get<PersonalExpense[]>(CACHE_KEYS.PERSONAL_EXPENSES)) || [];
+      const existing = cached.find((e) => e.id === expenseId);
+      const expDate =
+        payload.expense_date ||
+        (payload as any).date ||
+        existing?.expense_date ||
+        existing?.date ||
+        new Date().toISOString().split('T')[0];
+      const updatedNote =
+        payload.note !== undefined
+          ? payload.note
+          : (payload as any).description !== undefined
+          ? (payload as any).description
+          : existing?.note;
+
+      const optimistic: PersonalExpense = {
+        ...(existing || {
+          id: expenseId,
+          user_id: '',
+          amount: 0,
+          category: 'other',
+          created_at: new Date().toISOString(),
+        }),
+        ...payload,
+        note: updatedNote ?? null,
+        description: updatedNote || payload.category || existing?.category || 'other',
+        expense_date: expDate,
+        date: expDate,
+        created_at: existing?.created_at || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        is_pending_sync: true,
+      };
+
+      const refreshed = cached.some((e) => e.id === expenseId)
+        ? cached.map((e) => (e.id === expenseId ? optimistic : e))
+        : [optimistic, ...cached];
+
+      await cacheService.set(CACHE_KEYS.PERSONAL_EXPENSES, refreshed);
+      await cacheService.invalidate(CACHE_KEYS.DASHBOARD_SUMMARY);
+      await cacheService.invalidate(CACHE_KEYS.INSIGHT_DASHBOARD_DATA);
+      await cacheService.invalidate(CACHE_KEYS.STREAK_DATES);
+
+      return optimistic;
     };
 
-    // Update local cache
-    const cached = await cacheService.get<PersonalExpense[]>(CACHE_KEYS.PERSONAL_EXPENSES);
-    if (Array.isArray(cached)) {
-      const refreshed = cached.map((e) => (e.id === expenseId ? updated : e));
-      await cacheService.set(CACHE_KEYS.PERSONAL_EXPENSES, refreshed);
+    if (!networkService.isOnline()) {
+      return handleOptimisticUpdate();
     }
 
-    return updated;
+    try {
+      const res: any = await apiClient.patch(`/api/v1/expenses/${expenseId}`, payload);
+      const updated: PersonalExpense = {
+        ...res,
+        description: res.note || res.description || res.category,
+        date: res.expense_date || res.date,
+        is_pending_sync: false,
+      };
+
+      // Update local cache
+      const cached = await cacheService.get<PersonalExpense[]>(CACHE_KEYS.PERSONAL_EXPENSES);
+      if (Array.isArray(cached)) {
+        const refreshed = cached.map((e) => (e.id === expenseId ? updated : e));
+        await cacheService.set(CACHE_KEYS.PERSONAL_EXPENSES, refreshed);
+      }
+      await cacheService.invalidate(CACHE_KEYS.DASHBOARD_SUMMARY);
+      await cacheService.invalidate(CACHE_KEYS.INSIGHT_DASHBOARD_DATA);
+      await cacheService.invalidate(CACHE_KEYS.STREAK_DATES);
+
+      return updated;
+    } catch (err: any) {
+      if (err.message === 'Network Error' || !err.response) {
+        return handleOptimisticUpdate();
+      }
+      throw err;
+    }
   },
 
   async deletePersonalExpense(expenseId: string): Promise<void> {
-    await apiClient.delete(`/api/v1/expenses/${expenseId}`);
-    const cached = await cacheService.get<PersonalExpense[]>(CACHE_KEYS.PERSONAL_EXPENSES);
-    if (Array.isArray(cached)) {
-      const filtered = cached.filter((e) => e.id !== expenseId);
-      await cacheService.set(CACHE_KEYS.PERSONAL_EXPENSES, filtered);
+    const handleOptimisticDelete = async (): Promise<void> => {
+      // 1. If this was a pending offline creation, simply remove it from outbox
+      const removedCreations = await outboxService.removeMatching(
+        (a) => a.tempId === expenseId || (a.type === 'create_personal_expense' && a.tempId === expenseId)
+      );
+
+      // Clean up any pending updates for this expenseId
+      await outboxService.removeMatching(
+        (a) => a.type === 'update_personal_expense' && a.payload?.expenseId === expenseId
+      );
+
+      // If it wasn't a local creation (it exists on server), enqueue delete_personal_expense
+      if (removedCreations === 0) {
+        await outboxService.enqueue('delete_personal_expense', { expenseId });
+      }
+
+      // 2. Remove from local cache
+      const cached = await cacheService.get<PersonalExpense[]>(CACHE_KEYS.PERSONAL_EXPENSES);
+      if (Array.isArray(cached)) {
+        const filtered = cached.filter((e) => e.id !== expenseId);
+        await cacheService.set(CACHE_KEYS.PERSONAL_EXPENSES, filtered);
+      }
+      await cacheService.invalidate(CACHE_KEYS.DASHBOARD_SUMMARY);
+      await cacheService.invalidate(CACHE_KEYS.INSIGHT_DASHBOARD_DATA);
+      await cacheService.invalidate(CACHE_KEYS.STREAK_DATES);
+    };
+
+    if (!networkService.isOnline()) {
+      return handleOptimisticDelete();
+    }
+
+    try {
+      await apiClient.delete(`/api/v1/expenses/${expenseId}`);
+      const cached = await cacheService.get<PersonalExpense[]>(CACHE_KEYS.PERSONAL_EXPENSES);
+      if (Array.isArray(cached)) {
+        const filtered = cached.filter((e) => e.id !== expenseId);
+        await cacheService.set(CACHE_KEYS.PERSONAL_EXPENSES, filtered);
+      }
+      await cacheService.invalidate(CACHE_KEYS.DASHBOARD_SUMMARY);
+      await cacheService.invalidate(CACHE_KEYS.INSIGHT_DASHBOARD_DATA);
+      await cacheService.invalidate(CACHE_KEYS.STREAK_DATES);
+    } catch (err: any) {
+      if (err.message === 'Network Error' || !err.response) {
+        return handleOptimisticDelete();
+      }
+      throw err;
     }
   },
 

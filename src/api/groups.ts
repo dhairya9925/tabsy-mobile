@@ -6,6 +6,7 @@ import {
   GroupMember,
   GroupMemberAdd,
   GroupExpense,
+  GroupExpenseSplit,
   GroupExpenseCreate,
   GroupExpenseUpdate,
   GroupBalance,
@@ -163,48 +164,58 @@ export const groupsApi = {
 
   /** Create a group expense with splits */
   async createGroupExpense(id: string, payload: GroupExpenseCreate): Promise<GroupExpense> {
-    if (!networkService.isOnline()) {
+    const cacheKey = CACHE_KEYS.GROUP_EXPENSES(id);
+
+    const handleOptimisticCreate = async (): Promise<GroupExpense> => {
       const tempId = outboxService.generateTempId('temp-grp-exp');
       await outboxService.enqueue('create_group_expense', { groupId: id, payload }, tempId);
-      await cacheService.invalidate(CACHE_KEYS.GROUPS_LIST);
-      await cacheService.invalidate(CACHE_KEYS.GROUP_EXPENSES(id));
-      await cacheService.invalidatePattern(`cache:monthly_ledger:${id}`);
-      return {
+      const resolvedSplits: GroupExpenseSplit[] = payload.splits
+        ? payload.splits.map((s, idx) => ({
+            id: `temp-split-${idx}`,
+            expense_id: tempId,
+            user_id: s.user_id,
+            amount: s.amount,
+            is_settled: false,
+            created_at: new Date().toISOString(),
+          }))
+        : [];
+      const optimistic: GroupExpense = {
         id: tempId,
         group_id: id,
+        user_id: '',
         paid_by: payload.paid_by,
         amount: payload.amount,
         category: payload.category,
-        note: payload.note,
-        expense_date: payload.expense_date,
+        note: payload.note || null,
+        expense_date: payload.expense_date || new Date().toISOString().split('T')[0],
+        status: 'submitted',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        splits: payload.splits || [],
-      } as any;
+        splits: resolvedSplits,
+        is_pending_sync: true,
+      };
+
+      const cached = (await cacheService.get<GroupExpense[]>(cacheKey)) || [];
+      await cacheService.set(cacheKey, [optimistic, ...cached]);
+      return optimistic;
+    };
+
+    if (!networkService.isOnline()) {
+      return handleOptimisticCreate();
     }
 
     try {
       const res: any = await apiClient.post(`/api/v1/groups/${id}/expenses`, payload);
+      const cached = await cacheService.get<GroupExpense[]>(cacheKey);
+      if (Array.isArray(cached) && res) {
+        await cacheService.set(cacheKey, [res, ...cached]);
+      }
       await cacheService.invalidate(CACHE_KEYS.GROUPS_LIST);
-      await cacheService.invalidate(CACHE_KEYS.GROUP_EXPENSES(id));
       await cacheService.invalidatePattern(`cache:monthly_ledger:${id}`);
       return res;
     } catch (err: any) {
       if (err.message === 'Network Error' || !err.response) {
-        const tempId = outboxService.generateTempId('temp-grp-exp');
-        await outboxService.enqueue('create_group_expense', { groupId: id, payload }, tempId);
-        return {
-          id: tempId,
-          group_id: id,
-          paid_by: payload.paid_by,
-          amount: payload.amount,
-          category: payload.category,
-          note: payload.note,
-          expense_date: payload.expense_date,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          splits: payload.splits || [],
-        } as any;
+        return handleOptimisticCreate();
       }
       throw err;
     }
@@ -216,13 +227,153 @@ export const groupsApi = {
     expenseId: string,
     payload: GroupExpenseUpdate
   ): Promise<GroupExpense> {
-    const res: any = await apiClient.patch(`/api/v1/groups/${id}/expenses/${expenseId}`, payload);
-    return res;
+    const cacheKey = CACHE_KEYS.GROUP_EXPENSES(id);
+
+    const handleOptimisticUpdate = async (): Promise<GroupExpense> => {
+      // 1. If pending create in outbox, merge updates
+      const updatedPending = await outboxService.updatePendingPayload(
+        (a) => a.type === 'create_group_expense' && a.tempId === expenseId,
+        (current: any) => ({
+          ...current,
+          payload: { ...(current.payload || {}), ...payload },
+        })
+      );
+
+      // If not pending create, enqueue update
+      if (!updatedPending) {
+        const updatedExisting = await outboxService.updatePendingPayload(
+          (a) =>
+            a.type === 'update_group_expense' &&
+            a.payload?.groupId === id &&
+            a.payload?.expenseId === expenseId,
+          (current: any) => ({
+            ...current,
+            payload: { ...(current.payload || {}), ...payload },
+          })
+        );
+        if (!updatedExisting) {
+          await outboxService.enqueue('update_group_expense', {
+            groupId: id,
+            expenseId,
+            payload,
+          });
+        }
+      }
+
+      // 2. Update local cache
+      const cached = (await cacheService.get<GroupExpense[]>(cacheKey)) || [];
+      const existing = cached.find((item) => item.id === expenseId);
+      const resolvedSplits = payload.splits
+        ? payload.splits.map((s, idx) => ({
+            id: `temp-split-${idx}`,
+            expense_id: expenseId,
+            user_id: s.user_id,
+            amount: s.amount,
+            is_settled: false,
+            created_at: new Date().toISOString(),
+          }))
+        : existing?.splits || [];
+
+      const optimistic: GroupExpense = {
+        ...(existing || {
+          id: expenseId,
+          group_id: id,
+          user_id: '',
+          paid_by: '',
+          amount: 0,
+          category: 'other',
+          expense_date: new Date().toISOString().split('T')[0],
+          status: 'submitted',
+          splits: [],
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }),
+        ...payload,
+        splits: resolvedSplits,
+        updated_at: new Date().toISOString(),
+        is_pending_sync: true,
+      };
+
+      const refreshed = cached.some((item) => item.id === expenseId)
+        ? cached.map((item) => (item.id === expenseId ? optimistic : item))
+        : [optimistic, ...cached];
+
+      await cacheService.set(cacheKey, refreshed);
+      return optimistic;
+    };
+
+    if (!networkService.isOnline()) {
+      return handleOptimisticUpdate();
+    }
+
+    try {
+      const res: any = await apiClient.patch(`/api/v1/groups/${id}/expenses/${expenseId}`, payload);
+      const cached = await cacheService.get<GroupExpense[]>(cacheKey);
+      if (Array.isArray(cached) && res) {
+        const refreshed = cached.map((item) => (item.id === expenseId ? { ...item, ...res } : item));
+        await cacheService.set(cacheKey, refreshed);
+      }
+      await cacheService.invalidate(CACHE_KEYS.GROUPS_LIST);
+      await cacheService.invalidatePattern(`cache:monthly_ledger:${id}`);
+      return res;
+    } catch (err: any) {
+      if (err.message === 'Network Error' || !err.response) {
+        return handleOptimisticUpdate();
+      }
+      throw err;
+    }
   },
 
   /** Delete a group expense */
   async deleteGroupExpense(id: string, expenseId: string): Promise<void> {
-    await apiClient.delete(`/api/v1/groups/${id}/expenses/${expenseId}`);
+    const cacheKey = CACHE_KEYS.GROUP_EXPENSES(id);
+
+    const handleOptimisticDelete = async (): Promise<void> => {
+      // 1. If this was a pending offline creation, simply remove it from outbox
+      const removedCreations = await outboxService.removeMatching(
+        (a) => a.tempId === expenseId || (a.type === 'create_group_expense' && a.tempId === expenseId)
+      );
+
+      // Clean up any pending updates for this expenseId
+      await outboxService.removeMatching(
+        (a) =>
+          a.type === 'update_group_expense' &&
+          a.payload?.groupId === id &&
+          a.payload?.expenseId === expenseId
+      );
+
+      // If it wasn't a local creation, enqueue delete_group_expense
+      if (removedCreations === 0) {
+        await outboxService.enqueue('delete_group_expense', { groupId: id, expenseId });
+      }
+
+      // 2. Remove from local cache
+      const cached = await cacheService.get<GroupExpense[]>(cacheKey);
+      if (Array.isArray(cached)) {
+        const filtered = cached.filter((item) => item.id !== expenseId);
+        await cacheService.set(cacheKey, filtered);
+      }
+    };
+
+    if (!networkService.isOnline()) {
+      return handleOptimisticDelete();
+    }
+
+    try {
+      await apiClient.delete(`/api/v1/groups/${id}/expenses/${expenseId}`);
+      const cached = await cacheService.get<GroupExpense[]>(cacheKey);
+      if (Array.isArray(cached)) {
+        const filtered = cached.filter((item) => item.id !== expenseId);
+        await cacheService.set(cacheKey, filtered);
+      }
+      await cacheService.invalidate(CACHE_KEYS.GROUPS_LIST);
+      await cacheService.invalidatePattern(`cache:monthly_ledger:${id}`);
+    } catch (err: any) {
+      if (err.message === 'Network Error' || !err.response) {
+        return handleOptimisticDelete();
+      }
+      throw err;
+    }
   },
 
   /** Get simplified peer-to-peer group balances */
