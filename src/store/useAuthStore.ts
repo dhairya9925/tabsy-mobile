@@ -5,6 +5,7 @@ import { secureStorage } from '../utils/secureStorage';
 import { QuickAddModule } from '../native/QuickAddModule';
 import { resolveApiBaseUrl } from '../api/client';
 import { cacheService, CACHE_KEYS } from '../services/offline/cacheService';
+import { preloadOfflineData, preloadService } from '../services/offline';
 
 
 interface AuthState {
@@ -48,6 +49,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         // Sync token to native quick-add preferences
         QuickAddModule.syncAuthSession(storedToken, resolveApiBaseUrl()).catch(() => {});
 
+        // Eagerly preload and cache offline data in the background
+        preloadOfflineData().catch(() => {});
+
         // Background profile refresh
         authApi.getMe()
           .then((freshUser) => {
@@ -79,6 +83,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // Sync token to native quick-add preferences
       QuickAddModule.syncAuthSession(response.access_token, resolveApiBaseUrl()).catch(() => {});
 
+      // Eagerly preload offline data on successful login
+      preloadOfflineData({ force: true }).catch(() => {});
+
       set({
         token: response.access_token,
         user: response.user,
@@ -101,6 +108,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       // Sync token to native quick-add preferences
       QuickAddModule.syncAuthSession(response.access_token, resolveApiBaseUrl()).catch(() => {});
+
+      // Eagerly preload offline data on successful signup
+      preloadOfflineData({ force: true }).catch(() => {});
 
       set({
         token: response.access_token,
@@ -129,6 +139,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
       await secureStorage.clearAll();
       await cacheService.invalidate(CACHE_KEYS.USER_PROFILE);
+      preloadService.reset();
 
       set({
         token: null,
