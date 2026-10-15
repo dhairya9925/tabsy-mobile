@@ -89,4 +89,89 @@ export const cacheService = {
       console.warn(`[cacheService] Failed to invalidate pattern "${prefix}":`, err);
     }
   },
+
+  /**
+   * Scans all cached keys, checks timestamps against TTL, and purges expired entries.
+   * Returns the count of removed entries.
+   */
+  async cleanupExpiredEntries(): Promise<number> {
+    try {
+      const allKeys = await appStorage.getAllKeys();
+      const cacheKeys = allKeys.filter((k) => k.startsWith('cache:'));
+      let removedCount = 0;
+
+      for (const key of cacheKeys) {
+        const entry = await appStorage.getItem<CacheEntry<any>>(key);
+        if (!entry) continue;
+
+        const ttl = entry.ttl ?? DEFAULT_TTL_MS;
+        const isExpired = Date.now() - entry.timestamp > ttl;
+        if (isExpired) {
+          await appStorage.removeItem(key);
+          removedCount++;
+        }
+      }
+
+      return removedCount;
+    } catch (err) {
+      console.warn('[cacheService] cleanupExpiredEntries failed:', err);
+      return 0;
+    }
+  },
+
+  /**
+   * Returns estimated storage metrics (key count, cache keys count, approximate size in bytes).
+   */
+  async getStorageMetrics(): Promise<{
+    totalKeys: number;
+    cacheKeysCount: number;
+    estimatedBytes: number;
+  }> {
+    try {
+      const allKeys = await appStorage.getAllKeys();
+      const cacheKeys = allKeys.filter((k) => k.startsWith('cache:'));
+      let estimatedBytes = 0;
+
+      for (const key of allKeys) {
+        const item = await appStorage.getItem(key);
+        if (item) {
+          estimatedBytes += key.length * 2 + JSON.stringify(item).length * 2;
+        }
+      }
+
+      return {
+        totalKeys: allKeys.length,
+        cacheKeysCount: cacheKeys.length,
+        estimatedBytes,
+      };
+    } catch {
+      return { totalKeys: 0, cacheKeysCount: 0, estimatedBytes: 0 };
+    }
+  },
+
+  /**
+   * Trims cached personal expenses to at most maxItems (most recent first)
+   * to prevent exceeding device storage limits on large accounts.
+   */
+  async trimExpensesCache(maxItems: number = 500): Promise<number> {
+    try {
+      const expenses = await this.get<any[]>(CACHE_KEYS.PERSONAL_EXPENSES);
+      if (!Array.isArray(expenses) || expenses.length <= maxItems) {
+        return 0;
+      }
+
+      const sorted = [...expenses].sort((a, b) => {
+        const dateA = new Date(a.expense_date || a.created_at || 0).getTime();
+        const dateB = new Date(b.expense_date || b.created_at || 0).getTime();
+        return dateB - dateA;
+      });
+
+      const trimmed = sorted.slice(0, maxItems);
+      const removed = expenses.length - trimmed.length;
+      await this.set(CACHE_KEYS.PERSONAL_EXPENSES, trimmed);
+      return removed;
+    } catch {
+      return 0;
+    }
+  },
 };

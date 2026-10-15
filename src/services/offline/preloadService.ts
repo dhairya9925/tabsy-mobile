@@ -26,10 +26,12 @@ export class PreloadService {
 
   constructor() {
     // Automatically trigger cache refresh when connectivity is restored
+    let prevOnline = networkService.isOnline();
     networkService.subscribe((isOnline) => {
-      if (isOnline) {
+      if (isOnline && !prevOnline) {
         this.preloadAll().catch(() => {});
       }
+      prevOnline = isOnline;
     });
   }
 
@@ -167,6 +169,14 @@ export class PreloadService {
         } catch {
           // Non-fatal analytics precompute error
         }
+      }
+
+      // Level 4: Cache Maintenance & Eviction (purges expired keys, prunes large lists)
+      try {
+        await cacheService.cleanupExpiredEntries();
+        await cacheService.trimExpensesCache(500);
+      } catch {
+        // Non-fatal cache hygiene error
       }
 
       this.lastPreloadTimestamp = Date.now();

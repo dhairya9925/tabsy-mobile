@@ -29,10 +29,12 @@ class OutboxService {
   constructor() {
     this.loadFromStorage();
     // Automatically trigger queue processing when network connectivity is restored
+    let prevOnline = networkService.isOnline();
     networkService.subscribe((isOnline) => {
-      if (isOnline) {
+      if (isOnline && !prevOnline) {
         this.processQueue().catch(() => {});
       }
+      prevOnline = isOnline;
     });
   }
 
@@ -83,6 +85,15 @@ class OutboxService {
 
   public getQueue(): OutboxAction[] {
     return [...this.queue];
+  }
+
+  /**
+   * Helper that resolves when any current sync operation completes.
+   */
+  public async waitForSync(): Promise<void> {
+    while (this.isSyncing) {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
   }
 
   public generateTempId(prefix = 'temp-exp'): string {
