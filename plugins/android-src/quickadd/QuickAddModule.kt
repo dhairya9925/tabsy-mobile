@@ -111,13 +111,16 @@ class QuickAddModule(private val reactContext: ReactApplicationContext) :
     }
 
     @ReactMethod
-    fun syncAuthSession(token: String, apiUrl: String, promise: Promise) {
+    fun syncAuthSession(token: String, apiUrl: String, userId: String, promise: Promise) {
         try {
             val prefs = reactContext.getSharedPreferences(QuickAddService.PREFS_NAME, android.content.Context.MODE_PRIVATE)
-            prefs.edit()
+            val editor = prefs.edit()
                 .putString("auth_token", token)
                 .putString("api_url", apiUrl)
-                .apply()
+            if (userId.isNotEmpty()) {
+                editor.putString("user_id", userId)
+            }
+            editor.apply()
             promise.resolve(true)
         } catch (e: Exception) {
             promise.reject("SYNC_AUTH_ERROR", e.message, e)
@@ -130,6 +133,9 @@ class QuickAddModule(private val reactContext: ReactApplicationContext) :
             val prefs = reactContext.getSharedPreferences(QuickAddService.PREFS_NAME, android.content.Context.MODE_PRIVATE)
             prefs.edit()
                 .remove("auth_token")
+                .remove("user_id")
+                .remove("user_groups")
+                .remove("user_friends")
                 .apply()
             promise.resolve(true)
         } catch (e: Exception) {
@@ -178,6 +184,28 @@ class QuickAddModule(private val reactContext: ReactApplicationContext) :
             promise.resolve(true)
         } catch (e: Exception) {
             promise.reject("SYNC_CATEGORIES_ERROR", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun syncGroups(groupsJson: String, promise: Promise) {
+        try {
+            val prefs = reactContext.getSharedPreferences(QuickAddService.PREFS_NAME, android.content.Context.MODE_PRIVATE)
+            prefs.edit().putString("user_groups", groupsJson).apply()
+            promise.resolve(true)
+        } catch (e: Exception) {
+            promise.reject("SYNC_GROUPS_ERROR", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun syncFriends(friendsJson: String, promise: Promise) {
+        try {
+            val prefs = reactContext.getSharedPreferences(QuickAddService.PREFS_NAME, android.content.Context.MODE_PRIVATE)
+            prefs.edit().putString("user_friends", friendsJson).apply()
+            promise.resolve(true)
+        } catch (e: Exception) {
+            promise.reject("SYNC_FRIENDS_ERROR", e.message, e)
         }
     }
 }

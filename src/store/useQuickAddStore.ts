@@ -1,8 +1,12 @@
 import { create } from 'zustand';
-import { QuickAddModule } from '../native/QuickAddModule';
+import { QuickAddModule, QuickAddGroupItem, QuickAddFriendItem } from '../native/QuickAddModule';
 import { secureStorage } from '../utils/secureStorage';
 import { resolveApiBaseUrl } from '../api/client';
 import { expensesApi } from '../api/expenses';
+import { groupsApi } from '../api/groups';
+import { friendsApi } from '../api/friends';
+import { useAuthStore } from './useAuthStore';
+import { cacheService, CACHE_KEYS } from '../services/offline/cacheService';
 
 export const QUICK_ADD_ENABLED_KEY = 'tabsy_quick_add_enabled';
 
@@ -21,6 +25,7 @@ export interface QuickAddState {
   requestNotificationPermission: () => Promise<boolean>;
   openOverlay: (mode?: 'voice' | 'text') => Promise<boolean>;
   flushPendingExpenses: () => Promise<void>;
+  syncUserData: () => Promise<void>;
   setError: (error: string | null) => void;
 }
 
@@ -60,6 +65,9 @@ export const useQuickAddStore = create<QuickAddState>((set, get) => ({
       // Auto-flush pending offline expenses
       await get().flushPendingExpenses();
 
+      // Sync latest user auth, groups, and friends to native preferences
+      await get().syncUserData();
+
       // If user had enabled it previously and service isn't running, start it
       if (isEnabled && !serviceRunning && QuickAddModule.isSupported()) {
         await QuickAddModule.startQuickAddService();
@@ -96,10 +104,8 @@ export const useQuickAddStore = create<QuickAddState>((set, get) => ({
 
     try {
       if (enabled) {
-        const token = await secureStorage.getAuthToken();
-        if (token) {
-          await QuickAddModule.syncAuthSession(token, resolveApiBaseUrl());
-        }
+        await get().syncUserData();
+
         // Start foreground service
         const started = await QuickAddModule.startQuickAddService();
         await secureStorage.setItem(QUICK_ADD_ENABLED_KEY, 'true');
@@ -143,6 +149,67 @@ export const useQuickAddStore = create<QuickAddState>((set, get) => ({
 
   openOverlay: async (mode: 'voice' | 'text' = 'text'): Promise<boolean> => {
     return QuickAddModule.openOverlay(mode);
+  },
+
+  syncUserData: async () => {
+    try {
+      const token = await secureStorage.getAuthToken();
+      if (!token) return;
+
+      const user = useAuthStore.getState().user;
+      const userId = user?.id || (user as any)?.user_id || '';
+
+      await QuickAddModule.syncAuthSession(token, resolveApiBaseUrl(), userId);
+
+      // Fast sync from local cache first
+      const cachedGroups = await cacheService.get<any[]>(CACHE_KEYS.GROUPS_LIST);
+      const cachedFriends = await cacheService.get<any[]>(CACHE_KEYS.FRIENDS_LIST);
+
+      if (Array.isArray(cachedGroups)) {
+        const formattedGroups: QuickAddGroupItem[] = cachedGroups.map((g) => ({
+          id: g.id,
+          name: g.name,
+        }));
+        await QuickAddModule.syncGroups(formattedGroups);
+      }
+
+      if (Array.isArray(cachedFriends)) {
+        const formattedFriends: QuickAddFriendItem[] = cachedFriends.map((f) => ({
+          friend_id: f.friend_id,
+          display_name: f.profile?.display_name || f.profile?.email || f.friend_id,
+        }));
+        await QuickAddModule.syncFriends(formattedFriends);
+      }
+
+      // Background fresh fetch from API
+      groupsApi
+        .getGroups()
+        .then((groups) => {
+          if (Array.isArray(groups)) {
+            const formattedGroups: QuickAddGroupItem[] = groups.map((g) => ({
+              id: g.id,
+              name: g.name,
+            }));
+            QuickAddModule.syncGroups(formattedGroups).catch(() => {});
+          }
+        })
+        .catch(() => {});
+
+      friendsApi
+        .getFriends()
+        .then((friends) => {
+          if (Array.isArray(friends)) {
+            const formattedFriends: QuickAddFriendItem[] = friends.map((f) => ({
+              friend_id: f.friend_id,
+              display_name: f.profile?.display_name || f.profile?.email || f.friend_id,
+            }));
+            QuickAddModule.syncFriends(formattedFriends).catch(() => {});
+          }
+        })
+        .catch(() => {});
+    } catch (err) {
+      console.warn('[useQuickAddStore] syncUserData error:', err);
+    }
   },
 
   flushPendingExpenses: async () => {

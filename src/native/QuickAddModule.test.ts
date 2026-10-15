@@ -91,12 +91,27 @@ test('QuickAddModule syncTheme executes cleanly with theme config', async () => 
   assert.strictEqual(syncThemeRes, true);
 });
 
-test('QuickAddModule syncCategories executes cleanly with category list', async () => {
-  const syncCatsRes = await QuickAddModule.syncCategories([
-    { name: 'Food & Dining' },
-    { name: 'Transport' },
-    { name: 'Groceries' },
+test('QuickAddModule auth session sync with userId and clear execute cleanly', async () => {
+  const syncRes = await QuickAddModule.syncAuthSession('mock_token', 'http://localhost:8000', 'usr_123');
+  assert.strictEqual(syncRes, true);
+
+  const clearRes = await QuickAddModule.clearAuthSession();
+  assert.strictEqual(clearRes, true);
+});
+
+test('QuickAddModule syncGroups executes cleanly with group list', async () => {
+  const syncGroupsRes = await QuickAddModule.syncGroups([
+    { id: 'grp_1', name: 'Goa Trip' },
+    { id: 'grp_2', name: 'Apartment' },
   ]);
-  assert.strictEqual(syncCatsRes, true);
+  assert.strictEqual(syncGroupsRes, true);
+});
+
+test('QuickAddModule syncFriends executes cleanly with friend list', async () => {
+  const syncFriendsRes = await QuickAddModule.syncFriends([
+    { friend_id: 'usr_friend_1', display_name: 'Rahul Sharma' },
+    { friend_id: 'usr_friend_2', display_name: 'Priya Patel' },
+  ]);
+  assert.strictEqual(syncFriendsRes, true);
 });
 

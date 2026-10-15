@@ -46,8 +46,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           cacheService.set(CACHE_KEYS.USER_PROFILE, cachedUser).catch(() => {});
         }
 
-        // Sync token to native quick-add preferences
-        QuickAddModule.syncAuthSession(storedToken, resolveApiBaseUrl()).catch(() => {});
+        // Sync token and user id to native quick-add preferences
+        QuickAddModule.syncAuthSession(storedToken, resolveApiBaseUrl(), cachedUser?.id || (cachedUser as any)?.user_id || '').catch(() => {});
 
         // Eagerly preload and cache offline data in the background
         preloadOfflineData().catch(() => {});
@@ -58,6 +58,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             set({ user: freshUser });
             secureStorage.setCachedUser(freshUser);
             cacheService.set(CACHE_KEYS.USER_PROFILE, freshUser).catch(() => {});
+            QuickAddModule.syncAuthSession(storedToken, resolveApiBaseUrl(), freshUser?.id || (freshUser as any)?.user_id || '').catch(() => {});
           })
           .catch(() => {
             // Keep cached user if offline
@@ -80,8 +81,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       await secureStorage.setCachedUser(response.user);
       await cacheService.set(CACHE_KEYS.USER_PROFILE, response.user);
 
-      // Sync token to native quick-add preferences
-      QuickAddModule.syncAuthSession(response.access_token, resolveApiBaseUrl()).catch(() => {});
+      // Sync token and user id to native quick-add preferences
+      QuickAddModule.syncAuthSession(response.access_token, resolveApiBaseUrl(), response.user?.id || (response.user as any)?.user_id || '').catch(() => {});
 
       // Eagerly preload offline data on successful login
       preloadOfflineData({ force: true }).catch(() => {});
@@ -106,8 +107,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       await secureStorage.setCachedUser(response.user);
       await cacheService.set(CACHE_KEYS.USER_PROFILE, response.user);
 
-      // Sync token to native quick-add preferences
-      QuickAddModule.syncAuthSession(response.access_token, resolveApiBaseUrl()).catch(() => {});
+      // Sync token and user id to native quick-add preferences
+      QuickAddModule.syncAuthSession(response.access_token, resolveApiBaseUrl(), response.user?.id || (response.user as any)?.user_id || '').catch(() => {});
 
       // Eagerly preload offline data on successful signup
       preloadOfflineData({ force: true }).catch(() => {});

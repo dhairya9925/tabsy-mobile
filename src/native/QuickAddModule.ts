@@ -13,6 +13,16 @@ export interface QuickAddThemeConfig {
   accentSoft: string;
 }
 
+export interface QuickAddGroupItem {
+  id: string;
+  name: string;
+}
+
+export interface QuickAddFriendItem {
+  friend_id: string;
+  display_name: string;
+}
+
 export interface QuickAddModuleInterface {
   isSupported(): boolean;
   startQuickAddService(): Promise<boolean>;
@@ -25,12 +35,14 @@ export interface QuickAddModuleInterface {
   openOverlay(mode?: 'voice' | 'text'): Promise<boolean>;
   updateOverlayState(amount: string, category: string): Promise<boolean>;
   dismissOverlay(): Promise<boolean>;
-  syncAuthSession(token: string, apiUrl: string): Promise<boolean>;
+  syncAuthSession(token: string, apiUrl: string, userId?: string): Promise<boolean>;
   clearAuthSession(): Promise<boolean>;
   getPendingExpenses(): Promise<string>;
   clearPendingExpenses(): Promise<boolean>;
   syncTheme(themeConfig: QuickAddThemeConfig): Promise<boolean>;
   syncCategories(categories: { name: string; icon?: string }[]): Promise<boolean>;
+  syncGroups(groups: QuickAddGroupItem[]): Promise<boolean>;
+  syncFriends(friends: QuickAddFriendItem[]): Promise<boolean>;
   addActionListener(listener: (mode: 'voice' | 'text') => void): () => void;
 }
 
@@ -254,11 +266,11 @@ export const QuickAddModule: QuickAddModuleInterface = {
     return false;
   },
 
-  async syncAuthSession(token: string, apiUrl: string): Promise<boolean> {
+  async syncAuthSession(token: string, apiUrl: string, userId: string = ''): Promise<boolean> {
     const nativeModule = getNativeModule();
     if (nativeModule?.syncAuthSession) {
       try {
-        return Boolean(await nativeModule.syncAuthSession(token, apiUrl));
+        return Boolean(await nativeModule.syncAuthSession(token, apiUrl, userId || ''));
       } catch (err) {
         console.warn('[QuickAddModule] syncAuthSession native call failed:', err);
       }
@@ -321,6 +333,30 @@ export const QuickAddModule: QuickAddModuleInterface = {
         return Boolean(await nativeModule.syncCategories(JSON.stringify(categories)));
       } catch (err) {
         console.warn('[QuickAddModule] syncCategories native call failed:', err);
+      }
+    }
+    return true;
+  },
+
+  async syncGroups(groups: QuickAddGroupItem[]): Promise<boolean> {
+    const nativeModule = getNativeModule();
+    if (nativeModule?.syncGroups) {
+      try {
+        return Boolean(await nativeModule.syncGroups(JSON.stringify(groups)));
+      } catch (err) {
+        console.warn('[QuickAddModule] syncGroups native call failed:', err);
+      }
+    }
+    return true;
+  },
+
+  async syncFriends(friends: QuickAddFriendItem[]): Promise<boolean> {
+    const nativeModule = getNativeModule();
+    if (nativeModule?.syncFriends) {
+      try {
+        return Boolean(await nativeModule.syncFriends(JSON.stringify(friends)));
+      } catch (err) {
+        console.warn('[QuickAddModule] syncFriends native call failed:', err);
       }
     }
     return true;
