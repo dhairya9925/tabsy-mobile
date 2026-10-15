@@ -5,6 +5,7 @@ import android.animation.ObjectAnimator
 import android.animation.PropertyValuesHolder
 import android.animation.ValueAnimator
 import android.app.Activity
+import android.app.DatePickerDialog
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -40,6 +41,7 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
@@ -120,16 +122,19 @@ class QuickAddOverlayActivity : Activity() {
     private lateinit var progressSection: LinearLayout
     private lateinit var tvProgressMessage: TextView
     private lateinit var confirmationSection: LinearLayout
-    private lateinit var tvParsedAmount: TextView
+    private lateinit var btnEditToggle: TextView
+    private lateinit var tvCurrencySymbol: TextView
+    private lateinit var etParsedAmount: EditText
     private lateinit var tvParsedCategory: TextView
     private lateinit var targetRow: LinearLayout
     private lateinit var tvTypeLabel: TextView
     private lateinit var tvExpenseTarget: TextView
-    private lateinit var tvParsedNote: TextView
-    private lateinit var tvParsedDate: TextView
+    private lateinit var etParsedNote: EditText
+    private lateinit var etParsedDate: EditText
     private lateinit var btnCancel: Button
     private lateinit var btnConfirm: Button
     private lateinit var tvSuccessBanner: TextView
+    private var isEditMode = false
 
     private var speechRecognizer: SpeechRecognizer? = null
     private var isListening = false
@@ -307,7 +312,8 @@ class QuickAddOverlayActivity : Activity() {
             receiptCard?.background = receiptBg
 
             findViewById<TextView>(R.id.tvTotalLabel)?.setTextColor(Color.parseColor(themeColors.muted))
-            tvParsedAmount.setTextColor(Color.parseColor(themeColors.text))
+            tvCurrencySymbol.setTextColor(Color.parseColor(themeColors.text))
+            etParsedAmount.setTextColor(Color.parseColor(themeColors.text))
             findViewById<View>(R.id.receiptDivider)?.setBackgroundColor(Color.parseColor(themeColors.line))
             findViewById<TextView>(R.id.tvCategoryLabel)?.setTextColor(Color.parseColor(themeColors.muted))
 
@@ -317,6 +323,9 @@ class QuickAddOverlayActivity : Activity() {
                 setColor(Color.parseColor(themeColors.accentSoft))
                 setStroke(dpToPx(1f).toInt(), Color.parseColor(themeColors.accent))
             }
+            btnEditToggle.background = catPillBg
+            btnEditToggle.setTextColor(Color.parseColor(themeColors.accent))
+
             tvParsedCategory.background = catPillBg
             tvParsedCategory.setTextColor(Color.parseColor(themeColors.accent))
 
@@ -325,9 +334,9 @@ class QuickAddOverlayActivity : Activity() {
             tvExpenseTarget.setTextColor(Color.parseColor(themeColors.accent))
 
             findViewById<TextView>(R.id.tvNoteLabel)?.setTextColor(Color.parseColor(themeColors.muted))
-            tvParsedNote.setTextColor(Color.parseColor(themeColors.text))
+            etParsedNote.setTextColor(Color.parseColor(themeColors.text))
             findViewById<TextView>(R.id.tvDateLabel)?.setTextColor(Color.parseColor(themeColors.muted))
-            tvParsedDate.setTextColor(Color.parseColor(themeColors.muted))
+            etParsedDate.setTextColor(Color.parseColor(themeColors.muted))
 
             val cancelBtnBg = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
@@ -398,13 +407,15 @@ class QuickAddOverlayActivity : Activity() {
         progressSection = findViewById(R.id.progressSection)
         tvProgressMessage = findViewById(R.id.tvProgressMessage)
         confirmationSection = findViewById(R.id.confirmationSection)
-        tvParsedAmount = findViewById(R.id.tvParsedAmount)
+        btnEditToggle = findViewById(R.id.btnEditToggle)
+        tvCurrencySymbol = findViewById(R.id.tvCurrencySymbol)
+        etParsedAmount = findViewById(R.id.etParsedAmount)
         tvParsedCategory = findViewById(R.id.tvParsedCategory)
         targetRow = findViewById(R.id.targetRow)
         tvTypeLabel = findViewById(R.id.tvTypeLabel)
         tvExpenseTarget = findViewById(R.id.tvExpenseTarget)
-        tvParsedNote = findViewById(R.id.tvParsedNote)
-        tvParsedDate = findViewById(R.id.tvParsedDate)
+        etParsedNote = findViewById(R.id.etParsedNote)
+        etParsedDate = findViewById(R.id.etParsedDate)
         btnCancel = findViewById(R.id.btnCancel)
         btnConfirm = findViewById(R.id.btnConfirm)
         tvSuccessBanner = findViewById(R.id.tvSuccessBanner)
@@ -459,7 +470,19 @@ class QuickAddOverlayActivity : Activity() {
             }
         }
 
+        btnEditToggle.setOnClickListener {
+            toggleEditMode()
+        }
+
+        etParsedDate.setOnClickListener {
+            if (isEditMode) {
+                showDatePickerDialog()
+            }
+        }
+
         btnCancel.setOnClickListener {
+            hideKeyboard()
+            setEditMode(false)
             confirmationSection.visibility = View.GONE
             tabBar.visibility = View.VISIBLE
             switchMode(currentMode)
@@ -933,31 +956,87 @@ class QuickAddOverlayActivity : Activity() {
         )
     }
 
+    private fun toggleEditMode() {
+        setEditMode(!isEditMode)
+    }
+
+    private fun setEditMode(enabled: Boolean) {
+        isEditMode = enabled
+        btnEditToggle.text = if (isEditMode) "✓ Done" else "✎ Edit"
+
+        etParsedAmount.isEnabled = isEditMode
+        etParsedAmount.isFocusable = isEditMode
+        etParsedAmount.isFocusableInTouchMode = isEditMode
+
+        etParsedNote.isEnabled = isEditMode
+        etParsedNote.isFocusable = isEditMode
+        etParsedNote.isFocusableInTouchMode = isEditMode
+
+        etParsedDate.isEnabled = isEditMode
+
+        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+        if (isEditMode) {
+            etParsedAmount.requestFocus()
+            etParsedAmount.setSelection(etParsedAmount.text.length)
+            imm?.showSoftInput(etParsedAmount, InputMethodManager.SHOW_IMPLICIT)
+        } else {
+            currentFocus?.let { view ->
+                imm?.hideSoftInputFromWindow(view.windowToken, 0)
+            }
+            etParsedAmount.clearFocus()
+            etParsedNote.clearFocus()
+            etParsedDate.clearFocus()
+        }
+    }
+
+    private fun showDatePickerDialog() {
+        val cal = Calendar.getInstance()
+        try {
+            val currentText = etParsedDate.text.toString().trim()
+            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+            sdf.parse(currentText)?.let {
+                cal.time = it
+            }
+        } catch (_: Exception) {}
+
+        val datePicker = DatePickerDialog(
+            this,
+            { _, year, month, dayOfMonth ->
+                val selected = Calendar.getInstance().apply {
+                    set(Calendar.YEAR, year)
+                    set(Calendar.MONTH, month)
+                    set(Calendar.DAY_OF_MONTH, dayOfMonth)
+                }
+                val formatted = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(selected.time)
+                etParsedDate.setText(formatted)
+            },
+            cal.get(Calendar.YEAR),
+            cal.get(Calendar.MONTH),
+            cal.get(Calendar.DAY_OF_MONTH)
+        )
+        datePicker.show()
+    }
+
     private fun showConfirmation(parsed: ParsedExpenseData) {
         pendingExpense = parsed
         progressSection.visibility = View.GONE
         confirmationSection.visibility = View.VISIBLE
 
-        tvParsedAmount.text = "₹${String.format(Locale.US, "%.2f", parsed.amount)}"
+        setEditMode(false)
+
+        etParsedAmount.setText(String.format(Locale.US, "%.2f", parsed.amount))
         tvParsedCategory.text = formatCategoryWithEmoji(parsed.category)
         tvParsedCategory.setOnClickListener {
             showCategorySelectionDialog()
         }
-        tvParsedNote.text = parsed.note
+        etParsedNote.setText(parsed.note)
 
-        val displayDate = try {
-            val inputDf = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-            val dateObj = inputDf.parse(parsed.expenseDate)
-            val todayStr = inputDf.format(Date())
-            if (parsed.expenseDate == todayStr) {
-                "Today, " + SimpleDateFormat("d MMM", Locale.US).format(Date())
-            } else {
-                SimpleDateFormat("EEE, d MMM", Locale.US).format(dateObj ?: Date())
-            }
-        } catch (e: Exception) {
-            "Today"
+        val rawDate = if (parsed.expenseDate.isNotEmpty()) {
+            parsed.expenseDate
+        } else {
+            SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
         }
-        tvParsedDate.text = displayDate
+        etParsedDate.setText(rawDate)
 
         when (parsed.expenseType) {
             "group" -> {
@@ -980,6 +1059,24 @@ class QuickAddOverlayActivity : Activity() {
     }
 
     private fun saveExpense(expense: ParsedExpenseData) {
+        val rawAmtStr = etParsedAmount.text.toString().replace("[₹,]".toRegex(), "").trim()
+        val finalAmount = rawAmtStr.toDoubleOrNull() ?: expense.amount
+        val finalNote = etParsedNote.text.toString().trim().ifEmpty { expense.note }
+        val rawDate = etParsedDate.text.toString().trim()
+        val finalDate = when {
+            rawDate.isEmpty() || rawDate.equals("Today", ignoreCase = true) -> SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+            else -> rawDate
+        }
+        val finalCat = pendingExpense?.category ?: expense.category
+
+        val finalExpense = expense.copy(
+            amount = finalAmount,
+            note = finalNote,
+            expenseDate = finalDate,
+            category = finalCat
+        )
+
+        hideKeyboard()
         confirmationSection.visibility = View.GONE
         progressSection.visibility = View.VISIBLE
         tvProgressMessage.text = "Saving expense..."
@@ -993,24 +1090,24 @@ class QuickAddOverlayActivity : Activity() {
 
             try {
                 if (!token.isNullOrEmpty()) {
-                    savedOnline = when (expense.expenseType) {
+                    savedOnline = when (finalExpense.expenseType) {
                         "group" -> {
-                            if (!expense.groupId.isNullOrEmpty()) {
-                                saveGroupExpense(baseUrl, token, expense)
+                            if (!finalExpense.groupId.isNullOrEmpty()) {
+                                saveGroupExpense(baseUrl, token, finalExpense)
                             } else {
-                                savePersonalExpense(baseUrl, token, expense)
+                                savePersonalExpense(baseUrl, token, finalExpense)
                             }
                         }
                         "friend" -> {
-                            if (!expense.friendId.isNullOrEmpty()) {
+                            if (!finalExpense.friendId.isNullOrEmpty()) {
                                 val currentUserId = prefs.getString("user_id", "") ?: ""
-                                saveFriendExpense(baseUrl, token, currentUserId, expense)
+                                saveFriendExpense(baseUrl, token, currentUserId, finalExpense)
                             } else {
-                                savePersonalExpense(baseUrl, token, expense)
+                                savePersonalExpense(baseUrl, token, finalExpense)
                             }
                         }
                         else -> {
-                            savePersonalExpense(baseUrl, token, expense)
+                            savePersonalExpense(baseUrl, token, finalExpense)
                         }
                     }
                 }
@@ -1019,13 +1116,13 @@ class QuickAddOverlayActivity : Activity() {
             }
 
             if (!savedOnline) {
-                saveToOfflineQueue(expense)
+                saveToOfflineQueue(finalExpense)
             }
 
             mainHandler.post {
                 val message = when {
-                    savedOnline && expense.expenseType == "group" -> "✅ Added to Group!"
-                    savedOnline && expense.expenseType == "friend" -> "✅ Split Recorded!"
+                    savedOnline && finalExpense.expenseType == "group" -> "✅ Added to Group!"
+                    savedOnline && finalExpense.expenseType == "friend" -> "✅ Split Recorded!"
                     savedOnline -> "✅ Expense Saved!"
                     else -> "Saved offline ✅"
                 }
