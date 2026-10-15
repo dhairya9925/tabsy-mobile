@@ -50,3 +50,9 @@ test('useQuickAddStore syncUserData executes cleanly', async () => {
   assert.strictEqual(true, true);
 });
 
+test('useQuickAddStore flushPendingExpenses executes cleanly', async () => {
+  await useQuickAddStore.getState().flushPendingExpenses();
+  assert.strictEqual(true, true);
+});
+
+

@@ -957,36 +957,32 @@ class QuickAddOverlayActivity : Activity() {
 
         executor.execute {
             var savedOnline = false
+            val prefs = getSharedPreferences(QuickAddService.PREFS_NAME, Context.MODE_PRIVATE)
+            val token = prefs.getString("auth_token", null)
+            val rawApiUrl = prefs.getString("api_url", "http://10.0.2.2:8000") ?: "http://10.0.2.2:8000"
+            val baseUrl = rawApiUrl.trimEnd('/')
+
             try {
-                val prefs = getSharedPreferences(QuickAddService.PREFS_NAME, Context.MODE_PRIVATE)
-                val token = prefs.getString("auth_token", null)
-                val rawApiUrl = prefs.getString("api_url", "http://10.0.2.2:8000") ?: "http://10.0.2.2:8000"
-                val baseUrl = rawApiUrl.trimEnd('/')
-
                 if (!token.isNullOrEmpty()) {
-                    val url = URL("$baseUrl/api/v1/expenses/personal")
-                    val conn = (url.openConnection() as HttpURLConnection).apply {
-                        requestMethod = "POST"
-                        connectTimeout = 7000
-                        readTimeout = 7000
-                        setRequestProperty("Content-Type", "application/json")
-                        setRequestProperty("Authorization", "Bearer $token")
-                        doOutput = true
-                    }
-
-                    val payload = JSONObject().apply {
-                        put("amount", expense.amount)
-                        put("category", expense.category.lowercase(Locale.ROOT))
-                        put("note", expense.note)
-                        put("expense_date", expense.expenseDate)
-                    }
-
-                    conn.outputStream.use { os ->
-                        os.write(payload.toString().toByteArray(Charsets.UTF_8))
-                    }
-
-                    if (conn.responseCode in 200..299) {
-                        savedOnline = true
+                    savedOnline = when (expense.expenseType) {
+                        "group" -> {
+                            if (!expense.groupId.isNullOrEmpty()) {
+                                saveGroupExpense(baseUrl, token, expense)
+                            } else {
+                                savePersonalExpense(baseUrl, token, expense)
+                            }
+                        }
+                        "friend" -> {
+                            if (!expense.friendId.isNullOrEmpty()) {
+                                val currentUserId = prefs.getString("user_id", "") ?: ""
+                                saveFriendExpense(baseUrl, token, currentUserId, expense)
+                            } else {
+                                savePersonalExpense(baseUrl, token, expense)
+                            }
+                        }
+                        else -> {
+                            savePersonalExpense(baseUrl, token, expense)
+                        }
                     }
                 }
             } catch (e: Exception) {
@@ -998,10 +994,99 @@ class QuickAddOverlayActivity : Activity() {
             }
 
             mainHandler.post {
-                val message = if (savedOnline) "✅ Expense Saved!" else "Saved offline ✅"
+                val message = when {
+                    savedOnline && expense.expenseType == "group" -> "✅ Added to Group!"
+                    savedOnline && expense.expenseType == "friend" -> "✅ Split Recorded!"
+                    savedOnline -> "✅ Expense Saved!"
+                    else -> "Saved offline ✅"
+                }
                 showSuccessAndDismiss(message)
             }
         }
+    }
+
+    private fun savePersonalExpense(baseUrl: String, token: String, e: ParsedExpenseData): Boolean {
+        val url = URL("$baseUrl/api/v1/expenses/personal")
+        val payload = JSONObject().apply {
+            put("amount", e.amount)
+            put("category", e.category.lowercase(Locale.ROOT))
+            put("note", e.note)
+            put("expense_date", e.expenseDate)
+        }
+        return doPost(url, token, payload)
+    }
+
+    private fun saveGroupExpense(baseUrl: String, token: String, e: ParsedExpenseData): Boolean {
+        val splits = JSONArray()
+        try {
+            val membersUrl = URL("$baseUrl/api/v1/groups/${e.groupId}/members")
+            val membersConn = (membersUrl.openConnection() as HttpURLConnection).apply {
+                requestMethod = "GET"
+                connectTimeout = 5000
+                readTimeout = 5000
+                setRequestProperty("Authorization", "Bearer $token")
+            }
+            if (membersConn.responseCode in 200..299) {
+                val resp = membersConn.inputStream.bufferedReader().use { it.readText() }
+                val membersJson = JSONArray(resp)
+                val count = if (membersJson.length() > 0) membersJson.length() else 1
+                val share = Math.round((e.amount / count) * 100.0) / 100.0
+                for (i in 0 until membersJson.length()) {
+                    val m = membersJson.getJSONObject(i)
+                    val uid = m.optString("user_id", "")
+                    if (uid.isNotEmpty()) {
+                        splits.put(JSONObject().apply {
+                            put("user_id", uid)
+                            put("amount", share)
+                        })
+                    }
+                }
+            }
+        } catch (err: Exception) {
+            Log.w(TAG, "Failed to fetch group members for splits", err)
+        }
+
+        val payload = JSONObject().apply {
+            put("amount", e.amount)
+            put("category", e.category.lowercase(Locale.ROOT))
+            put("note", e.note)
+            put("expense_date", e.expenseDate)
+            put("splits", splits)
+        }
+        return doPost(URL("$baseUrl/api/v1/groups/${e.groupId}/expenses"), token, payload)
+    }
+
+    private fun saveFriendExpense(baseUrl: String, token: String, currentUserId: String, e: ParsedExpenseData): Boolean {
+        val payerId = if (e.paidBy.equals("friend", ignoreCase = true)) {
+            e.friendId ?: currentUserId.ifEmpty { "self" }
+        } else {
+            currentUserId.ifEmpty { "self" }
+        }
+
+        val payload = JSONObject().apply {
+            put("amount", e.amount)
+            put("category", e.category.lowercase(Locale.ROOT))
+            put("note", e.note)
+            put("expense_date", e.expenseDate)
+            put("paid_by", payerId)
+            put("split_type", if (e.splitType.equals("full", ignoreCase = true)) "full" else "equal")
+        }
+        return doPost(URL("$baseUrl/api/v1/friends/${e.friendId}/expenses"), token, payload)
+    }
+
+    private fun doPost(url: URL, token: String, payload: JSONObject): Boolean {
+        val conn = (url.openConnection() as HttpURLConnection).apply {
+            requestMethod = "POST"
+            connectTimeout = 7000
+            readTimeout = 7000
+            setRequestProperty("Content-Type", "application/json")
+            setRequestProperty("Authorization", "Bearer $token")
+            doOutput = true
+        }
+        conn.outputStream.use { os ->
+            os.write(payload.toString().toByteArray(Charsets.UTF_8))
+        }
+        return conn.responseCode in 200..299
     }
 
     private fun saveToOfflineQueue(expense: ParsedExpenseData) {
@@ -1014,6 +1099,13 @@ class QuickAddOverlayActivity : Activity() {
                 put("category", expense.category)
                 put("note", expense.note)
                 put("expense_date", expense.expenseDate)
+                put("expense_type", expense.expenseType)
+                put("group_id", expense.groupId ?: JSONObject.NULL)
+                put("group_name", expense.groupName ?: JSONObject.NULL)
+                put("friend_id", expense.friendId ?: JSONObject.NULL)
+                put("friend_name", expense.friendName ?: JSONObject.NULL)
+                put("paid_by", expense.paidBy)
+                put("split_type", expense.splitType)
                 put("created_at", SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
                     timeZone = TimeZone.getTimeZone("UTC")
                 }.format(Date()))

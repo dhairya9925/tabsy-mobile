@@ -7,6 +7,7 @@ import { groupsApi } from '../api/groups';
 import { friendsApi } from '../api/friends';
 import { useAuthStore } from './useAuthStore';
 import { cacheService, CACHE_KEYS } from '../services/offline/cacheService';
+import { splitEqual } from '../utils/money';
 
 export const QUICK_ADD_ENABLED_KEY = 'tabsy_quick_add_enabled';
 
@@ -218,21 +219,63 @@ export const useQuickAddStore = create<QuickAddState>((set, get) => ({
       if (!pendingJson || pendingJson === '[]') return;
 
       const items = JSON.parse(pendingJson);
-      if (Array.isArray(items) && items.length > 0) {
-        for (const item of items) {
-          try {
-            await expensesApi.createPersonalExpense({
-              amount: Number(item.amount),
-              category: item.category || 'General',
-              note: item.note || undefined,
-              expense_date: item.expense_date,
+      if (!Array.isArray(items) || items.length === 0) return;
+
+      const currentUserId =
+        useAuthStore.getState().user?.id ||
+        (useAuthStore.getState().user as any)?.user_id ||
+        'self';
+
+      for (const item of items) {
+        try {
+          const expenseDate = item.expense_date || new Date().toISOString().split('T')[0];
+          const amount = Number(item.amount) || 0;
+          const category = item.category || 'General';
+          const note = item.note || undefined;
+
+          if (item.expense_type === 'group' && item.group_id) {
+            const members = await groupsApi.getGroupMembers(item.group_id);
+            const count = members.length > 0 ? members.length : 1;
+            const shares = splitEqual(amount, count);
+            const splits = members.map((m, idx) => ({
+              user_id: m.user_id,
+              amount: shares[idx] || 0,
+            }));
+
+            await groupsApi.createGroupExpense(item.group_id, {
+              amount,
+              category,
+              note,
+              expense_date: expenseDate,
+              splits,
             });
-          } catch (syncErr) {
-            console.warn('[useQuickAddStore] Error syncing offline expense:', syncErr);
+          } else if (item.expense_type === 'friend' && item.friend_id) {
+            const payerId =
+              item.paid_by === 'friend'
+                ? item.friend_id
+                : (item.paid_by && item.paid_by !== 'self' ? item.paid_by : currentUserId);
+
+            await friendsApi.createFriendExpense(item.friend_id, {
+              amount,
+              category,
+              note,
+              expense_date: expenseDate,
+              paid_by: payerId,
+              split_type: item.split_type === 'full' ? 'full' : 'equal',
+            });
+          } else {
+            await expensesApi.createPersonalExpense({
+              amount,
+              category,
+              note,
+              expense_date: expenseDate,
+            });
           }
+        } catch (syncErr) {
+          console.warn('[useQuickAddStore] Error syncing offline expense:', syncErr);
         }
-        await QuickAddModule.clearPendingExpenses();
       }
+      await QuickAddModule.clearPendingExpenses();
     } catch (err) {
       console.warn('[useQuickAddStore] flushPendingExpenses error:', err);
     }
