@@ -185,6 +185,7 @@ export const RootNavigator: React.FC = () => {
               options={{
                 presentation: 'transparentModal',
                 animation: 'fade',
+                contentStyle: { backgroundColor: 'transparent' },
               }}
             />
           </>

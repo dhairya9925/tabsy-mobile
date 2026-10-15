@@ -26,7 +26,7 @@ import { friendsApi } from '../../api/friends';
 import { useAuthStore } from '../../store/useAuthStore';
 import { Group, FriendRecord, FriendBalance } from '../../types';
 import { formatCurrency } from '../../utils/formatters';
-import { cacheService, CACHE_KEYS } from '../../services/offline/cacheService';
+import { cacheService, CACHE_KEYS, outboxService } from '../../services/offline';
 import { Users, UserPlus, KeyRound, UserCheck, Settings, Plus } from 'lucide-react-native';
 
 export const GroupsListScreen: React.FC = () => {
@@ -49,121 +49,218 @@ export const GroupsListScreen: React.FC = () => {
   const [friendBalances, setFriendBalances] = useState<FriendBalance[]>([]);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
-  const [isLoading, setIsLoading] = useState(false);
+  // Independent loading states so background fetches don't race/cancel each other
+  const [isGroupsLoading, setIsGroupsLoading] = useState(false);
+  const [isFriendsLoading, setIsFriendsLoading] = useState(false);
+  const isLoading = mainTab === 'groups' ? isGroupsLoading : isFriendsLoading;
+
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [showJoinPopup, setShowJoinPopup] = useState(false);
 
-  const loadData = useCallback(async () => {
-    setIsLoading(true);
+  // Fast-path: Instant 0ms cache hydration from local storage
+  const hydrateFromCache = useCallback(async () => {
+    try {
+      const [
+        cachedGroups,
+        cachedGroupBalances,
+        cachedGroupCounts,
+        cachedFriends,
+        cachedPending,
+        cachedSent,
+        cachedBalances,
+      ] = await Promise.all([
+        cacheService.get<Group[]>(CACHE_KEYS.GROUPS_LIST),
+        cacheService.get<Record<string, number>>(CACHE_KEYS.GROUP_BALANCES),
+        cacheService.get<Record<string, number>>(CACHE_KEYS.GROUP_MEMBER_COUNTS),
+        cacheService.get<FriendRecord[]>(CACHE_KEYS.FRIENDS_LIST),
+        cacheService.get<FriendRecord[]>(CACHE_KEYS.PENDING_FRIEND_REQUESTS),
+        cacheService.get<FriendRecord[]>(CACHE_KEYS.SENT_FRIEND_REQUESTS),
+        cacheService.get<FriendBalance[]>(CACHE_KEYS.FRIEND_BALANCES),
+      ]);
+
+      if (Array.isArray(cachedGroups) && cachedGroups.length > 0) {
+        setGroups(cachedGroups);
+      }
+      if (cachedGroupBalances) {
+        setGroupBalances(cachedGroupBalances);
+      }
+      if (cachedGroupCounts) {
+        setMemberCounts(cachedGroupCounts);
+      }
+      if (Array.isArray(cachedFriends) && cachedFriends.length > 0) {
+        setFriends(cachedFriends);
+      }
+      if (Array.isArray(cachedPending) && cachedPending.length > 0) {
+        setPendingRequests(cachedPending);
+      }
+      if (Array.isArray(cachedSent) && cachedSent.length > 0) {
+        setSentRequests(cachedSent);
+      }
+      if (Array.isArray(cachedBalances) && cachedBalances.length > 0) {
+        setFriendBalances(cachedBalances);
+      }
+    } catch {
+      // Best-effort cache hydration
+    }
+  }, []);
+
+  // Hydrate immediately on mount & react to outbox syncs
+  useEffect(() => {
+    hydrateFromCache();
+
+    const unsub = outboxService.subscribe(() => {
+      hydrateFromCache();
+    });
+
+    return unsub;
+  }, [hydrateFromCache]);
+
+  const loadGroupsData = useCallback(async (isPullToRefresh = false) => {
+    if (isPullToRefresh || groups.length === 0) {
+      setIsGroupsLoading(true);
+    }
     setErrorMessage('');
     const currId = currentUser?.id || currentUser?.user_id || '';
 
     try {
-      if (mainTab === 'groups') {
-        const gList = await groupsApi.getGroups();
-        setGroups(gList);
+      const gList = await groupsApi.getGroups();
+      setGroups(gList);
 
-        const balancesMap: Record<string, number> = {};
-        const countsMap: Record<string, number> = {};
+      const balancesMap: Record<string, number> = {};
+      const countsMap: Record<string, number> = {};
 
-        // Optimistically prefill from cached maps if available
-        const [cachedBalances, cachedCounts] = await Promise.all([
-          cacheService.get<Record<string, number>>(CACHE_KEYS.GROUP_BALANCES),
-          cacheService.get<Record<string, number>>(CACHE_KEYS.GROUP_MEMBER_COUNTS),
-        ]);
-        if (cachedBalances) setGroupBalances(cachedBalances);
-        if (cachedCounts) setMemberCounts(cachedCounts);
+      const [cachedBalances, cachedCounts] = await Promise.all([
+        cacheService.get<Record<string, number>>(CACHE_KEYS.GROUP_BALANCES),
+        cacheService.get<Record<string, number>>(CACHE_KEYS.GROUP_MEMBER_COUNTS),
+      ]);
+      if (cachedBalances) setGroupBalances(cachedBalances);
+      if (cachedCounts) setMemberCounts(cachedCounts);
 
-        await Promise.all(
-          gList.map(async (g) => {
-            try {
-              const [bList, mList] = await Promise.all([
-                groupsApi.getGroupBalances(g.id).catch(() => []),
-                groupsApi.getGroupMembers(g.id).catch(() => []),
-              ]);
+      await Promise.all(
+        gList.map(async (g) => {
+          try {
+            const [bList, mList] = await Promise.all([
+              groupsApi.getGroupBalances(g.id).catch(() => []),
+              groupsApi.getGroupMembers(g.id).catch(() => []),
+            ]);
 
-              countsMap[g.id] = mList.length;
+            countsMap[g.id] = mList.length;
 
-              let net = 0;
-              bList.forEach((b) => {
-                if (b.to_user_id === currId) net += b.amount;
-                if (b.from_user_id === currId) net -= b.amount;
-              });
-              balancesMap[g.id] = net;
-            } catch {
-              // Ignore per-group failure
-            }
-          })
-        );
-
-        setGroupBalances(balancesMap);
-        setMemberCounts(countsMap);
-        cacheService.set(CACHE_KEYS.GROUP_BALANCES, balancesMap).catch(() => {});
-        cacheService.set(CACHE_KEYS.GROUP_MEMBER_COUNTS, countsMap).catch(() => {});
-      } else {
-        const [friendsData, pendingData, sentData, balancesData] = await Promise.all([
-          friendsApi.getFriends().catch(() => []),
-          friendsApi.getPendingRequests().catch(() => []),
-          friendsApi.getSentRequests().catch(() => []),
-          friendsApi.getFriendBalances().catch(() => []),
-        ]);
-
-        const currentUserId = currentUser?.id;
-        const acceptedFriendIds = new Set<string>();
-        const acceptedEmails = new Set<string>();
-
-        friendsData.forEach((f) => {
-          const counterpartId = f.user_id === currentUserId ? f.friend_id : f.user_id;
-          if (counterpartId) acceptedFriendIds.add(counterpartId);
-          if (f.profile?.user_id) acceptedFriendIds.add(f.profile.user_id);
-          if (f.profile?.email) acceptedEmails.add(f.profile.email.toLowerCase());
-        });
-
-        // Filter out sent requests where counterpart is already an accepted friend or profile is missing
-        const validSentData = sentData.filter((s) => {
-          if (!s.profile && !s.friend_id) return false;
-          const counterpartId = s.user_id === currentUserId ? s.friend_id : s.user_id;
-          if (counterpartId && acceptedFriendIds.has(counterpartId)) return false;
-          if (s.profile?.user_id && acceptedFriendIds.has(s.profile.user_id)) return false;
-          if (s.profile?.email && acceptedEmails.has(s.profile.email.toLowerCase())) return false;
-          return true;
-        });
-
-        // Background auto-clean stale sent requests on the server
-        sentData.forEach((s) => {
-          const counterpartId = s.user_id === currentUserId ? s.friend_id : s.user_id;
-          const isStale = (!s.profile && !s.friend_id) ||
-            (counterpartId && acceptedFriendIds.has(counterpartId)) ||
-            (s.profile?.user_id && acceptedFriendIds.has(s.profile.user_id)) ||
-            (s.profile?.email && acceptedEmails.has(s.profile.email.toLowerCase()));
-          if (isStale && s.id) {
-            friendsApi.removeFriend(s.id).catch(() => { });
+            let net = 0;
+            bList.forEach((b) => {
+              if (b.to_user_id === currId) net += b.amount;
+              if (b.from_user_id === currId) net -= b.amount;
+            });
+            balancesMap[g.id] = net;
+          } catch {
+            // Ignore per-group failure
           }
-        });
+        })
+      );
 
-        // Also filter out pending (incoming) requests where counterpart is already friends
-        const validPendingData = pendingData.filter((p) => {
-          if (!p.profile && !p.user_id) return false;
-          const counterpartId = p.user_id === currentUserId ? p.friend_id : p.user_id;
-          if (counterpartId && acceptedFriendIds.has(counterpartId)) return false;
-          if (p.profile?.user_id && acceptedFriendIds.has(p.profile.user_id)) return false;
-          if (p.profile?.email && acceptedEmails.has(p.profile.email.toLowerCase())) return false;
-          return true;
-        });
-
-        setFriends(friendsData);
-        setPendingRequests(validPendingData);
-        setSentRequests(validSentData);
-        setFriendBalances(balancesData);
-      }
+      setGroupBalances(balancesMap);
+      setMemberCounts(countsMap);
+      cacheService.set(CACHE_KEYS.GROUP_BALANCES, balancesMap).catch(() => {});
+      cacheService.set(CACHE_KEYS.GROUP_MEMBER_COUNTS, countsMap).catch(() => {});
     } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to load data');
+      setErrorMessage(err.message || 'Failed to load groups');
     } finally {
-      setIsLoading(false);
+      setIsGroupsLoading(false);
     }
-  }, [mainTab, currentUser]);
+  }, [currentUser, groups.length]);
 
+  const loadFriendsData = useCallback(async (isPullToRefresh = false) => {
+    if (isPullToRefresh || friends.length === 0) {
+      setIsFriendsLoading(true);
+    }
+    setErrorMessage('');
+
+    try {
+      const [friendsData, pendingData, sentData, balancesData] = await Promise.all([
+        friendsApi.getFriends().catch(() => []),
+        friendsApi.getPendingRequests().catch(() => []),
+        friendsApi.getSentRequests().catch(() => []),
+        friendsApi.getFriendBalances().catch(() => []),
+      ]);
+
+      const currentUserId = currentUser?.id;
+      const acceptedFriendIds = new Set<string>();
+      const acceptedEmails = new Set<string>();
+
+      friendsData.forEach((f) => {
+        const counterpartId = f.user_id === currentUserId ? f.friend_id : f.user_id;
+        if (counterpartId) acceptedFriendIds.add(counterpartId);
+        if (f.profile?.user_id) acceptedFriendIds.add(f.profile.user_id);
+        if (f.profile?.email) acceptedEmails.add(f.profile.email.toLowerCase());
+      });
+
+      // Filter out sent requests where counterpart is already an accepted friend or profile is missing
+      const validSentData = sentData.filter((s) => {
+        if (!s.profile && !s.friend_id) return false;
+        const counterpartId = s.user_id === currentUserId ? s.friend_id : s.user_id;
+        if (counterpartId && acceptedFriendIds.has(counterpartId)) return false;
+        if (s.profile?.user_id && acceptedFriendIds.has(s.profile.user_id)) return false;
+        if (s.profile?.email && acceptedEmails.has(s.profile.email.toLowerCase())) return false;
+        return true;
+      });
+
+      // Background auto-clean stale sent requests on the server
+      sentData.forEach((s) => {
+        const counterpartId = s.user_id === currentUserId ? s.friend_id : s.user_id;
+        const isStale = (!s.profile && !s.friend_id) ||
+          (counterpartId && acceptedFriendIds.has(counterpartId)) ||
+          (s.profile?.user_id && acceptedFriendIds.has(s.profile.user_id)) ||
+          (s.profile?.email && acceptedEmails.has(s.profile.email.toLowerCase()));
+        if (isStale && s.id) {
+          friendsApi.removeFriend(s.id).catch(() => {});
+        }
+      });
+
+      // Also filter out pending (incoming) requests where counterpart is already friends
+      const validPendingData = pendingData.filter((p) => {
+        if (!p.profile && !p.user_id) return false;
+        const counterpartId = p.user_id === currentUserId ? p.friend_id : p.user_id;
+        if (counterpartId && acceptedFriendIds.has(counterpartId)) return false;
+        if (p.profile?.user_id && acceptedFriendIds.has(p.profile.user_id)) return false;
+        if (p.profile?.email && acceptedEmails.has(p.profile.email.toLowerCase())) return false;
+        return true;
+      });
+
+      setFriends(friendsData);
+      setPendingRequests(validPendingData);
+      setSentRequests(validSentData);
+      setFriendBalances(balancesData);
+
+      // Persist friend balances & requests to cache
+      cacheService.set(CACHE_KEYS.FRIEND_BALANCES, balancesData).catch(() => {});
+      cacheService.set(CACHE_KEYS.PENDING_FRIEND_REQUESTS, validPendingData, 5 * 60 * 1000).catch(() => {});
+      cacheService.set(CACHE_KEYS.SENT_FRIEND_REQUESTS, validSentData, 5 * 60 * 1000).catch(() => {});
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Failed to load friends');
+    } finally {
+      setIsFriendsLoading(false);
+    }
+  }, [currentUser, friends.length]);
+
+  const loadData = useCallback(async (isPullToRefresh = false) => {
+    if (mainTab === 'groups') {
+      await loadGroupsData(isPullToRefresh);
+    } else {
+      await loadFriendsData(isPullToRefresh);
+    }
+  }, [mainTab, loadGroupsData, loadFriendsData]);
+
+  // Load/refresh data automatically whenever switching between Groups and Friends
+  useEffect(() => {
+    if (mainTab === 'groups') {
+      loadGroupsData();
+    } else {
+      loadFriendsData();
+    }
+  }, [mainTab, loadGroupsData, loadFriendsData]);
+
+  // Reload active tab on screen focus
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       loadData();
@@ -294,7 +391,7 @@ export const GroupsListScreen: React.FC = () => {
   return (
     <ScreenShell
       isRefreshing={isLoading}
-      onRefresh={loadData}
+      onRefresh={() => loadData(true)}
       contentContainerStyle={styles.container}
     >
       <Toast

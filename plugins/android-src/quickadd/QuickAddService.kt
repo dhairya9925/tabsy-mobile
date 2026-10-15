@@ -131,8 +131,9 @@ class QuickAddService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Main content tap intent
-        val contentIntent = Intent(Intent.ACTION_VIEW, Uri.parse("tabsy://quick-add")).apply {
+        // Main content tap intent - opens the native floating overlay card
+        val contentIntent = Intent(this, QuickAddOverlayActivity::class.java).apply {
+            putExtra("mode", "voice")
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         val contentPendingIntent = PendingIntent.getActivity(
