@@ -69,7 +69,14 @@ class QuickAddOverlayActivity : Activity() {
         val amount: Double,
         val category: String,
         val note: String,
-        val expenseDate: String
+        val expenseDate: String,
+        val expenseType: String = "personal",
+        val groupId: String? = null,
+        val groupName: String? = null,
+        val friendId: String? = null,
+        val friendName: String? = null,
+        val paidBy: String = "self",
+        val splitType: String = "equal"
     )
 
     data class ThemeColors(
@@ -708,6 +715,7 @@ class QuickAddOverlayActivity : Activity() {
 
                     val payload = JSONObject().apply {
                         put("text", userText)
+                        put("conversation_history", JSONArray())
                     }
 
                     conn.outputStream.use { os ->
@@ -730,7 +738,36 @@ class QuickAddOverlayActivity : Activity() {
                         val note = data.optString("note", userText).ifEmpty { userText }
                         val today = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
                         val date = data.optString("expense_date", today).ifEmpty { today }
-                        parsedResult = ParsedExpenseData(amt, cat, note, date)
+
+                        val rawExpenseType = data.optString("expense_type", "personal").trim().lowercase(Locale.ROOT)
+                        val expenseType = if (rawExpenseType in listOf("personal", "group", "friend")) rawExpenseType else "personal"
+
+                        fun optCleanString(key: String): String? {
+                            if (!data.has(key) || data.isNull(key)) return null
+                            val v = data.optString(key, "").trim()
+                            return if (v.isEmpty() || v.equals("null", ignoreCase = true)) null else v
+                        }
+
+                        val groupId = optCleanString("group_id")
+                        val groupName = optCleanString("group_name")
+                        val friendId = optCleanString("friend_id")
+                        val friendName = optCleanString("friend_name")
+                        val paidBy = optCleanString("paid_by") ?: "self"
+                        val splitType = optCleanString("split_type") ?: "equal"
+
+                        parsedResult = ParsedExpenseData(
+                            amount = amt,
+                            category = cat,
+                            note = note,
+                            expenseDate = date,
+                            expenseType = expenseType,
+                            groupId = groupId,
+                            groupName = groupName,
+                            friendId = friendId,
+                            friendName = friendName,
+                            paidBy = paidBy,
+                            splitType = splitType
+                        )
                     }
                 } catch (netErr: Exception) {
                     Log.w(TAG, "Network parse failed, using local parser", netErr)
@@ -827,12 +864,62 @@ class QuickAddOverlayActivity : Activity() {
             .ifEmpty { text }
             .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() }
 
+        var detectedExpenseType = "personal"
+        var detectedGroupId: String? = null
+        var detectedGroupName: String? = null
+        var detectedFriendId: String? = null
+        var detectedFriendName: String? = null
+
+        try {
+            val prefs = getSharedPreferences(QuickAddService.PREFS_NAME, Context.MODE_PRIVATE)
+            val groupsJson = prefs.getString("user_groups", null)
+            if (!groupsJson.isNullOrEmpty()) {
+                val groupsArr = JSONArray(groupsJson)
+                for (i in 0 until groupsArr.length()) {
+                    val g = groupsArr.getJSONObject(i)
+                    val gName = g.optString("name", "").trim()
+                    if (gName.isNotEmpty() && lower.contains(gName.lowercase(Locale.ROOT))) {
+                        detectedExpenseType = "group"
+                        detectedGroupId = g.optString("id", "").ifEmpty { null }
+                        detectedGroupName = gName
+                        break
+                    }
+                }
+            }
+
+            if (detectedExpenseType == "personal") {
+                val friendsJson = prefs.getString("user_friends", null)
+                if (!friendsJson.isNullOrEmpty()) {
+                    val friendsArr = JSONArray(friendsJson)
+                    for (i in 0 until friendsArr.length()) {
+                        val f = friendsArr.getJSONObject(i)
+                        val fName = f.optString("display_name", "").trim()
+                        if (fName.isNotEmpty() && lower.contains(fName.lowercase(Locale.ROOT))) {
+                            detectedExpenseType = "friend"
+                            detectedFriendId = f.optString("friend_id", "").ifEmpty { null }
+                            detectedFriendName = fName
+                            break
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Error checking local groups/friends in parseLocally", e)
+        }
+
         val today = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
         return ParsedExpenseData(
             amount = amount,
             category = category,
             note = cleanedNote,
-            expenseDate = today
+            expenseDate = today,
+            expenseType = detectedExpenseType,
+            groupId = detectedGroupId,
+            groupName = detectedGroupName,
+            friendId = detectedFriendId,
+            friendName = detectedFriendName,
+            paidBy = "self",
+            splitType = "equal"
         )
     }
 
