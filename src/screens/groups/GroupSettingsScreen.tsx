@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { SharedStackParamList } from '../../navigation/types';
-import { colors, radii, spacing, shadows } from '../../theme';
+import { useTheme, radii, spacing, shadows } from '../../theme';
 import {
   SproutText,
   SproutButton,
@@ -28,6 +28,7 @@ import { ArrowLeft, Trash2, Share2, Users, AlignLeft, ShieldAlert } from 'lucide
 type Props = NativeStackScreenProps<SharedStackParamList, 'GroupSettings'>;
 
 export const GroupSettingsScreen: React.FC<Props> = ({ route, navigation }) => {
+  const { colors } = useTheme();
   const { groupId } = route.params;
   const currentUser = useAuthStore((s) => s.user);
 
@@ -157,7 +158,7 @@ export const GroupSettingsScreen: React.FC<Props> = ({ route, navigation }) => {
         />
 
         {/* Group Type Card */}
-        <View style={styles.infoCard}>
+        <View style={[styles.infoCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
           <SproutText variant="eyebrow" color={colors.muted} style={styles.cardEyebrow}>
             GROUP CATEGORY
           </SproutText>
@@ -171,7 +172,7 @@ export const GroupSettingsScreen: React.FC<Props> = ({ route, navigation }) => {
 
         {/* Share Code Card */}
         <TouchableOpacity
-          style={styles.shareCard}
+          style={[styles.shareCard, { backgroundColor: colors.surface, borderColor: colors.line }]}
           activeOpacity={0.7}
           onPress={handleShareCode}
           accessibilityRole="button"
@@ -247,8 +248,8 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   infoCard: {
-    backgroundColor: colors.surface,
     borderRadius: radii.md,
+    borderWidth: 1,
     padding: spacing.md,
   },
   cardEyebrow: {
@@ -261,8 +262,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.surface,
     borderRadius: radii.md,
+    borderWidth: 1,
     padding: spacing.md,
   },
   shareLeft: {

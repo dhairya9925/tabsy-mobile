@@ -3,7 +3,7 @@ import { View, StyleSheet, Alert, ScrollView } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
 import { JournalStackParamList, RootStackParamList } from '../../navigation/types';
-import { colors, radii, spacing, shadows } from '../../theme';
+import { useTheme, radii, spacing, shadows } from '../../theme';
 import {
   SproutText,
   SproutButton,
@@ -21,6 +21,7 @@ type Props = NativeStackScreenProps<JournalStackParamList, 'ExpenseDetail'>;
 
 export const ExpenseDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const rootNavigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { colors, isDark } = useTheme();
   const [expense, setExpense] = useState(route.params.expense);
   const [isDeleting, setIsDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -84,7 +85,7 @@ export const ExpenseDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollBody}>
         {/* Hero Amount Card */}
-        <View style={styles.heroCard}>
+        <View style={[styles.heroCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
           <SproutText variant="eyebrow" color={colors.muted} style={styles.amountEyebrow}>
             TOTAL AMOUNT
           </SproutText>
@@ -92,7 +93,7 @@ export const ExpenseDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             -{formatCurrencyExact(expense.amount)}
           </SproutText>
 
-          <View style={styles.categoryBadge}>
+          <View style={[styles.categoryBadge, { backgroundColor: colors.soft }]}>
             <View style={styles.badgeIcon}>{getCategoryIcon(categoryName)}</View>
             <SproutText variant="caption" color={colors.text} weight="700">
               {categoryName}
@@ -101,9 +102,9 @@ export const ExpenseDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         </View>
 
         {/* Detail Cards */}
-        <View style={styles.detailsGroup}>
-          <View style={styles.detailRow}>
-            <View style={styles.detailIconCircle}>
+        <View style={[styles.detailsGroup, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+          <View style={[styles.detailRow, { borderBottomColor: colors.line }]}>
+            <View style={[styles.detailIconCircle, { backgroundColor: colors.accentSoft }]}>
               <FileText size={18} color={colors.accent} />
             </View>
             <View style={styles.detailContent}>
@@ -116,8 +117,8 @@ export const ExpenseDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             </View>
           </View>
 
-          <View style={styles.detailRow}>
-            <View style={styles.detailIconCircle}>
+          <View style={[styles.detailRow, { borderBottomColor: colors.line }]}>
+            <View style={[styles.detailIconCircle, { backgroundColor: colors.accentSoft }]}>
               <Calendar size={18} color={colors.accent} />
             </View>
             <View style={styles.detailContent}>
@@ -130,8 +131,8 @@ export const ExpenseDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             </View>
           </View>
 
-          <View style={styles.detailRow}>
-            <View style={styles.detailIconCircle}>
+          <View style={[styles.detailRow, { borderBottomWidth: 0 }]}>
+            <View style={[styles.detailIconCircle, { backgroundColor: colors.accentSoft }]}>
               <User size={18} color={colors.accent} />
             </View>
             <View style={styles.detailContent}>
@@ -181,10 +182,8 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   heroCard: {
-    backgroundColor: colors.surface,
     borderRadius: radii.xl,
     borderWidth: 1,
-    borderColor: colors.line,
     padding: spacing.xl,
     alignItems: 'center',
     marginBottom: spacing.lg,
@@ -199,7 +198,6 @@ const styles = StyleSheet.create({
   categoryBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.soft,
     borderRadius: radii.full,
     paddingVertical: 6,
     paddingHorizontal: spacing.md,
@@ -209,10 +207,8 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   detailsGroup: {
-    backgroundColor: colors.surface,
     borderRadius: radii.lg,
     borderWidth: 1,
-    borderColor: colors.line,
     padding: spacing.md,
     ...shadows.card,
   },
@@ -221,13 +217,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F4EE',
   },
   detailIconCircle: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: colors.accentSoft,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,

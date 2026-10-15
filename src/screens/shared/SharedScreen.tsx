@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { colors, spacing } from '../../theme';
+import { useTheme, spacing } from '../../theme';
 import { SproutText, ScreenShell, SegmentControl } from '../../components';
 import { Users, UserPlus, FolderPlus } from 'lucide-react-native';
 
 export const SharedScreen: React.FC = () => {
+  const { colors } = useTheme();
   const [subTab, setSubTab] = useState<'groups' | 'friends'>('groups');
 
   const options = [
@@ -32,7 +33,7 @@ export const SharedScreen: React.FC = () => {
         onChange={(v) => setSubTab(v)}
       />
 
-      <View style={styles.card}>
+      <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
         {subTab === 'groups' ? (
           <>
             <FolderPlus size={36} color={colors.accent} strokeWidth={1.5} />
@@ -71,10 +72,8 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
   card: {
-    backgroundColor: colors.surface,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: colors.line,
     padding: spacing.xl,
     alignItems: 'center',
     justifyContent: 'center',

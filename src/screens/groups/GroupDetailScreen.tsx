@@ -9,7 +9,7 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
 import { SharedStackParamList, RootStackParamList } from '../../navigation/types';
-import { colors, fontFamilies, radii, spacing } from '../../theme';
+import { useTheme, fontFamilies, radii, spacing } from '../../theme';
 import {
   SproutText,
   CircleButton,
@@ -49,6 +49,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 type Props = NativeStackScreenProps<SharedStackParamList, 'GroupDetail'>;
 
 export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
+  const { colors } = useTheme();
   const { groupId } = route.params;
   const rootNavigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const currentUser = useAuthStore((s) => s.user);
@@ -376,7 +377,7 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                   disabled={isAddingMember}
                   style={[styles.addMemberSubmit, { backgroundColor: colors.accent }]}
                 >
-                  <SproutText variant="caption" weight="700" style={{ color: colors.surface }}>
+                  <SproutText variant="caption" weight="700" style={{ color: colors.onAccent }}>
                     {isAddingMember ? 'Adding...' : 'Add'}
                   </SproutText>
                 </TouchableOpacity>
@@ -432,13 +433,11 @@ const styles = StyleSheet.create({
     fontSize: 9,
     letterSpacing: 1.2,
     textTransform: 'uppercase',
-    color: colors.muted,
   },
   topBarTitle: {
     fontFamily: fontFamilies.bold,
     fontSize: 21,
     letterSpacing: -0.8,
-    color: colors.text,
     marginTop: 2,
   },
   topBarActions: {
@@ -461,7 +460,6 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilies.bold,
     fontSize: 18,
     letterSpacing: -0.4,
-    color: colors.text,
   },
   addBtn: {
     flexDirection: 'row',
@@ -470,7 +468,6 @@ const styles = StyleSheet.create({
   addBtnText: {
     fontFamily: fontFamilies.bold,
     fontSize: 12,
-    color: colors.accent,
   },
   expensesList: {
     gap: 0,
@@ -486,13 +483,10 @@ const styles = StyleSheet.create({
   confirmText: {
     fontFamily: fontFamilies.medium,
     fontSize: 9,
-    color: colors.muted,
   },
   emptyCard: {
-    backgroundColor: colors.surface,
     borderRadius: radii.lg,
     borderWidth: 1,
-    borderColor: colors.line,
     padding: spacing.xl,
     alignItems: 'center',
     justifyContent: 'center',
@@ -509,7 +503,6 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   addMemberCard: {
-    backgroundColor: colors.surface,
     borderRadius: radii.md,
     padding: spacing.md,
     marginBottom: spacing.md,
@@ -521,7 +514,6 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   addMemberSubmit: {
-    backgroundColor: colors.accent,
     minHeight: 44,
     borderRadius: 22,
     alignItems: 'center',
@@ -535,14 +527,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.line,
     borderRadius: 18,
     paddingVertical: 12,
     paddingHorizontal: 14,
     marginBottom: spacing.md,
-    shadowColor: colors.text,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.03,
     shadowRadius: 3,
@@ -560,7 +549,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: colors.soft,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
@@ -581,7 +569,6 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: colors.soft,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,

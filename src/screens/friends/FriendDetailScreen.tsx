@@ -8,7 +8,7 @@ import {
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SharedStackParamList, RootStackParamList } from '../../navigation/types';
-import { colors, fontFamilies, radii, spacing } from '../../theme';
+import { useTheme, fontFamilies, radii, spacing } from '../../theme';
 import {
   SproutText,
   ScreenShell,
@@ -25,6 +25,7 @@ import { ArrowLeft, UserMinus, Plus, HandCoins, Receipt } from 'lucide-react-nat
 type FriendDetailRouteProp = RouteProp<SharedStackParamList, 'FriendDetail'>;
 
 export const FriendDetailScreen: React.FC = () => {
+  const { colors } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<SharedStackParamList>>();
   const rootNavigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<FriendDetailRouteProp>();
@@ -154,10 +155,10 @@ export const FriendDetailScreen: React.FC = () => {
         />
 
         <View style={styles.headerCenter}>
-          <SproutText style={styles.headerEyebrow}>
+          <SproutText style={[styles.headerEyebrow, { color: colors.muted }]}>
             1-ON-1 RHYTHM
           </SproutText>
-          <SproutText style={styles.headerTitle} numberOfLines={1}>
+          <SproutText style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
             {friendName}
           </SproutText>
         </View>
@@ -180,7 +181,7 @@ export const FriendDetailScreen: React.FC = () => {
         <TouchableOpacity
           activeOpacity={0.8}
           onPress={handleOpenAddExpense}
-          style={styles.primaryActionBtn}
+          style={[styles.primaryActionBtn, { backgroundColor: colors.accent }]}
         >
           <Plus size={16} color={colors.onAccent} style={{ marginRight: 6 }} />
           <SproutText variant="caption" color={colors.onAccent} weight="700">
@@ -191,7 +192,7 @@ export const FriendDetailScreen: React.FC = () => {
           <TouchableOpacity
             activeOpacity={0.8}
             onPress={handleOpenSettleUp}
-            style={styles.secondaryActionBtn}
+            style={[styles.secondaryActionBtn, { backgroundColor: colors.surface, borderColor: colors.accent }]}
           >
             <HandCoins size={16} color={colors.accent} style={{ marginRight: 6 }} />
             <SproutText variant="caption" color={colors.accent} weight="700">
@@ -203,12 +204,12 @@ export const FriendDetailScreen: React.FC = () => {
 
       {/* Shared Expenses Section */}
       <View style={styles.expensesSection}>
-        <SproutText variant="eyebrow" color={colors.muted} style={styles.sectionLabel}>
+        <SproutText variant="eyebrow" style={[styles.sectionLabel, { color: colors.text }]}>
           SHARED EXPENSES
         </SproutText>
 
         {expenses.length === 0 && !isLoading ? (
-          <View style={styles.emptyCard}>
+          <View style={[styles.emptyCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
             <Receipt size={36} color={colors.muted} strokeWidth={1.5} />
             <SproutText variant="subtitle" color={colors.text} style={styles.emptyTitle}>
               No shared expenses found
@@ -219,7 +220,7 @@ export const FriendDetailScreen: React.FC = () => {
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={handleOpenAddExpense}
-              style={styles.emptyBtn}
+              style={[styles.emptyBtn, { backgroundColor: colors.accent }]}
             >
               <SproutText variant="caption" color={colors.onAccent} weight="700">
                 + Add Expense
@@ -264,13 +265,11 @@ const styles = StyleSheet.create({
     fontSize: 9,
     letterSpacing: 1.2,
     textTransform: 'uppercase',
-    color: colors.muted,
   },
   headerTitle: {
     fontFamily: fontFamilies.bold,
     fontSize: 21,
     letterSpacing: -0.8,
-    color: colors.text,
     marginTop: 2,
   },
   actionsBar: {
@@ -284,7 +283,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.accent,
     minHeight: 44,
     borderRadius: 22,
   },
@@ -293,11 +291,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.surface,
     minHeight: 44,
     borderRadius: 22,
     borderWidth: 1,
-    borderColor: colors.accent,
   },
   expensesSection: {
     marginTop: spacing.xs,
@@ -306,17 +302,14 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilies.bold,
     fontSize: 18,
     letterSpacing: -0.4,
-    color: colors.text,
     marginBottom: spacing.sm,
   },
   expensesList: {
     gap: 0,
   },
   emptyCard: {
-    backgroundColor: colors.surface,
     borderRadius: radii.lg,
     borderWidth: 1,
-    borderColor: colors.line,
     padding: spacing.xl,
     alignItems: 'center',
     justifyContent: 'center',
@@ -331,7 +324,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   emptyBtn: {
-    backgroundColor: colors.accent,
     paddingVertical: 10,
     paddingHorizontal: spacing.xl,
     borderRadius: radii.full,

@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { View, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
-import { colors, radii, spacing, shadows } from '../../theme';
+import { useTheme, radii, spacing, shadows } from '../../theme';
 import {
   SproutText,
   SproutButton,
@@ -19,6 +19,7 @@ import { ArrowLeft, Plus, Trash2, Tag, Layers } from 'lucide-react-native';
 type Props = NativeStackScreenProps<RootStackParamList, 'CategoryManager'>;
 
 export const CategoryManagerScreen: React.FC<Props> = ({ navigation }) => {
+  const { colors, isDark } = useTheme();
   const [categories, setCategories] = useState<Category[]>([]);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -124,16 +125,16 @@ export const CategoryManagerScreen: React.FC<Props> = ({ navigation }) => {
         <SproutText variant="eyebrow" color={colors.accent}>
           CATEGORIES
         </SproutText>
-        <SproutText variant="hero" style={styles.title}>
+        <SproutText variant="hero" color={colors.text} style={styles.title}>
           Manage Categories
         </SproutText>
-        <SproutText variant="bodyMuted">
+        <SproutText variant="bodyMuted" color={colors.muted}>
           Create custom categories to organize your expenses.
         </SproutText>
       </View>
 
       {/* Add New Category Box */}
-      <View style={styles.addCard}>
+      <View style={[styles.addCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
         <SproutText variant="caption" color={colors.muted} weight="700" style={styles.addLabel}>
           ADD CATEGORY
         </SproutText>
@@ -161,7 +162,7 @@ export const CategoryManagerScreen: React.FC<Props> = ({ navigation }) => {
         </SproutText>
 
         {categories.length === 0 && !isLoading ? (
-          <View style={styles.emptyCard}>
+          <View style={[styles.emptyCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
             <Layers size={36} color={colors.muted} strokeWidth={1.5} />
             <SproutText variant="subtitle" color={colors.text} style={styles.emptyTitle}>
               No custom categories yet
@@ -173,8 +174,8 @@ export const CategoryManagerScreen: React.FC<Props> = ({ navigation }) => {
         ) : (
           <View style={styles.categoryList}>
             {categories.map((cat) => (
-              <View key={cat.id} style={styles.catItem}>
-                <View style={styles.catIconCircle}>{getCategoryIcon(cat.name)}</View>
+              <View key={cat.id} style={[styles.catItem, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+                <View style={[styles.catIconCircle, { backgroundColor: colors.accentSoft }]}>{getCategoryIcon(cat.name)}</View>
                 <View style={styles.catInfo}>
                   <SproutText variant="subtitle" color={colors.text} weight="700">
                     {cat.name}
@@ -219,10 +220,8 @@ const styles = StyleSheet.create({
     fontSize: 26,
   },
   addCard: {
-    backgroundColor: colors.surface,
     borderRadius: radii.lg,
     borderWidth: 1,
-    borderColor: colors.line,
     padding: spacing.md,
     marginBottom: spacing.xl,
     ...shadows.card,
@@ -252,10 +251,8 @@ const styles = StyleSheet.create({
   catItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.line,
     padding: spacing.md,
     ...shadows.card,
   },
@@ -263,7 +260,6 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: colors.accentSoft,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,
@@ -275,10 +271,8 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   emptyCard: {
-    backgroundColor: colors.surface,
     borderRadius: radii.lg,
     borderWidth: 1,
-    borderColor: colors.line,
     padding: spacing.xl,
     alignItems: 'center',
     justifyContent: 'center',
