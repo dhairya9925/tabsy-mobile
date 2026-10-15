@@ -7,6 +7,7 @@ import { groupsApi } from '../api/groups';
 import { friendsApi } from '../api/friends';
 import { useAuthStore } from './useAuthStore';
 import { cacheService, CACHE_KEYS } from '../services/offline/cacheService';
+import { networkService } from '../services/offline/networkService';
 import { splitEqual } from '../utils/money';
 
 export const QUICK_ADD_ENABLED_KEY = 'tabsy_quick_add_enabled';
@@ -26,7 +27,7 @@ export interface QuickAddState {
   requestNotificationPermission: () => Promise<boolean>;
   openOverlay: (mode?: 'voice' | 'text') => Promise<boolean>;
   flushPendingExpenses: () => Promise<void>;
-  syncUserData: () => Promise<void>;
+  syncUserData: (forceNetwork?: boolean) => Promise<void>;
   setError: (error: string | null) => void;
 }
 
@@ -152,7 +153,7 @@ export const useQuickAddStore = create<QuickAddState>((set, get) => ({
     return QuickAddModule.openOverlay(mode);
   },
 
-  syncUserData: async () => {
+  syncUserData: async (forceNetwork: boolean = false) => {
     try {
       const token = await secureStorage.getAuthToken();
       if (!token) return;
@@ -182,32 +183,53 @@ export const useQuickAddStore = create<QuickAddState>((set, get) => ({
         await QuickAddModule.syncFriends(formattedFriends);
       }
 
-      // Background fresh fetch from API
-      groupsApi
-        .getGroups()
-        .then((groups) => {
-          if (Array.isArray(groups)) {
-            const formattedGroups: QuickAddGroupItem[] = groups.map((g) => ({
-              id: g.id,
-              name: g.name,
-            }));
-            QuickAddModule.syncGroups(formattedGroups).catch(() => {});
-          }
-        })
-        .catch(() => {});
+      if (forceNetwork && networkService.isOnline()) {
+        const [groups, friends] = await Promise.all([
+          groupsApi.getGroups().catch(() => null),
+          friendsApi.getFriends().catch(() => null),
+        ]);
+        if (Array.isArray(groups)) {
+          const formattedGroups: QuickAddGroupItem[] = groups.map((g) => ({
+            id: g.id,
+            name: g.name,
+          }));
+          await QuickAddModule.syncGroups(formattedGroups);
+        }
+        if (Array.isArray(friends)) {
+          const formattedFriends: QuickAddFriendItem[] = friends.map((f) => ({
+            friend_id: f.friend_id,
+            display_name: f.profile?.display_name || f.profile?.email || f.friend_id,
+          }));
+          await QuickAddModule.syncFriends(formattedFriends);
+        }
+      } else {
+        // Background fresh fetch from API
+        groupsApi
+          .getGroups()
+          .then((groups) => {
+            if (Array.isArray(groups)) {
+              const formattedGroups: QuickAddGroupItem[] = groups.map((g) => ({
+                id: g.id,
+                name: g.name,
+              }));
+              QuickAddModule.syncGroups(formattedGroups).catch(() => {});
+            }
+          })
+          .catch(() => {});
 
-      friendsApi
-        .getFriends()
-        .then((friends) => {
-          if (Array.isArray(friends)) {
-            const formattedFriends: QuickAddFriendItem[] = friends.map((f) => ({
-              friend_id: f.friend_id,
-              display_name: f.profile?.display_name || f.profile?.email || f.friend_id,
-            }));
-            QuickAddModule.syncFriends(formattedFriends).catch(() => {});
-          }
-        })
-        .catch(() => {});
+        friendsApi
+          .getFriends()
+          .then((friends) => {
+            if (Array.isArray(friends)) {
+              const formattedFriends: QuickAddFriendItem[] = friends.map((f) => ({
+                friend_id: f.friend_id,
+                display_name: f.profile?.display_name || f.profile?.email || f.friend_id,
+              }));
+              QuickAddModule.syncFriends(formattedFriends).catch(() => {});
+            }
+          })
+          .catch(() => {});
+      }
     } catch (err) {
       console.warn('[useQuickAddStore] syncUserData error:', err);
     }

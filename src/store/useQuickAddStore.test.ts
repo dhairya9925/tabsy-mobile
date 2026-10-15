@@ -46,6 +46,7 @@ test('useQuickAddStore openOverlay executes without error', async () => {
 
 test('useQuickAddStore syncUserData executes cleanly', async () => {
   await useQuickAddStore.getState().syncUserData();
+  await useQuickAddStore.getState().syncUserData(true);
   // Confirms no unhandled promise rejections or exceptions during user data sync
   assert.strictEqual(true, true);
 });

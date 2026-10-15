@@ -18,6 +18,7 @@ import {
   AlertTriangle,
   ExternalLink,
   Sparkles,
+  RefreshCw,
 } from 'lucide-react-native';
 
 export const QuickAddToggle: React.FC = () => {
@@ -32,8 +33,11 @@ export const QuickAddToggle: React.FC = () => {
   const checkPermissions = useQuickAddStore((s) => s.checkPermissions);
   const requestOverlayPermission = useQuickAddStore((s) => s.requestOverlayPermission);
   const requestNotificationPermission = useQuickAddStore((s) => s.requestNotificationPermission);
+  const syncUserData = useQuickAddStore((s) => s.syncUserData);
 
   const [isToggling, setIsToggling] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncSuccess, setSyncSuccess] = useState(false);
   const isAndroid = QuickAddModule.isSupported();
 
   // Re-check permissions when the app comes back to foreground
@@ -57,6 +61,18 @@ export const QuickAddToggle: React.FC = () => {
 
   const handleTestOverlay = () => {
     navigation.navigate('QuickAddModal', { initialMode: 'text' });
+  };
+
+  const handleRefreshGroupsAndFriends = async () => {
+    setIsSyncing(true);
+    setSyncSuccess(false);
+    try {
+      await syncUserData(true);
+      setSyncSuccess(true);
+      setTimeout(() => setSyncSuccess(false), 2500);
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   return (
@@ -159,22 +175,46 @@ export const QuickAddToggle: React.FC = () => {
         </View>
       )}
 
-      {/* Action / Test Row */}
+      {/* Action / Sync Row */}
       <View style={[styles.bottomRow, { borderTopColor: colors.line }]}>
-        <TouchableOpacity
-          style={[styles.testBtn, { backgroundColor: colors.background }]}
-          onPress={handleTestOverlay}
-          activeOpacity={0.7}
-        >
-          <Sparkles size={14} color={colors.accent} style={{ marginRight: 6 }} />
-          <SproutText variant="caption" color={colors.accent} weight="700">
-            Test Quick Add Popup
-          </SproutText>
-        </TouchableOpacity>
+        <View style={styles.actionButtonsRow}>
+          <TouchableOpacity
+            style={[styles.testBtn, { backgroundColor: colors.background }]}
+            onPress={handleTestOverlay}
+            activeOpacity={0.7}
+            accessibilityLabel="Test quick add popup"
+          >
+            <Sparkles size={13} color={colors.accent} style={{ marginRight: 5 }} />
+            <SproutText variant="caption" color={colors.accent} weight="700" style={{ fontSize: 11 }}>
+              Test Popup
+            </SproutText>
+          </TouchableOpacity>
+
+          {isAndroid && isEnabled && (
+            <TouchableOpacity
+              style={[styles.testBtn, { backgroundColor: colors.background, marginLeft: 8 }]}
+              onPress={handleRefreshGroupsAndFriends}
+              disabled={isSyncing}
+              activeOpacity={0.7}
+              accessibilityLabel="Refresh groups and friends list"
+            >
+              {isSyncing ? (
+                <ActivityIndicator size="small" color={colors.accent} style={{ marginRight: 5 }} />
+              ) : syncSuccess ? (
+                <Check size={13} color={colors.accent} style={{ marginRight: 5 }} />
+              ) : (
+                <RefreshCw size={13} color={colors.accent} style={{ marginRight: 5 }} />
+              )}
+              <SproutText variant="caption" color={colors.accent} weight="700" style={{ fontSize: 11 }}>
+                {isSyncing ? 'Syncing...' : syncSuccess ? 'Refreshed!' : 'Refresh Groups'}
+              </SproutText>
+            </TouchableOpacity>
+          )}
+        </View>
 
         {isAndroid && isServiceRunning && (
           <SproutText variant="caption" color={colors.muted} style={{ fontSize: 11 }}>
-            Foreground service running
+            Running
           </SproutText>
         )}
       </View>
@@ -254,6 +294,10 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm + 2,
     paddingTop: spacing.xs + 4,
     borderTopWidth: 1,
+  },
+  actionButtonsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   testBtn: {
     flexDirection: 'row',
