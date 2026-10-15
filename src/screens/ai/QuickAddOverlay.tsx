@@ -579,7 +579,11 @@ export const QuickAddOverlay: React.FC = () => {
                               <Tag size={11} color={colors.accent} style={{ marginRight: 3 }} />
                             )}
                             <SproutText variant="caption" color={colors.accent} weight="700" style={{ fontSize: 10 }}>
-                              {pendingConfirmation.expense_type?.toUpperCase() || 'PERSONAL'}
+                              {pendingConfirmation.expense_type === 'group'
+                                ? 'GRP'
+                                : pendingConfirmation.expense_type === 'friend'
+                                ? 'SPLIT'
+                                : 'PERSONAL'}
                             </SproutText>
                           </View>
                           <TouchableOpacity
@@ -685,14 +689,14 @@ export const QuickAddOverlay: React.FC = () => {
                         </View>
                       )}
 
-                      {/* Target group/friend display */}
-                      {(pendingConfirmation.group_name || pendingConfirmation.friend_name) && (
-                        <SproutText variant="caption" color={colors.muted} style={{ marginTop: 4 }}>
-                          {pendingConfirmation.group_name
-                            ? `👥 Group: ${pendingConfirmation.group_name}`
-                            : `🤝 Split with: ${pendingConfirmation.friend_name}`}
-                        </SproutText>
-                      )}
+                      {/* Expense type & target display */}
+                      <SproutText variant="caption" color={colors.muted} style={{ marginTop: 4 }}>
+                        {pendingConfirmation.expense_type === 'group'
+                          ? `👥 Grp: ${pendingConfirmation.group_name || 'Group'}`
+                          : pendingConfirmation.expense_type === 'friend'
+                          ? `🤝 Split with: ${pendingConfirmation.friend_name || 'Friend'}`
+                          : '👤 Type: Personal'}
+                      </SproutText>
 
                       {/* Note Field */}
                       {isEditing ? (

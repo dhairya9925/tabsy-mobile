@@ -3,7 +3,8 @@
     android:id="@+id/rootContainer"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="20dp">
+    android:paddingHorizontal="16dp"
+    android:paddingVertical="16dp">
 
     <!-- Floating Glassmorphic Card -->
     <LinearLayout
@@ -14,7 +15,7 @@
         android:background="@drawable/overlay_card_bg"
         android:elevation="12dp"
         android:orientation="vertical"
-        android:padding="20dp">
+        android:padding="16dp">
 
         <!-- Header -->
         <LinearLayout
@@ -25,16 +26,16 @@
 
             <ImageView
                 android:id="@+id/ivHeaderLogo"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
                 android:background="@drawable/header_icon_bg"
-                android:padding="8dp"
+                android:padding="6dp"
                 android:src="@drawable/ic_overlay_logo" />
 
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
+                android:layout_marginStart="10dp"
                 android:layout_weight="1"
                 android:orientation="vertical">
 
@@ -44,7 +45,7 @@
                     android:layout_height="wrap_content"
                     android:text="Quick Add Expense"
                     android:textColor="#0F172A"
-                    android:textSize="16sp"
+                    android:textSize="15sp"
                     android:textStyle="bold" />
 
                 <TextView
@@ -53,17 +54,17 @@
                     android:layout_height="wrap_content"
                     android:text="Tabsy AI Assistant"
                     android:textColor="#64748B"
-                    android:textSize="12sp" />
+                    android:textSize="11sp" />
             </LinearLayout>
 
             <ImageView
                 android:id="@+id/btnClose"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
                 android:background="@drawable/close_btn_bg"
                 android:clickable="true"
                 android:focusable="true"
-                android:padding="8dp"
+                android:padding="6dp"
                 android:src="@drawable/ic_close_gray" />
         </LinearLayout>
 
@@ -72,20 +73,20 @@
             android:id="@+id/tabBar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="12dp"
             android:orientation="horizontal">
 
             <TextView
                 android:id="@+id/btnTabVoice"
                 android:layout_width="0dp"
-                android:layout_height="38dp"
-                android:layout_marginEnd="6dp"
+                android:layout_height="34dp"
+                android:layout_marginEnd="5dp"
                 android:layout_weight="1"
                 android:background="@drawable/tab_active_bg"
                 android:gravity="center"
                 android:text="🎤  Voice"
                 android:textColor="#2E6930"
-                android:textSize="13sp"
+                android:textSize="12sp"
                 android:textStyle="bold"
                 android:clickable="true"
                 android:focusable="true" />
@@ -93,14 +94,14 @@
             <TextView
                 android:id="@+id/btnTabType"
                 android:layout_width="0dp"
-                android:layout_height="38dp"
-                android:layout_marginStart="6dp"
+                android:layout_height="34dp"
+                android:layout_marginStart="5dp"
                 android:layout_weight="1"
                 android:background="@drawable/tab_inactive_bg"
                 android:gravity="center"
                 android:text="⌨️  Type"
                 android:textColor="#64748B"
-                android:textSize="13sp"
+                android:textSize="12sp"
                 android:textStyle="bold"
                 android:clickable="true"
                 android:focusable="true" />
@@ -111,29 +112,29 @@
             android:id="@+id/voiceSection"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="14dp"
             android:gravity="center_horizontal"
             android:orientation="vertical">
 
             <FrameLayout
-                android:layout_width="100dp"
-                android:layout_height="100dp">
+                android:layout_width="86dp"
+                android:layout_height="86dp">
 
                 <View
                     android:id="@+id/pulseRing"
-                    android:layout_width="84dp"
-                    android:layout_height="84dp"
+                    android:layout_width="72dp"
+                    android:layout_height="72dp"
                     android:layout_gravity="center"
                     android:background="@drawable/pulse_ring_bg"
                     android:visibility="invisible" />
 
                 <ImageView
                     android:id="@+id/btnMic"
-                    android:layout_width="64dp"
-                    android:layout_height="64dp"
+                    android:layout_width="54dp"
+                    android:layout_height="54dp"
                     android:layout_gravity="center"
                     android:background="@drawable/mic_bg"
-                    android:padding="16dp"
+                    android:padding="13dp"
                     android:src="@drawable/ic_mic"
                     android:clickable="true"
                     android:focusable="true" />
@@ -143,23 +144,23 @@
                 android:id="@+id/tvTranscript"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="8dp"
                 android:gravity="center"
                 android:minLines="2"
                 android:text="Listening..."
                 android:textColor="#0F172A"
-                android:textSize="16sp"
+                android:textSize="15sp"
                 android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/tvVoiceStatus"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="3dp"
                 android:gravity="center"
                 android:text="Tap mic to speak your expense"
                 android:textColor="#64748B"
-                android:textSize="12sp" />
+                android:textSize="11sp" />
         </LinearLayout>
 
         <!-- 2. Text Input Section -->
@@ -167,21 +168,21 @@
             android:id="@+id/textSection"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="12dp"
             android:orientation="horizontal"
             android:visibility="gone">
 
             <EditText
                 android:id="@+id/etExpenseInput"
                 android:layout_width="0dp"
-                android:layout_height="48dp"
+                android:layout_height="42dp"
                 android:layout_weight="1"
                 android:background="@drawable/overlay_input_bg"
                 android:hint="e.g. Spent 350 on groceries"
                 android:textColor="#0F172A"
                 android:textColorHint="#94A3B8"
-                android:textSize="14sp"
-                android:paddingHorizontal="14dp"
+                android:textSize="13sp"
+                android:paddingHorizontal="12dp"
                 android:imeOptions="actionSend"
                 android:inputType="textCapSentences|textAutoCorrect"
                 android:maxLines="2" />
@@ -189,13 +190,13 @@
             <Button
                 android:id="@+id/btnSendText"
                 android:layout_width="wrap_content"
-                android:layout_height="48dp"
+                android:layout_height="42dp"
                 android:layout_marginStart="8dp"
                 android:background="@drawable/btn_confirm_bg"
                 android:text="Send"
                 android:textAllCaps="false"
                 android:textColor="#FFFFFF"
-                android:textSize="13sp"
+                android:textSize="12sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
@@ -204,24 +205,24 @@
             android:id="@+id/progressSection"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="14dp"
             android:gravity="center"
             android:orientation="vertical"
             android:visibility="gone">
 
             <ProgressBar
-                android:layout_width="36dp"
-                android:layout_height="36dp"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
                 android:indeterminate="true" />
 
             <TextView
                 android:id="@+id/tvProgressMessage"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
+                android:layout_marginTop="8dp"
                 android:text="Analyzing expense with AI..."
                 android:textColor="#475569"
-                android:textSize="13sp" />
+                android:textSize="12sp" />
         </LinearLayout>
 
         <!-- 4. Confirmation Section -->
@@ -229,20 +230,21 @@
             android:id="@+id/confirmationSection"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="12dp"
             android:orientation="vertical"
             android:visibility="gone">
 
-            <!-- Elegant Receipt Card -->
+            <!-- Elegant Compact Receipt Card -->
             <LinearLayout
                 android:id="@+id/receiptCardContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="@drawable/receipt_card_bg"
                 android:orientation="vertical"
-                android:padding="18dp">
+                android:paddingHorizontal="14dp"
+                android:paddingVertical="12dp">
 
-                <!-- Header / Label + Edit Toggle -->
+                <!-- Header / Label + Type Badge + Edit Toggle -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -256,7 +258,20 @@
                         android:letterSpacing="0.06"
                         android:text="TOTAL EXPENSE"
                         android:textColor="#94A3B8"
-                        android:textSize="11sp"
+                        android:textSize="10sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvTypeBadge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:background="@drawable/category_pill_bg"
+                        android:paddingHorizontal="7dp"
+                        android:paddingVertical="2dp"
+                        android:text="PERSONAL"
+                        android:textColor="#2E6930"
+                        android:textSize="9.5sp"
                         android:textStyle="bold" />
 
                     <View
@@ -271,19 +286,19 @@
                         android:background="@drawable/category_pill_bg"
                         android:clickable="true"
                         android:focusable="true"
-                        android:paddingHorizontal="10dp"
-                        android:paddingVertical="4dp"
+                        android:paddingHorizontal="8dp"
+                        android:paddingVertical="3dp"
                         android:text="✎ Edit"
                         android:textColor="#2E6930"
-                        android:textSize="12sp"
+                        android:textSize="11sp"
                         android:textStyle="bold" />
                 </LinearLayout>
 
-                <!-- Large Amount Display -->
+                <!-- Amount Display -->
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
+                    android:layout_marginTop="0dp"
                     android:gravity="center_vertical"
                     android:orientation="horizontal">
 
@@ -293,7 +308,7 @@
                         android:layout_height="wrap_content"
                         android:text="₹"
                         android:textColor="#0F172A"
-                        android:textSize="34sp"
+                        android:textSize="26sp"
                         android:textStyle="bold" />
 
                     <EditText
@@ -305,7 +320,7 @@
                         android:inputType="numberDecimal"
                         android:text="0.00"
                         android:textColor="#0F172A"
-                        android:textSize="34sp"
+                        android:textSize="26sp"
                         android:textStyle="bold" />
                 </LinearLayout>
 
@@ -314,8 +329,8 @@
                     android:id="@+id/receiptDivider"
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:layout_marginTop="14dp"
-                    android:layout_marginBottom="14dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="8dp"
                     android:background="#EDF2F7" />
 
                 <!-- Category Row -->
@@ -331,7 +346,7 @@
                         android:layout_height="wrap_content"
                         android:text="Category"
                         android:textColor="#64748B"
-                        android:textSize="13sp" />
+                        android:textSize="12sp" />
 
                     <View
                         android:layout_width="0dp"
@@ -343,25 +358,24 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:background="@drawable/category_pill_bg"
-                        android:paddingHorizontal="12dp"
-                        android:paddingVertical="4dp"
+                        android:paddingHorizontal="9dp"
+                        android:paddingVertical="3dp"
                         android:clickable="true"
                         android:focusable="true"
                         android:text="✨ Other"
                         android:textColor="#2E6930"
-                        android:textSize="12sp"
+                        android:textSize="11.5sp"
                         android:textStyle="bold" />
                 </LinearLayout>
 
-                <!-- Expense Type + Target Row (GONE by default, shown for group/friend) -->
+                <!-- Expense Type Row (Personal, Grp, or Split) -->
                 <LinearLayout
                     android:id="@+id/targetRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
+                    android:layout_marginTop="7dp"
                     android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:visibility="gone">
+                    android:orientation="horizontal">
 
                     <TextView
                         android:id="@+id/tvTypeLabel"
@@ -369,7 +383,7 @@
                         android:layout_height="wrap_content"
                         android:text="Type"
                         android:textColor="#64748B"
-                        android:textSize="13sp" />
+                        android:textSize="12sp" />
 
                     <View
                         android:layout_width="0dp"
@@ -381,11 +395,16 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:background="@drawable/category_pill_bg"
-                        android:paddingHorizontal="12dp"
-                        android:paddingVertical="4dp"
-                        android:text="Personal"
+                        android:paddingHorizontal="9dp"
+                        android:paddingVertical="3dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:singleLine="true"
+                        android:ellipsize="end"
+                        android:maxWidth="210dp"
+                        android:text="👤 Personal"
                         android:textColor="#2E6930"
-                        android:textSize="12sp"
+                        android:textSize="11.5sp"
                         android:textStyle="bold" />
                 </LinearLayout>
 
@@ -393,7 +412,7 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
+                    android:layout_marginTop="7dp"
                     android:gravity="top"
                     android:orientation="horizontal">
 
@@ -403,13 +422,13 @@
                         android:layout_height="wrap_content"
                         android:text="Note"
                         android:textColor="#64748B"
-                        android:textSize="13sp" />
+                        android:textSize="12sp" />
 
                     <EditText
                         android:id="@+id/etParsedNote"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="20dp"
+                        android:layout_marginStart="16dp"
                         android:layout_weight="1"
                         android:background="@null"
                         android:ellipsize="end"
@@ -417,17 +436,17 @@
                         android:gravity="end"
                         android:hint="Add a note"
                         android:inputType="textCapSentences|textMultiLine"
-                        android:maxLines="3"
+                        android:maxLines="2"
                         android:text="Expense description"
                         android:textColor="#1E293B"
-                        android:textSize="13sp" />
+                        android:textSize="12sp" />
                 </LinearLayout>
 
                 <!-- Date Row -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
+                    android:layout_marginTop="7dp"
                     android:gravity="center_vertical"
                     android:orientation="horizontal">
 
@@ -437,7 +456,7 @@
                         android:layout_height="wrap_content"
                         android:text="Date"
                         android:textColor="#64748B"
-                        android:textSize="13sp" />
+                        android:textSize="12sp" />
 
                     <View
                         android:layout_width="0dp"
@@ -457,7 +476,7 @@
                         android:inputType="date"
                         android:text="Today"
                         android:textColor="#64748B"
-                        android:textSize="12sp" />
+                        android:textSize="11.5sp" />
                 </LinearLayout>
 
             </LinearLayout>
@@ -466,33 +485,33 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="18dp"
+                android:layout_marginTop="12dp"
                 android:orientation="horizontal">
 
                 <Button
                     android:id="@+id/btnCancel"
                     android:layout_width="0dp"
-                    android:layout_height="48dp"
-                    android:layout_marginEnd="6dp"
+                    android:layout_height="40dp"
+                    android:layout_marginEnd="5dp"
                     android:layout_weight="1"
                     android:background="@drawable/btn_cancel_bg"
                     android:text="Cancel"
                     android:textAllCaps="false"
                     android:textColor="#475569"
-                    android:textSize="14sp"
+                    android:textSize="13sp"
                     android:textStyle="bold" />
 
                 <Button
                     android:id="@+id/btnConfirm"
                     android:layout_width="0dp"
-                    android:layout_height="48dp"
-                    android:layout_marginStart="6dp"
+                    android:layout_height="40dp"
+                    android:layout_marginStart="5dp"
                     android:layout_weight="1"
                     android:background="@drawable/btn_confirm_bg"
                     android:text="Confirm &amp; Save"
                     android:textAllCaps="false"
                     android:textColor="#FFFFFF"
-                    android:textSize="14sp"
+                    android:textSize="13sp"
                     android:textStyle="bold" />
             </LinearLayout>
         </LinearLayout>
@@ -502,11 +521,11 @@
             android:id="@+id/tvSuccessBanner"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="18dp"
+            android:layout_marginTop="12dp"
             android:gravity="center"
             android:text="✅ Expense Saved!"
             android:textColor="#2E6930"
-            android:textSize="16sp"
+            android:textSize="14sp"
             android:textStyle="bold"
             android:visibility="gone" />
 

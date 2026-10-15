@@ -122,6 +122,7 @@ class QuickAddOverlayActivity : Activity() {
     private lateinit var progressSection: LinearLayout
     private lateinit var tvProgressMessage: TextView
     private lateinit var confirmationSection: LinearLayout
+    private lateinit var tvTypeBadge: TextView
     private lateinit var btnEditToggle: TextView
     private lateinit var tvCurrencySymbol: TextView
     private lateinit var etParsedAmount: EditText
@@ -239,7 +240,7 @@ class QuickAddOverlayActivity : Activity() {
             // Outer Card
             val cardDrawable = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
-                cornerRadius = dpToPx(24f)
+                cornerRadius = dpToPx(20f)
                 setColor(Color.parseColor(themeColors.cardBg))
                 setStroke(dpToPx(1f).toInt(), Color.parseColor(themeColors.line))
             }
@@ -251,7 +252,7 @@ class QuickAddOverlayActivity : Activity() {
 
             val headerIconBg = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
-                cornerRadius = dpToPx(10f)
+                cornerRadius = dpToPx(8f)
                 setColor(Color.parseColor(themeColors.accentSoft))
             }
             findViewById<ImageView>(R.id.ivHeaderLogo)?.apply {
@@ -282,7 +283,7 @@ class QuickAddOverlayActivity : Activity() {
             // Text Section
             val inputBg = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
-                cornerRadius = dpToPx(14f)
+                cornerRadius = dpToPx(12f)
                 setColor(Color.parseColor(themeColors.innerCardBg))
                 setStroke(dpToPx(1f).toInt(), Color.parseColor(themeColors.line))
             }
@@ -292,7 +293,7 @@ class QuickAddOverlayActivity : Activity() {
 
             val sendBtnBg = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
-                cornerRadius = dpToPx(14f)
+                cornerRadius = dpToPx(12f)
                 setColor(Color.parseColor(themeColors.accent))
             }
             btnSendText.background = sendBtnBg
@@ -305,13 +306,23 @@ class QuickAddOverlayActivity : Activity() {
             val receiptCard = findViewById<LinearLayout>(R.id.receiptCardContainer)
             val receiptBg = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
-                cornerRadius = dpToPx(18f)
+                cornerRadius = dpToPx(14f)
                 setColor(Color.parseColor(themeColors.innerCardBg))
                 setStroke(dpToPx(1.5f).toInt(), Color.parseColor(themeColors.line))
             }
             receiptCard?.background = receiptBg
 
             findViewById<TextView>(R.id.tvTotalLabel)?.setTextColor(Color.parseColor(themeColors.muted))
+
+            val typeBadgeBg = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = dpToPx(8f)
+                setColor(Color.parseColor(themeColors.accentSoft))
+                setStroke(dpToPx(1f).toInt(), Color.parseColor(themeColors.accent))
+            }
+            tvTypeBadge.background = typeBadgeBg
+            tvTypeBadge.setTextColor(Color.parseColor(themeColors.accent))
+
             tvCurrencySymbol.setTextColor(Color.parseColor(themeColors.text))
             etParsedAmount.setTextColor(Color.parseColor(themeColors.text))
             findViewById<View>(R.id.receiptDivider)?.setBackgroundColor(Color.parseColor(themeColors.line))
@@ -319,7 +330,7 @@ class QuickAddOverlayActivity : Activity() {
 
             val catPillBg = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
-                cornerRadius = dpToPx(20f)
+                cornerRadius = dpToPx(16f)
                 setColor(Color.parseColor(themeColors.accentSoft))
                 setStroke(dpToPx(1f).toInt(), Color.parseColor(themeColors.accent))
             }
@@ -340,7 +351,7 @@ class QuickAddOverlayActivity : Activity() {
 
             val cancelBtnBg = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
-                cornerRadius = dpToPx(14f)
+                cornerRadius = dpToPx(11f)
                 setColor(Color.parseColor(if (themeColors.isDark) themeColors.innerCardBg else "#F1F5F9"))
                 setStroke(dpToPx(1f).toInt(), Color.parseColor(themeColors.line))
             }
@@ -349,7 +360,7 @@ class QuickAddOverlayActivity : Activity() {
 
             val confirmBtnBg = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
-                cornerRadius = dpToPx(14f)
+                cornerRadius = dpToPx(11f)
                 setColor(Color.parseColor(themeColors.accent))
             }
             btnConfirm.background = confirmBtnBg
@@ -407,6 +418,7 @@ class QuickAddOverlayActivity : Activity() {
         progressSection = findViewById(R.id.progressSection)
         tvProgressMessage = findViewById(R.id.tvProgressMessage)
         confirmationSection = findViewById(R.id.confirmationSection)
+        tvTypeBadge = findViewById(R.id.tvTypeBadge)
         btnEditToggle = findViewById(R.id.btnEditToggle)
         tvCurrencySymbol = findViewById(R.id.tvCurrencySymbol)
         etParsedAmount = findViewById(R.id.etParsedAmount)
@@ -870,6 +882,96 @@ class QuickAddOverlayActivity : Activity() {
             .show()
     }
 
+    private fun showTypeSelectionDialog() {
+        val options = mutableListOf<Triple<String, String, ParsedExpenseData>>()
+        val current = pendingExpense ?: return
+
+        // 1. Personal
+        options.add(
+            Triple(
+                "👤 Personal",
+                "personal",
+                current.copy(
+                    expenseType = "personal",
+                    groupId = null,
+                    groupName = null,
+                    friendId = null,
+                    friendName = null
+                )
+            )
+        )
+
+        // 2. Groups
+        try {
+            val prefs = getSharedPreferences(QuickAddService.PREFS_NAME, Context.MODE_PRIVATE)
+            val groupsJson = prefs.getString("user_groups", null)
+            if (!groupsJson.isNullOrEmpty()) {
+                val groupsArr = JSONArray(groupsJson)
+                for (i in 0 until groupsArr.length()) {
+                    val g = groupsArr.getJSONObject(i)
+                    val gName = g.optString("name", "").trim()
+                    val gId = g.optString("id", "").ifEmpty { null }
+                    if (gName.isNotEmpty() && gId != null) {
+                        options.add(
+                            Triple(
+                                "👥 Grp • $gName",
+                                "group",
+                                current.copy(
+                                    expenseType = "group",
+                                    groupId = gId,
+                                    groupName = gName,
+                                    friendId = null,
+                                    friendName = null
+                                )
+                            )
+                        )
+                    }
+                }
+            }
+
+            // 3. Friends / Splits
+            val friendsJson = prefs.getString("user_friends", null)
+            if (!friendsJson.isNullOrEmpty()) {
+                val friendsArr = JSONArray(friendsJson)
+                for (i in 0 until friendsArr.length()) {
+                    val f = friendsArr.getJSONObject(i)
+                    val fName = f.optString("display_name", "").trim()
+                    val fId = f.optString("friend_id", "").ifEmpty { null }
+                    if (fName.isNotEmpty() && fId != null) {
+                        options.add(
+                            Triple(
+                                "🤝 Split • $fName",
+                                "friend",
+                                current.copy(
+                                    expenseType = "friend",
+                                    groupId = null,
+                                    groupName = null,
+                                    friendId = fId,
+                                    friendName = fName,
+                                    paidBy = "self",
+                                    splitType = "equal"
+                                )
+                            )
+                        )
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Error building type selection dialog", e)
+        }
+
+        val displayItems = options.map { it.first }.toTypedArray()
+        android.app.AlertDialog.Builder(this)
+            .setTitle("Expense Type")
+            .setItems(displayItems) { _, which ->
+                val selected = options[which].third
+                pendingExpense = selected
+                showConfirmation(selected)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
     private fun parseLocally(text: String): ParsedExpenseData {
         val lower = text.lowercase(Locale.ROOT)
 
@@ -1038,23 +1140,35 @@ class QuickAddOverlayActivity : Activity() {
         }
         etParsedDate.setText(rawDate)
 
-        when (parsed.expenseType) {
+        targetRow.visibility = View.VISIBLE
+        val typeBadgeText: String
+        when (parsed.expenseType.lowercase(Locale.ROOT)) {
             "group" -> {
-                targetRow.visibility = View.VISIBLE
-                tvTypeLabel.text = "Group"
+                typeBadgeText = "GRP"
+                tvTypeLabel.text = "Type"
                 val groupName = parsed.groupName?.ifEmpty { null } ?: parsed.groupId ?: "Group"
-                tvExpenseTarget.text = "👥 $groupName"
+                tvExpenseTarget.text = "👥 Grp • $groupName"
             }
             "friend" -> {
-                targetRow.visibility = View.VISIBLE
-                tvTypeLabel.text = if (parsed.paidBy.equals("friend", ignoreCase = true)) "Paid by" else "Split with"
+                typeBadgeText = "SPLIT"
+                tvTypeLabel.text = "Type"
                 val friendName = parsed.friendName?.ifEmpty { null } ?: parsed.friendId ?: "Friend"
                 val splitInfo = if (parsed.splitType.equals("full", ignoreCase = true)) " (Full)" else ""
-                tvExpenseTarget.text = "🤝 $friendName$splitInfo"
+                tvExpenseTarget.text = "🤝 Split • $friendName$splitInfo"
             }
             else -> {
-                targetRow.visibility = View.GONE
+                typeBadgeText = "PERSONAL"
+                tvTypeLabel.text = "Type"
+                tvExpenseTarget.text = "👤 Personal"
             }
+        }
+        tvTypeBadge.text = typeBadgeText
+
+        tvExpenseTarget.setOnClickListener {
+            showTypeSelectionDialog()
+        }
+        tvTypeBadge.setOnClickListener {
+            showTypeSelectionDialog()
         }
     }
 
