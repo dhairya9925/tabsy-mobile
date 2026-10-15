@@ -122,6 +122,9 @@ class QuickAddOverlayActivity : Activity() {
     private lateinit var confirmationSection: LinearLayout
     private lateinit var tvParsedAmount: TextView
     private lateinit var tvParsedCategory: TextView
+    private lateinit var targetRow: LinearLayout
+    private lateinit var tvTypeLabel: TextView
+    private lateinit var tvExpenseTarget: TextView
     private lateinit var tvParsedNote: TextView
     private lateinit var tvParsedDate: TextView
     private lateinit var btnCancel: Button
@@ -317,6 +320,10 @@ class QuickAddOverlayActivity : Activity() {
             tvParsedCategory.background = catPillBg
             tvParsedCategory.setTextColor(Color.parseColor(themeColors.accent))
 
+            findViewById<TextView>(R.id.tvTypeLabel)?.setTextColor(Color.parseColor(themeColors.muted))
+            tvExpenseTarget.background = catPillBg
+            tvExpenseTarget.setTextColor(Color.parseColor(themeColors.accent))
+
             findViewById<TextView>(R.id.tvNoteLabel)?.setTextColor(Color.parseColor(themeColors.muted))
             tvParsedNote.setTextColor(Color.parseColor(themeColors.text))
             findViewById<TextView>(R.id.tvDateLabel)?.setTextColor(Color.parseColor(themeColors.muted))
@@ -393,6 +400,9 @@ class QuickAddOverlayActivity : Activity() {
         confirmationSection = findViewById(R.id.confirmationSection)
         tvParsedAmount = findViewById(R.id.tvParsedAmount)
         tvParsedCategory = findViewById(R.id.tvParsedCategory)
+        targetRow = findViewById(R.id.targetRow)
+        tvTypeLabel = findViewById(R.id.tvTypeLabel)
+        tvExpenseTarget = findViewById(R.id.tvExpenseTarget)
         tvParsedNote = findViewById(R.id.tvParsedNote)
         tvParsedDate = findViewById(R.id.tvParsedDate)
         btnCancel = findViewById(R.id.btnCancel)
@@ -948,6 +958,25 @@ class QuickAddOverlayActivity : Activity() {
             "Today"
         }
         tvParsedDate.text = displayDate
+
+        when (parsed.expenseType) {
+            "group" -> {
+                targetRow.visibility = View.VISIBLE
+                tvTypeLabel.text = "Group"
+                val groupName = parsed.groupName?.ifEmpty { null } ?: parsed.groupId ?: "Group"
+                tvExpenseTarget.text = "👥 $groupName"
+            }
+            "friend" -> {
+                targetRow.visibility = View.VISIBLE
+                tvTypeLabel.text = if (parsed.paidBy.equals("friend", ignoreCase = true)) "Paid by" else "Split with"
+                val friendName = parsed.friendName?.ifEmpty { null } ?: parsed.friendId ?: "Friend"
+                val splitInfo = if (parsed.splitType.equals("full", ignoreCase = true)) " (Full)" else ""
+                tvExpenseTarget.text = "🤝 $friendName$splitInfo"
+            }
+            else -> {
+                targetRow.visibility = View.GONE
+            }
+        }
     }
 
     private fun saveExpense(expense: ParsedExpenseData) {
