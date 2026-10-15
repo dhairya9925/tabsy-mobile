@@ -10,6 +10,7 @@ import {
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
+  ScrollView,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useQueryClient } from '@tanstack/react-query';
@@ -21,6 +22,8 @@ import { formatCurrency } from '../../utils/formatters';
 import { haptics } from '../../utils/haptics';
 import { analytics } from '../../utils/analytics';
 import { offlineQueue } from '../../utils/offlineQueue';
+import { expensesApi } from '../../api/expenses';
+import { Category } from '../../types';
 import {
   Sparkles,
   X,
@@ -35,8 +38,21 @@ import {
   Square,
   PlusCircle,
   WifiOff,
+  Pencil,
 } from 'lucide-react-native';
 import { networkService } from '../../services/offline/networkService';
+
+const DEFAULT_CATEGORIES: Category[] = [
+  { id: 'food', name: 'Food & Dining' },
+  { id: 'transport', name: 'Transport' },
+  { id: 'shopping', name: 'Shopping' },
+  { id: 'bills', name: 'Bills & Utilities' },
+  { id: 'entertainment', name: 'Entertainment' },
+  { id: 'health', name: 'Health' },
+  { id: 'education', name: 'Education' },
+  { id: 'personal', name: 'Personal' },
+  { id: 'other', name: 'Other' },
+];
 
 
 export const QuickAddOverlay: React.FC = () => {
@@ -55,14 +71,58 @@ export const QuickAddOverlay: React.FC = () => {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isOnline, setIsOnline] = useState<boolean>(networkService.isOnline());
 
+  // Editable confirmation state (mirrors pendingConfirmation, allows local user fixes)
+  const [categories, setCategories] = useState<Category[]>(DEFAULT_CATEGORIES);
+  const [editedAmount, setEditedAmount] = useState<string>('');
+  const [editedNote, setEditedNote] = useState<string>('');
+  const [editedCategory, setEditedCategory] = useState<string>('');
+  const [editedDate, setEditedDate] = useState<string>('');
+  const [isEditing, setIsEditing] = useState(false);
+
   useEffect(() => {
     return networkService.subscribe(setIsOnline);
+  }, []);
+
+  // Fetch custom categories from server/cache
+  useEffect(() => {
+    expensesApi.getCategories().then((customCats) => {
+      if (Array.isArray(customCats) && customCats.length > 0) {
+        const map = new Map<string, Category>();
+        DEFAULT_CATEGORIES.forEach((c) => map.set(c.name.toLowerCase(), c));
+        customCats.forEach((c) => {
+          if (c.name && !map.has(c.name.toLowerCase())) {
+            map.set(c.name.toLowerCase(), {
+              id: c.id || c.name.toLowerCase().replace(/\s+/g, '_'),
+              name: c.name,
+            });
+          }
+        });
+        setCategories(Array.from(map.values()));
+      }
+    }).catch(() => {
+      // Retain default categories if offline or error
+    });
   }, []);
 
   // Store hooks
   const isLoading = useAIStore((s) => s.isLoading);
   const isConfirming = useAIStore((s) => s.isConfirming);
   const pendingConfirmation = useAIStore((s) => s.pendingConfirmation);
+
+  // Sync pendingConfirmation into local editable state
+  useEffect(() => {
+    if (pendingConfirmation) {
+      setEditedAmount(
+        pendingConfirmation.amount != null ? String(pendingConfirmation.amount) : ''
+      );
+      setEditedNote(pendingConfirmation.note || '');
+      setEditedCategory(pendingConfirmation.category || 'Other');
+      setEditedDate(
+        pendingConfirmation.expense_date || new Date().toISOString().split('T')[0]
+      );
+      setIsEditing(false);
+    }
+  }, [pendingConfirmation]);
   const messages = useAIStore((s) => s.messages);
   const sendMessage = useAIStore((s) => s.sendMessage);
   const confirmExpense = useAIStore((s) => s.confirmExpense);
@@ -207,7 +267,17 @@ export const QuickAddOverlay: React.FC = () => {
   const handleConfirm = async () => {
     if (!pendingConfirmation) return;
     setSubmitError(null);
-    const success = await confirmExpense(pendingConfirmation, () => {
+
+    const parsedAmount = parseFloat(editedAmount);
+    const toConfirm = {
+      ...pendingConfirmation,
+      amount: !isNaN(parsedAmount) && parsedAmount > 0 ? parsedAmount : pendingConfirmation.amount,
+      note: editedNote.trim() || pendingConfirmation.note,
+      category: editedCategory.trim().toLowerCase() || pendingConfirmation.category,
+      expense_date: editedDate.trim() || pendingConfirmation.expense_date,
+    };
+
+    const success = await confirmExpense(toConfirm, () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['groups'] });
@@ -499,45 +569,177 @@ export const QuickAddOverlay: React.FC = () => {
                         <SproutText variant="eyebrow" color={colors.muted}>
                           AI CONFIRMATION
                         </SproutText>
-                        <View style={styles.typeBadge}>
-                          {pendingConfirmation.expense_type === 'group' ? (
-                            <Users size={11} color={colors.accent} style={{ marginRight: 3 }} />
-                          ) : pendingConfirmation.expense_type === 'friend' ? (
-                            <User size={11} color={colors.accent} style={{ marginRight: 3 }} />
-                          ) : (
-                            <Tag size={11} color={colors.accent} style={{ marginRight: 3 }} />
-                          )}
-                          <SproutText variant="caption" color={colors.accent} weight="700" style={{ fontSize: 10 }}>
-                            {pendingConfirmation.expense_type?.toUpperCase() || 'PERSONAL'}
-                          </SproutText>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                          <View style={styles.typeBadge}>
+                            {pendingConfirmation.expense_type === 'group' ? (
+                              <Users size={11} color={colors.accent} style={{ marginRight: 3 }} />
+                            ) : pendingConfirmation.expense_type === 'friend' ? (
+                              <User size={11} color={colors.accent} style={{ marginRight: 3 }} />
+                            ) : (
+                              <Tag size={11} color={colors.accent} style={{ marginRight: 3 }} />
+                            )}
+                            <SproutText variant="caption" color={colors.accent} weight="700" style={{ fontSize: 10 }}>
+                              {pendingConfirmation.expense_type?.toUpperCase() || 'PERSONAL'}
+                            </SproutText>
+                          </View>
+                          <TouchableOpacity
+                            onPress={() => {
+                              haptics.selection();
+                              setIsEditing((prev) => !prev);
+                            }}
+                            style={styles.editToggleBtn}
+                            accessibilityLabel={isEditing ? 'Done editing' : 'Edit fields'}
+                            accessibilityRole="button"
+                          >
+                            <Pencil size={11} color={colors.accent} style={{ marginRight: 3 }} />
+                            <SproutText variant="caption" color={colors.accent} weight="700" style={{ fontSize: 11 }}>
+                              {isEditing ? 'Done' : 'Edit'}
+                            </SproutText>
+                          </TouchableOpacity>
                         </View>
                       </View>
 
-                      <View style={styles.amountRow}>
-                        <SproutText variant="amount" color={colors.text} weight="800" style={{ fontSize: 24 }}>
-                          {formatCurrency(pendingConfirmation.amount || 0)}
-                        </SproutText>
-                        <View style={styles.categoryChip}>
-                          <Tag size={11} color={colors.accent} />
-                          <SproutText variant="caption" color={colors.accent} weight="600" style={{ fontSize: 11 }}>
-                            {pendingConfirmation.category || 'General'}
+                      {/* Amount Field */}
+                      {isEditing ? (
+                        <View style={styles.editSection}>
+                          <SproutText variant="caption" color={colors.muted} style={{ marginBottom: 4 }}>
+                            Amount
                           </SproutText>
+                          <View style={styles.editAmountContainer}>
+                            <SproutText variant="title" color={colors.text} weight="800" style={{ marginRight: 6 }}>
+                              ₹
+                            </SproutText>
+                            <TextInput
+                              style={styles.editAmountInput}
+                              value={editedAmount}
+                              onChangeText={setEditedAmount}
+                              keyboardType="decimal-pad"
+                              placeholder="0.00"
+                              placeholderTextColor={colors.muted}
+                              accessibilityLabel="Edit amount"
+                            />
+                          </View>
                         </View>
-                      </View>
+                      ) : (
+                        <View style={styles.amountRow}>
+                          <SproutText variant="amount" color={colors.text} weight="800" style={{ fontSize: 24 }}>
+                            {formatCurrency(parseFloat(editedAmount) || pendingConfirmation.amount || 0)}
+                          </SproutText>
+                          <TouchableOpacity
+                            style={styles.categoryChip}
+                            onPress={() => {
+                              haptics.selection();
+                              setIsEditing(true);
+                            }}
+                            accessibilityRole="button"
+                            accessibilityLabel="Change category"
+                          >
+                            <Tag size={11} color={colors.accent} />
+                            <SproutText variant="caption" color={colors.accent} weight="600" style={{ fontSize: 11 }}>
+                              {editedCategory || pendingConfirmation.category || 'General'}
+                            </SproutText>
+                          </TouchableOpacity>
+                        </View>
+                      )}
 
+                      {/* Category Selector (when editing) */}
+                      {isEditing && (
+                        <View style={styles.editSection}>
+                          <SproutText variant="caption" color={colors.muted} style={{ marginBottom: 6 }}>
+                            Category
+                          </SproutText>
+                          <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.categoryScroll}
+                          >
+                            {categories.map((cat) => {
+                              const isSelected =
+                                (editedCategory || '').trim().toLowerCase() === cat.name.toLowerCase();
+                              return (
+                                <TouchableOpacity
+                                  key={cat.id}
+                                  onPress={() => {
+                                    haptics.selection();
+                                    setEditedCategory(cat.name);
+                                  }}
+                                  style={[
+                                    styles.catChip,
+                                    isSelected && styles.catChipActive,
+                                  ]}
+                                  accessibilityRole="button"
+                                  accessibilityState={{ selected: isSelected }}
+                                >
+                                  <SproutText
+                                    variant="caption"
+                                    color={isSelected ? colors.surface : colors.text}
+                                    weight="600"
+                                    style={{ fontSize: 11 }}
+                                  >
+                                    {cat.name}
+                                  </SproutText>
+                                </TouchableOpacity>
+                              );
+                            })}
+                          </ScrollView>
+                        </View>
+                      )}
+
+                      {/* Target group/friend display */}
                       {(pendingConfirmation.group_name || pendingConfirmation.friend_name) && (
-                        <SproutText variant="caption" color={colors.muted} style={{ marginTop: 2 }}>
+                        <SproutText variant="caption" color={colors.muted} style={{ marginTop: 4 }}>
                           {pendingConfirmation.group_name
-                            ? `Group: ${pendingConfirmation.group_name}`
-                            : `Split with: ${pendingConfirmation.friend_name}`}
+                            ? `👥 Group: ${pendingConfirmation.group_name}`
+                            : `🤝 Split with: ${pendingConfirmation.friend_name}`}
                         </SproutText>
                       )}
 
-                      {pendingConfirmation.note ? (
-                        <SproutText variant="caption" color={colors.muted} style={{ marginTop: 2 }} numberOfLines={1}>
-                          Note: "{pendingConfirmation.note}"
+                      {/* Note Field */}
+                      {isEditing ? (
+                        <View style={styles.editSection}>
+                          <SproutText variant="caption" color={colors.muted} style={{ marginBottom: 4 }}>
+                            Note
+                          </SproutText>
+                          <TextInput
+                            style={styles.editNoteInput}
+                            value={editedNote}
+                            onChangeText={setEditedNote}
+                            placeholder="Add a note..."
+                            placeholderTextColor={colors.muted}
+                            multiline
+                            maxLength={200}
+                            accessibilityLabel="Edit note"
+                          />
+                        </View>
+                      ) : (
+                        editedNote ? (
+                          <SproutText variant="caption" color={colors.muted} style={{ marginTop: 4 }} numberOfLines={2}>
+                            Note: "{editedNote}"
+                          </SproutText>
+                        ) : null
+                      )}
+
+                      {/* Date Field */}
+                      {isEditing ? (
+                        <View style={styles.editSection}>
+                          <SproutText variant="caption" color={colors.muted} style={{ marginBottom: 4 }}>
+                            Date (YYYY-MM-DD)
+                          </SproutText>
+                          <TextInput
+                            style={styles.editDateInput}
+                            value={editedDate}
+                            onChangeText={setEditedDate}
+                            placeholder="YYYY-MM-DD"
+                            placeholderTextColor={colors.muted}
+                            keyboardType="numbers-and-punctuation"
+                            accessibilityLabel="Edit date"
+                          />
+                        </View>
+                      ) : (
+                        <SproutText variant="caption" color={colors.muted} style={{ marginTop: 4 }}>
+                          📅 {editedDate || pendingConfirmation.expense_date || 'Today'}
                         </SproutText>
-                      ) : null}
+                      )}
 
                       {/* Confirmation Buttons */}
                       <View style={styles.actionRow}>
@@ -825,6 +1027,75 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: radii.md,
+  },
+  editToggleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.accentSoft,
+    paddingHorizontal: 8,
+    paddingVertical: 2.5,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: colors.accent,
+  },
+  editSection: {
+    marginTop: spacing.xs,
+  },
+  editAmountContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.line,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+  },
+  editAmountInput: {
+    flex: 1,
+    fontSize: 22,
+    fontFamily: fontFamilies.bold,
+    color: colors.text,
+    padding: 0,
+  },
+  categoryScroll: {
+    gap: 6,
+    paddingVertical: 2,
+  },
+  catChip: {
+    backgroundColor: colors.surface,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
+  catChipActive: {
+    backgroundColor: colors.accent,
+    borderColor: colors.accent,
+  },
+  editNoteInput: {
+    backgroundColor: colors.surface,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.line,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    fontSize: 13,
+    fontFamily: fontFamilies.regular,
+    color: colors.text,
+    minHeight: 36,
+  },
+  editDateInput: {
+    backgroundColor: colors.surface,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.line,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    fontSize: 13,
+    fontFamily: fontFamilies.regular,
+    color: colors.text,
   },
   confirmBtn: {
     flexDirection: 'row',
