@@ -22,6 +22,7 @@ import {
   FriendPickerSheet,
   GroupPickerSheet,
   CategoryPickerSheet,
+  AIIcon,
 } from '../../components';
 import { getCategoryIcon } from '../../components/ExpenseRow';
 import { useTransitionAutoFocus } from '../../hooks';
@@ -53,7 +54,6 @@ import {
   Layers,
   ChevronDown,
   User,
-  Sparkles,
   ChevronRight,
 } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -405,7 +405,7 @@ export const AddExpenseModal: React.FC = () => {
           >
             <View style={styles.aiQuickLeft}>
               <View style={styles.aiQuickIcon}>
-                <Sparkles size={14} color={colors.accent} strokeWidth={2.4} />
+                <AIIcon size={24} coverCircle />
               </View>
               <SproutText variant="caption" style={styles.aiQuickText}>
                 Speak or type naturally with Tabsy AI
@@ -961,7 +961,6 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: colors.goldHighlight,
     alignItems: 'center',
     justifyContent: 'center',
   },

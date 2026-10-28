@@ -3,6 +3,7 @@ import { View, StyleSheet } from 'react-native';
 import { colors, radii, spacing, fontFamilies } from '../../theme';
 import { SproutText } from '../SproutText';
 import { Bot, User, Mic } from 'lucide-react-native';
+import { AIIcon } from '../AIIcon';
 
 interface ChatBubbleProps {
   role: 'user' | 'assistant';
@@ -28,7 +29,7 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
       {/* Assistant Avatar */}
       {!isUser && (
         <View style={styles.assistantAvatar}>
-          <Bot size={16} color={colors.accent} strokeWidth={2.2} />
+          <AIIcon size={28} coverCircle />
         </View>
       )}
 
@@ -147,7 +148,6 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: colors.accentSoft,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 14,

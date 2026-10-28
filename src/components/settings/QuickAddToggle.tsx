@@ -12,12 +12,12 @@ import { radii, spacing, shadows, useTheme } from '../../theme';
 import { SproutText } from '../SproutText';
 import { useQuickAddStore } from '../../store/useQuickAddStore';
 import { QuickAddModule } from '../../native/QuickAddModule';
+import { AIIcon } from '../AIIcon';
 import {
   Zap,
   Check,
   AlertTriangle,
   ExternalLink,
-  Sparkles,
   RefreshCw,
 } from 'lucide-react-native';
 
@@ -184,7 +184,7 @@ export const QuickAddToggle: React.FC = () => {
             activeOpacity={0.7}
             accessibilityLabel="Test quick add popup"
           >
-            <Sparkles size={13} color={colors.accent} style={{ marginRight: 5 }} />
+            <AIIcon size={16} coverCircle containerStyle={{ marginRight: 5 }} />
             <SproutText variant="caption" color={colors.accent} weight="700" style={{ fontSize: 11 }}>
               Test Popup
             </SproutText>

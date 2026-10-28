@@ -9,7 +9,7 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native';
-import { colors, fontFamilies, radii, spacing } from '../theme';
+import { fontFamilies, radii, spacing, useTheme } from '../theme';
 import { SproutText } from './SproutText';
 import { groupsApi } from '../api/groups';
 import { KeyRound, X, AlertCircle } from 'lucide-react-native';
@@ -25,6 +25,7 @@ export const JoinGroupPopup: React.FC<JoinGroupPopupProps> = ({
   onClose,
   onSuccess,
 }) => {
+  const { colors: themeColors, isDark } = useTheme();
   const [inviteCode, setInviteCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -85,7 +86,7 @@ export const JoinGroupPopup: React.FC<JoinGroupPopupProps> = ({
       animationType="fade"
       onRequestClose={handleClose}
     >
-      <View style={styles.overlay}>
+      <View style={[styles.overlay, { backgroundColor: isDark ? 'rgba(0, 0, 0, 0.72)' : 'rgba(18, 38, 28, 0.45)' }]}>
         {/* Semi-transparent Dimmed Backdrop */}
         <TouchableOpacity
           style={styles.backdrop}
@@ -97,37 +98,57 @@ export const JoinGroupPopup: React.FC<JoinGroupPopupProps> = ({
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={styles.keyboardWrap}
         >
-          <View style={[styles.dialogCard, { backgroundColor: colors.surface, borderColor: colors.line, shadowColor: colors.text }]}>
+          <View style={[styles.dialogCard, { backgroundColor: themeColors.surface, borderColor: themeColors.line, shadowColor: themeColors.text }]}>
             {/* Header */}
             <View style={styles.header}>
-              <View style={styles.iconCircle}>
-                <KeyRound size={20} color={colors.text} strokeWidth={2.2} />
+              <View
+                style={[
+                  styles.iconCircle,
+                  {
+                    backgroundColor: isDark ? themeColors.accentSoft : themeColors.soft,
+                    borderColor: isDark ? themeColors.line : 'transparent',
+                    borderWidth: isDark ? 1 : 0,
+                  },
+                ]}
+              >
+                <KeyRound
+                  size={20}
+                  color={isDark ? themeColors.accent : themeColors.text}
+                  strokeWidth={2.2}
+                />
               </View>
               <View style={styles.headerText}>
-                <SproutText variant="title" color={colors.text} weight="700" style={styles.title}>
+                <SproutText variant="title" color={themeColors.text} weight="700" style={styles.title}>
                   Join a Group
                 </SproutText>
-                <SproutText variant="caption" color={colors.muted} style={styles.subtitle}>
+                <SproutText variant="caption" color={themeColors.muted} style={styles.subtitle}>
                   Paste 10-character code or invite link shared with you
                 </SproutText>
               </View>
               <TouchableOpacity
                 activeOpacity={0.7}
                 onPress={handleClose}
-                style={styles.closeBtn}
+                style={[
+                  styles.closeBtn,
+                  {
+                    backgroundColor: isDark ? themeColors.surfaceElevated : themeColors.soft,
+                    borderColor: isDark ? themeColors.line : 'transparent',
+                    borderWidth: isDark ? 1 : 0,
+                  },
+                ]}
                 accessibilityLabel="Close"
               >
-                <X size={18} color={colors.text} />
+                <X size={18} color={themeColors.text} strokeWidth={2.2} />
               </TouchableOpacity>
             </View>
 
             {/* Input Container */}
-            <View style={[styles.inputWrap, { backgroundColor: colors.background, borderColor: colors.line }]}>
-              <KeyRound size={16} color={colors.muted} style={styles.inputIcon} />
+            <View style={[styles.inputWrap, { backgroundColor: isDark ? themeColors.surfaceElevated : themeColors.background, borderColor: themeColors.line }]}>
+              <KeyRound size={16} color={themeColors.muted} style={styles.inputIcon} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: themeColors.text }]}
                 placeholder="Paste code (e.g. K9X2P7M4R1)"
-                placeholderTextColor={colors.muted}
+                placeholderTextColor={themeColors.muted}
                 value={inviteCode}
                 onChangeText={(text) => {
                   const cleaned = extractAndNormalizeCode(text);
@@ -144,16 +165,16 @@ export const JoinGroupPopup: React.FC<JoinGroupPopupProps> = ({
                   onPress={() => setInviteCode('')}
                   style={styles.clearBtn}
                 >
-                  <X size={14} color={colors.muted} />
+                  <X size={14} color={themeColors.muted} />
                 </TouchableOpacity>
               )}
             </View>
 
             {/* Error Message */}
             {!!errorMessage && (
-              <View style={[styles.errorPill, { backgroundColor: colors.negativeSoft, borderColor: colors.negative }]}>
-                <AlertCircle size={13} color={colors.negative} style={{ marginRight: 5 }} />
-                <SproutText style={[styles.errorText, { color: colors.negative }]} numberOfLines={2}>
+              <View style={[styles.errorPill, { backgroundColor: themeColors.negativeSoft, borderColor: themeColors.negative }]}>
+                <AlertCircle size={13} color={themeColors.negative} style={{ marginRight: 5 }} />
+                <SproutText style={[styles.errorText, { color: themeColors.negative }]} numberOfLines={2}>
                   {errorMessage}
                 </SproutText>
               </View>
@@ -164,10 +185,16 @@ export const JoinGroupPopup: React.FC<JoinGroupPopupProps> = ({
               <TouchableOpacity
                 activeOpacity={0.7}
                 onPress={handleClose}
-                style={[styles.cancelBtn, { backgroundColor: colors.surface, borderColor: colors.line }]}
+                style={[
+                  styles.cancelBtn,
+                  {
+                    backgroundColor: isDark ? themeColors.surfaceElevated : themeColors.surface,
+                    borderColor: themeColors.line,
+                  },
+                ]}
                 disabled={isLoading}
               >
-                <SproutText variant="body" color={colors.muted} weight="600" style={styles.cancelText}>
+                <SproutText variant="body" color={themeColors.muted} weight="600" style={styles.cancelText}>
                   Cancel
                 </SproutText>
               </TouchableOpacity>
@@ -175,13 +202,22 @@ export const JoinGroupPopup: React.FC<JoinGroupPopupProps> = ({
               <TouchableOpacity
                 activeOpacity={0.8}
                 onPress={handleJoin}
-                style={[styles.joinBtn, { backgroundColor: colors.text }, !inviteCode.trim() && styles.joinBtnDisabled]}
+                style={[
+                  styles.joinBtn,
+                  { backgroundColor: isDark ? themeColors.accent : themeColors.text },
+                  !inviteCode.trim() && styles.joinBtnDisabled,
+                ]}
                 disabled={isLoading || !inviteCode.trim()}
               >
                 {isLoading ? (
-                  <ActivityIndicator size="small" color={colors.surface} />
+                  <ActivityIndicator size="small" color={isDark ? themeColors.onAccent : themeColors.surface} />
                 ) : (
-                  <SproutText style={[styles.joinBtnText, { color: colors.surface }]}>
+                  <SproutText
+                    style={[
+                      styles.joinBtnText,
+                      { color: isDark ? themeColors.onAccent : themeColors.surface },
+                    ]}
+                  >
                     Join Group
                   </SproutText>
                 )}
@@ -216,12 +252,9 @@ const styles = StyleSheet.create({
   },
   dialogCard: {
     width: '100%',
-    backgroundColor: colors.surface,
     borderRadius: 22,
     borderWidth: 1,
-    borderColor: colors.line,
     padding: 18,
-    shadowColor: '#183228',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.12,
     shadowRadius: 20,
@@ -236,7 +269,6 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 13,
-    backgroundColor: colors.soft,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -256,7 +288,6 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: colors.soft,
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 6,
@@ -264,10 +295,8 @@ const styles = StyleSheet.create({
   inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.background,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: colors.line,
     paddingHorizontal: 12,
     height: 46,
   },
@@ -277,7 +306,6 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 13.5,
-    color: colors.text,
     fontFamily: fontFamilies.interface,
     paddingVertical: 0,
   },
@@ -287,9 +315,7 @@ const styles = StyleSheet.create({
   errorPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FAF2EE',
     borderWidth: 1,
-    borderColor: '#E7C5B5',
     borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 6,
@@ -298,7 +324,6 @@ const styles = StyleSheet.create({
   errorText: {
     flex: 1,
     fontSize: 11.5,
-    color: '#9C4221',
     fontFamily: fontFamilies.medium,
   },
   actionsRow: {
@@ -312,10 +337,8 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: 22,
     borderWidth: 1,
-    borderColor: colors.line,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.surface,
   },
   cancelText: {
     fontSize: 13.5,
@@ -324,7 +347,6 @@ const styles = StyleSheet.create({
     flex: 1.4,
     height: 44,
     borderRadius: 22,
-    backgroundColor: colors.text, // Forest green accent #183228
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -334,6 +356,5 @@ const styles = StyleSheet.create({
   joinBtnText: {
     fontSize: 13.5,
     fontFamily: fontFamilies.bold,
-    color: '#FAF2EE', // Warm gold
   },
 });

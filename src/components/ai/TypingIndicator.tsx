@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated } from 'react-native';
 import { colors, radii, spacing, shadows } from '../../theme';
-import { Sparkles } from 'lucide-react-native';
+import { AIIcon } from '../AIIcon';
 
 export const TypingIndicator: React.FC = () => {
   const dot1 = useRef(new Animated.Value(0)).current;
@@ -53,7 +53,7 @@ export const TypingIndicator: React.FC = () => {
       accessibilityLabel="AI is thinking and typing"
     >
       <View style={styles.botIcon}>
-        <Sparkles size={14} color={colors.accent} />
+        <AIIcon size={28} coverCircle />
       </View>
       <View style={[styles.bubble, shadows.card]}>
         <Animated.View
@@ -82,7 +82,6 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: radii.full,
-    backgroundColor: colors.accentSoft,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 4,

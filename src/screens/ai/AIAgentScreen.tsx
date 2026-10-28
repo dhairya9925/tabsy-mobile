@@ -16,7 +16,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, radii, spacing, fontFamilies } from '../../theme';
 import { SproutText } from '../../components/SproutText';
-import { Toast } from '../../components';
+import { Toast, AIIcon } from '../../components';
 import {
   ChatBubble,
   ClarificationBubble,
@@ -33,7 +33,6 @@ import { offlineQueue } from '../../utils/offlineQueue';
 import {
   ArrowLeft,
   Send,
-  Sparkles,
   RotateCcw,
   AlertCircle,
   PlusCircle,
@@ -268,7 +267,7 @@ export const AIAgentScreen: React.FC = () => {
 
           <View style={styles.headerTitleContainer}>
             <View style={styles.assistantBadge}>
-              <Sparkles size={14} color={colors.sun} />
+              <AIIcon size={28} coverCircle />
             </View>
             <View>
               <SproutText variant="subtitle" style={styles.headerTitle}>
@@ -441,7 +440,6 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: colors.goldBackground,
     alignItems: 'center',
     justifyContent: 'center',
   },

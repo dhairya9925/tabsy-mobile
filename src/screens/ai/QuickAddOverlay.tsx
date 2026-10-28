@@ -15,7 +15,7 @@ import {
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useQueryClient } from '@tanstack/react-query';
 import { colors, radii, spacing, shadows, fontFamilies } from '../../theme';
-import { SproutText } from '../../components';
+import { SproutText, AIIcon } from '../../components';
 import { useAIStore } from '../../store/useAIStore';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import { formatCurrency } from '../../utils/formatters';
@@ -25,7 +25,6 @@ import { offlineQueue } from '../../utils/offlineQueue';
 import { expensesApi } from '../../api/expenses';
 import { Category } from '../../types';
 import {
-  Sparkles,
   X,
   Mic,
   Send,
@@ -317,7 +316,7 @@ export const QuickAddOverlay: React.FC = () => {
               <View style={styles.header}>
                 <View style={styles.headerLeft}>
                   <View style={styles.iconCircle}>
-                    <Sparkles size={16} color={colors.accent} />
+                    <AIIcon size={32} coverCircle />
                   </View>
                   <View>
                     <SproutText variant="subtitle" color={colors.text} weight="700">
@@ -823,7 +822,6 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: radii.full,
-    backgroundColor: colors.accentSoft,
     justifyContent: 'center',
     alignItems: 'center',
   },

@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Plus, Sparkles, WifiOff } from 'lucide-react-native';
-import { colors, fontFamilies } from '../theme';
+import { Plus, WifiOff } from 'lucide-react-native';
+import { colors, fontFamilies, useTheme } from '../theme';
 import { SproutText } from '../components/SproutText';
+import { AIIcon } from '../components/AIIcon';
 import { networkService } from '../services/offline/networkService';
 import { outboxService } from '../services/offline/outboxService';
 
@@ -22,6 +23,7 @@ export const SproutTabBar: React.FC<SproutTabBarProps> = ({
   onAIPress,
 }) => {
   const insets = useSafeAreaInsets();
+  const { colors: themeColors } = useTheme();
   const [isOnline, setIsOnline] = useState<boolean>(networkService.isOnline());
   const [pendingCount, setPendingCount] = useState<number>(outboxService.getPendingCount());
 
@@ -50,14 +52,19 @@ export const SproutTabBar: React.FC<SproutTabBarProps> = ({
           onPress={onAIPress}
           style={({ pressed }) => [
             styles.aiFloatingButton,
-            { backgroundColor: colors.goldBackground, borderColor: colors.goldHighlight, shadowColor: colors.text },
+            {
+              shadowColor: themeColors.text,
+            },
             { bottom: insets.bottom + 66 },
-            pressed && [styles.aiButtonPressed, { backgroundColor: colors.goldHighlight }],
+            pressed && styles.aiButtonPressed,
           ]}
         >
-          <Sparkles size={23} color={colors.accent} strokeWidth={2.2} />
+          <AIIcon size={48} coverCircle />
           {!isOnline && (
-            <View style={styles.aiOfflineDot} testID="ai-offline-dot">
+            <View
+              style={[styles.aiOfflineDot, { borderColor: themeColors.surface }]}
+              testID="ai-offline-dot"
+            >
               <WifiOff size={9} color="#7A3E2D" strokeWidth={2.4} />
             </View>
           )}
@@ -65,7 +72,7 @@ export const SproutTabBar: React.FC<SproutTabBarProps> = ({
       )}
 
       {/* Main Bottom Tab Bar */}
-      <View style={[styles.bar, { backgroundColor: colors.surface, borderTopColor: colors.line, height: 66 + insets.bottom }]}>
+      <View style={[styles.bar, { backgroundColor: themeColors.surface, borderTopColor: themeColors.line, height: 66 + insets.bottom }]}>
         <View style={styles.tabItems}>
           {state.routes.map((route, index) => {
             const isFocused = state.index === index;
@@ -74,7 +81,7 @@ export const SproutTabBar: React.FC<SproutTabBarProps> = ({
               typeof options.tabBarLabel === 'string'
                 ? options.tabBarLabel
                 : options.title || route.name;
-            const color = isFocused ? colors.accent : colors.muted;
+            const color = isFocused ? themeColors.accent : themeColors.muted;
             const icon = options.tabBarIcon?.({ focused: isFocused, color, size: 19 });
 
             const onPress = () => {
@@ -126,12 +133,12 @@ export const SproutTabBar: React.FC<SproutTabBarProps> = ({
           onPress={onAddPress}
           style={({ pressed }) => [
             styles.addButton,
-            { backgroundColor: colors.accent, shadowColor: colors.text },
+            { backgroundColor: themeColors.accent, shadowColor: themeColors.text },
             { bottom: insets.bottom + 8 },
             pressed && styles.addButtonPressed,
           ]}
         >
-          <Plus size={24} color={colors.onAccent || colors.surface} strokeWidth={2.25} />
+          <Plus size={24} color={themeColors.onAccent || themeColors.surface} strokeWidth={2.25} />
         </Pressable>
       </View>
     </View>
@@ -205,7 +212,6 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1.5,
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.14,
     shadowRadius: 5,

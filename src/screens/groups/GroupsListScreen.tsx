@@ -7,7 +7,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SharedStackParamList, RootStackParamList } from '../../navigation/types';
-import { colors, fontFamilies, radii, spacing } from '../../theme';
+import { colors, fontFamilies, radii, spacing, useTheme } from '../../theme';
 import {
   SproutText,
   AvatarCircle,
@@ -30,6 +30,7 @@ import { cacheService, CACHE_KEYS, outboxService } from '../../services/offline'
 import { Users, UserPlus, KeyRound, UserCheck, Settings, Plus } from 'lucide-react-native';
 
 export const GroupsListScreen: React.FC = () => {
+  const { colors: themeColors, isDark } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<SharedStackParamList>>();
   const rootNavigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const currentUser = useAuthStore((s) => s.user);
@@ -467,11 +468,23 @@ export const GroupsListScreen: React.FC = () => {
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={() => setShowJoinPopup(true)}
-              style={[styles.secondaryActionBtn, { backgroundColor: colors.soft }]}
+              style={[
+                styles.secondaryActionBtn,
+                {
+                  backgroundColor: isDark ? themeColors.accentSoft : themeColors.soft,
+                  borderColor: isDark ? themeColors.line : 'transparent',
+                  borderWidth: isDark ? 1 : 0,
+                },
+              ]}
               accessibilityLabel="Join group with code"
             >
-              <KeyRound size={15} color={colors.text} strokeWidth={2.2} style={{ marginRight: 5 }} />
-              <SproutText style={[styles.secondaryActionBtnText, { color: colors.text }]}>
+              <KeyRound
+                size={15}
+                color={isDark ? themeColors.accent : themeColors.text}
+                strokeWidth={2.2}
+                style={{ marginRight: 5 }}
+              />
+              <SproutText style={[styles.secondaryActionBtnText, { color: isDark ? themeColors.accent : themeColors.text }]}>
                 Join
               </SproutText>
             </TouchableOpacity>

@@ -40,3 +40,4 @@ export * from './OfflineSyncBanner';
 export * from './OfflineBanner';
 export * from './TabsyLogo';
 export * from './CategoryPickerSheet';
+export * from './AIIcon';
