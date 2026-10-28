@@ -8,9 +8,10 @@ import {
   Platform,
   ScrollView,
   Image,
+  Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { colors, radii, spacing } from '../../theme';
+import { useTheme, colors, radii, spacing } from '../../theme';
 import {
   SproutText,
   SproutButton,
@@ -23,18 +24,21 @@ import {
 import { useAuthStore } from '../../store/useAuthStore';
 import { authApi } from '../../api/auth';
 import { avatarKeyToUrl } from '../../utils/avatarRegistry';
-import { ArrowLeft, X, User, Pencil, Image as ImageIcon, Check } from 'lucide-react-native';
+import { ArrowLeft, X, User, Pencil, Image as ImageIcon, Check, Shield, Trash2 } from 'lucide-react-native';
 import { AVATAR_OPTIONS } from '../auth/AvatarSelectionScreen';
 
 export const EditProfileModal: React.FC = () => {
   const navigation = useNavigation();
+  const { colors } = useTheme();
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
+  const logout = useAuthStore((s) => s.logout);
 
   const [displayName, setDisplayName] = useState(user?.display_name || '');
   const [selectedAvatar, setSelectedAvatar] = useState<string | null>(user?.avatar_url || null);
   const [pickerVisible, setPickerVisible] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
   const handleSave = async () => {
@@ -60,6 +64,30 @@ export const EditProfileModal: React.FC = () => {
       setErrorMessage(err.message || 'Failed to update profile');
       setIsSaving(false);
     }
+  };
+
+  const handleDeleteAccountPress = () => {
+    Alert.alert(
+      'Delete Account',
+      'Are you absolutely sure? This action cannot be undone. This will permanently delete your account and all associated data including expenses, group memberships, and splits.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Account',
+          style: 'destructive',
+          onPress: async () => {
+            setIsDeleting(true);
+            try {
+              await authApi.deleteAccount();
+              await logout();
+            } catch (err: any) {
+              setErrorMessage(err.message || 'Failed to delete account');
+              setIsDeleting(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const previewName = displayName.trim() || user?.email || 'User';
@@ -189,7 +217,33 @@ export const EditProfileModal: React.FC = () => {
           label="Save Changes"
           onPress={handleSave}
           isLoading={isSaving}
+          disabled={isDeleting}
         />
+      </View>
+
+      {/* Danger Zone */}
+      <View style={[styles.dangerCard, { backgroundColor: colors.surface, borderColor: colors.clay }]}>
+        <View style={styles.dangerHeader}>
+          <Shield size={18} color={colors.negative} />
+          <SproutText variant="subtitle" color={colors.negative} weight="700">
+            Danger Zone
+          </SproutText>
+        </View>
+        <SproutText variant="caption" color={colors.muted} style={styles.dangerDesc}>
+          Once you delete your account, there is no going back. Please be certain. All expenses, balances, and history will be permanently deleted.
+        </SproutText>
+
+        <TouchableOpacity
+          style={[styles.deleteButton, isDeleting && styles.disabledButton, { backgroundColor: colors.negative }]}
+          activeOpacity={0.8}
+          disabled={isDeleting || isSaving}
+          onPress={handleDeleteAccountPress}
+        >
+          <Trash2 size={16} color={colors.surface} />
+          <SproutText variant="buttonSm" color={colors.surface}>
+            {isDeleting ? 'Deleting Account...' : 'Delete Account'}
+          </SproutText>
+        </TouchableOpacity>
       </View>
 
       {/* Avatar Picker Modal */}
@@ -322,5 +376,33 @@ const styles = StyleSheet.create({
   },
   bottomCta: {
     marginTop: spacing.md,
+  },
+  dangerCard: {
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    padding: spacing.lg,
+    marginTop: spacing.xl,
+    marginBottom: spacing.lg,
+  },
+  dangerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 6,
+  },
+  dangerDesc: {
+    lineHeight: 18,
+    marginBottom: spacing.md,
+  },
+  deleteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 11,
+    borderRadius: radii.full,
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
 });

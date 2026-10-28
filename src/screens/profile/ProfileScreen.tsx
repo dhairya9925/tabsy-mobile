@@ -24,9 +24,7 @@ import {
   Pencil,
   Tag,
   LogOut,
-  Trash2,
   ChevronRight,
-  Shield,
   Layers,
 } from 'lucide-react-native';
 
@@ -36,7 +34,6 @@ export const ProfileScreen: React.FC = () => {
   const logout = useAuthStore((s) => s.logout);
   const { colors: themeColors, shadows: themeShadows } = useTheme();
 
-  const [isDeleting, setIsDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
@@ -57,30 +54,6 @@ export const ProfileScreen: React.FC = () => {
               await authApi.logout();
             } finally {
               await logout();
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const handleDeleteAccountPress = () => {
-    Alert.alert(
-      'Delete Account',
-      'Are you absolutely sure? This action cannot be undone. This will permanently delete your account and all associated data including expenses, group memberships, and splits.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete Account',
-          style: 'destructive',
-          onPress: async () => {
-            setIsDeleting(true);
-            try {
-              await authApi.deleteAccount();
-              await logout();
-            } catch (err: any) {
-              setErrorMessage(err.message || 'Failed to delete account');
-              setIsDeleting(false);
             }
           },
         },
@@ -225,31 +198,6 @@ export const ProfileScreen: React.FC = () => {
           <ChevronRight size={18} color={themeColors.muted} />
         </TouchableOpacity>
       </View>
-
-      {/* Danger Zone Card */}
-      <View style={[styles.dangerCard, themeShadows.card, { backgroundColor: themeColors.surface, borderColor: themeColors.clay }]}>
-        <View style={styles.dangerHeader}>
-          <Shield size={18} color={themeColors.negative} />
-          <SproutText variant="subtitle" color={themeColors.negative} weight="700">
-            Danger Zone
-          </SproutText>
-        </View>
-        <SproutText variant="caption" color={themeColors.muted} style={styles.dangerDesc}>
-          Once you delete your account, there is no going back. Please be certain. All expenses, balances, and history will be permanently deleted.
-        </SproutText>
-
-        <TouchableOpacity
-          style={[styles.deleteButton, isDeleting && styles.disabledButton, { backgroundColor: themeColors.negative }]}
-          activeOpacity={0.8}
-          disabled={isDeleting}
-          onPress={handleDeleteAccountPress}
-        >
-          <Trash2 size={16} color={themeColors.surface} />
-          <SproutText variant="buttonSm" color={themeColors.surface}>
-            {isDeleting ? 'Deleting Account...' : 'Delete Account'}
-          </SproutText>
-        </TouchableOpacity>
-      </View>
     </ScreenShell>
   );
 };
@@ -328,35 +276,5 @@ const styles = StyleSheet.create({
   menuDivider: {
     height: 1,
     backgroundColor: colors.line,
-  },
-  dangerCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: colors.clay,
-    padding: spacing.lg,
-    marginBottom: spacing.xl,
-  },
-  dangerHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 6,
-  },
-  dangerDesc: {
-    lineHeight: 18,
-    marginBottom: spacing.md,
-  },
-  deleteButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: colors.negative,
-    paddingVertical: 11,
-    borderRadius: radii.full,
-  },
-  disabledButton: {
-    opacity: 0.6,
   },
 });
