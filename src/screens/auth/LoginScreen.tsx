@@ -13,6 +13,7 @@ import {
 } from '../../components';
 import { useAuthStore } from '../../store/useAuthStore';
 import { ArrowLeft, Mail, Lock, Eye, EyeOff } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
@@ -26,6 +27,7 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
   const login = useAuthStore((s) => s.login);
   const isLoading = useAuthStore((s) => s.isLoading);
+  const insets = useSafeAreaInsets();
 
   const handleLogin = async () => {
     setErrorMessage('');
@@ -56,7 +58,7 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   return (
-    <ScreenShell contentContainerStyle={styles.container}>
+    <ScreenShell contentContainerStyle={[styles.container, { paddingBottom: Math.max(insets.bottom + spacing.lg, spacing.xxl) }]}>
       <Toast
         visible={!!errorMessage}
         message={errorMessage}

@@ -72,7 +72,7 @@ export const SproutTabBar: React.FC<SproutTabBarProps> = ({
       )}
 
       {/* Main Bottom Tab Bar */}
-      <View style={[styles.bar, { backgroundColor: themeColors.surface, borderTopColor: themeColors.line, height: 66 + insets.bottom }]}>
+      <View style={[styles.bar, { backgroundColor: themeColors.surface, borderTopColor: themeColors.line, height: 66 + insets.bottom, paddingBottom: insets.bottom }]}>
         <View style={styles.tabItems}>
           {state.routes.map((route, index) => {
             const isFocused = state.index === index;

@@ -12,10 +12,12 @@ import {
   TabsyLogo,
 } from '../../components';
 import { ArrowLeft, Mail, Lock, User, Eye, EyeOff, ShieldCheck, Phone, ArrowRight } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Signup'>;
 
 export const SignupScreen: React.FC<Props> = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -61,7 +63,7 @@ export const SignupScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   return (
-    <ScreenShell contentContainerStyle={styles.container}>
+    <ScreenShell contentContainerStyle={[styles.container, { paddingBottom: Math.max(insets.bottom + spacing.lg, spacing.xxl) }]}>
       <Toast
         visible={!!errorMessage}
         message={errorMessage}

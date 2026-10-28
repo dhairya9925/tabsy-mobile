@@ -4,6 +4,7 @@ import {
   ScrollView,
   StyleSheet,
   ViewStyle,
+  StyleProp,
   RefreshControl,
   KeyboardAvoidingView,
   Platform,
@@ -19,8 +20,8 @@ export interface ScreenShellProps {
   scrollable?: boolean;
   onRefresh?: () => void;
   isRefreshing?: boolean;
-  style?: ViewStyle;
-  contentContainerStyle?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
+  contentContainerStyle?: StyleProp<ViewStyle>;
   showOfflineBanner?: boolean;
 }
 

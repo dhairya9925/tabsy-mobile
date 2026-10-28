@@ -32,6 +32,9 @@
         "android.permission.RECORD_AUDIO"
       ]
     },
+    "androidNavigationBar": {
+      "visible": "sticky-immersive"
+    },
     "plugins": [
       [
         "expo-font",
