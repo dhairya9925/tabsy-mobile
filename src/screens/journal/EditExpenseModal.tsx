@@ -8,6 +8,7 @@ import {
   Platform,
   TouchableOpacity,
   Alert,
+  useWindowDimensions,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
@@ -16,14 +17,13 @@ import {
   SproutText,
   SproutButton,
   CircleButton,
-  CategoryChip,
   CategoryPickerSheet,
-  FieldRow,
   Toast,
 } from '../../components';
+import { getCategoryIcon } from '../../components/ExpenseRow';
 import { expensesApi } from '../../api/expenses';
 import { Category } from '../../types';
-import { X, FileText, Calendar, Layers, ChevronDown, Trash2 } from 'lucide-react-native';
+import { X, Trash2, MoreHorizontal } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'EditExpenseModal'>;
@@ -34,12 +34,25 @@ const DEFAULT_CATEGORIES: Category[] = [
   { id: 'shopping', name: 'Shopping' },
   { id: 'bills', name: 'Bills & Utilities' },
   { id: 'entertainment', name: 'Entertainment' },
+  { id: 'health', name: 'Health' },
+  { id: 'groceries', name: 'Groceries' },
   { id: 'other', name: 'Other' },
+];
+
+const POPULAR_GRID_CATEGORIES: Category[] = [
+  { id: 'food', name: 'Food & Dining' },
+  { id: 'transport', name: 'Transport' },
+  { id: 'shopping', name: 'Shopping' },
+  { id: 'bills', name: 'Bills & Utilities' },
+  { id: 'entertainment', name: 'Entertainment' },
+  { id: 'health', name: 'Health' },
 ];
 
 export const EditExpenseModal: React.FC<Props> = ({ route, navigation }) => {
   const { expense } = route.params;
   const { colors } = useTheme();
+  const { width: windowWidth } = useWindowDimensions();
+  const cardWidth = Math.floor((windowWidth - spacing.lg * 2 - 24) / 4);
 
   const [amountStr, setAmountStr] = useState(String(expense.amount));
   const [description, setDescription] = useState(expense.description || expense.note || '');
@@ -96,19 +109,40 @@ export const EditExpenseModal: React.FC<Props> = ({ route, navigation }) => {
     );
   };
 
-  // Quick categories: top 5 categories plus active selection if outside top 5
-  const quickCategories = useMemo(() => {
-    const top5 = categories.slice(0, 5);
+  const isAutoPicked = useMemo(() => {
+    if (!description.trim()) return false;
+    const desc = description.toLowerCase();
+    const cat = selectedCategoryName.toLowerCase();
+    return desc.includes(cat) || cat.includes(desc);
+  }, [description, selectedCategoryName]);
+
+  const gridCategories = useMemo(() => {
     const selectedNorm = selectedCategoryName.trim().toLowerCase();
-    const isAlreadyInTop5 = top5.some((c) => c.name.trim().toLowerCase() === selectedNorm);
-    if (!isAlreadyInTop5 && selectedCategoryName) {
-      const foundInAll = categories.find((c) => c.name.trim().toLowerCase() === selectedNorm);
-      if (foundInAll) {
-        return [...top5, foundInAll];
+    const isSelectedInTop6 = POPULAR_GRID_CATEGORIES.some(
+      (c) => c.name.trim().toLowerCase() === selectedNorm
+    );
+
+    const items = [...POPULAR_GRID_CATEGORIES];
+
+    if (!isSelectedInTop6 && selectedCategoryName.trim()) {
+      const found = categories.find((c) => c.name.trim().toLowerCase() === selectedNorm);
+      items.push(found || { id: 'active_cat', name: selectedCategoryName });
+    } else {
+      const remaining = categories.filter((c) => {
+        const norm = c.name.trim().toLowerCase();
+        return (
+          norm !== 'other' &&
+          !POPULAR_GRID_CATEGORIES.some((p) => p.name.trim().toLowerCase() === norm)
+        );
+      });
+      if (remaining.length > 0) {
+        items.push(remaining[0]);
+      } else {
+        items.push({ id: 'other', name: 'Other' });
       }
-      return [...top5, { id: 'active_cat', name: selectedCategoryName }];
     }
-    return top5;
+
+    return items.slice(0, 7);
   }, [categories, selectedCategoryName]);
 
   useEffect(() => {
@@ -226,9 +260,6 @@ export const EditExpenseModal: React.FC<Props> = ({ route, navigation }) => {
               AMOUNT
             </SproutText>
             <View style={styles.amountInputRow}>
-              <SproutText variant="amount" color={colors.accent} style={[styles.currencyPrefix, { color: colors.accent }]}>
-                ₹
-              </SproutText>
               <TextInput
                 style={[styles.amountInput, { color: colors.text }]}
                 placeholder="0"
@@ -247,65 +278,126 @@ export const EditExpenseModal: React.FC<Props> = ({ route, navigation }) => {
               <SproutText variant="eyebrow" color={colors.muted} style={styles.sectionLabel}>
                 CATEGORY
               </SproutText>
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={() => setIsCategorySheetOpen(true)}
-                style={styles.allCategoriesLink}
-              >
-                <SproutText variant="caption" color={colors.accent} weight="700">
-                  {categories.length > 5 ? `All (${categories.length}) ▾` : 'Browse ▾'}
+              {isAutoPicked ? (
+                <SproutText variant="caption" color={colors.muted} style={styles.autoPickedText}>
+                  Auto-picked from your note
                 </SproutText>
-              </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => setIsCategorySheetOpen(true)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <SproutText variant="caption" color={colors.accent} weight="700">
+                    {categories.length > 7 ? `All (${categories.length}) ▾` : 'Browse ▾'}
+                  </SproutText>
+                </TouchableOpacity>
+              )}
             </View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.categoryScroll}
-            >
-              {quickCategories.map((cat) => (
-                <CategoryChip
-                  key={cat.id}
-                  id={cat.id}
-                  name={cat.name}
-                  isSelected={selectedCategoryName.trim().toLowerCase() === cat.name.trim().toLowerCase()}
-                  onSelect={() => setSelectedCategoryName(cat.name)}
-                />
-              ))}
 
+            {/* 4x2 Category Grid (8 Slots) */}
+            <View style={styles.categoryGrid}>
+              {gridCategories.map((cat) => {
+                const isSelected =
+                  selectedCategoryName.trim().toLowerCase() === cat.name.trim().toLowerCase();
+                return (
+                  <TouchableOpacity
+                    key={cat.id || cat.name}
+                    activeOpacity={0.75}
+                    onPress={() => setSelectedCategoryName(cat.name)}
+                    style={[
+                      styles.categoryCard,
+                      {
+                        width: cardWidth,
+                        backgroundColor: colors.surface,
+                        borderColor: isSelected ? colors.accent : colors.line,
+                        borderWidth: isSelected ? 1.5 : 1,
+                      },
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.iconWrap,
+                        isSelected && [
+                          styles.iconWrapSelected,
+                          { backgroundColor: colors.accentSoft },
+                        ],
+                      ]}
+                    >
+                      {getCategoryIcon(cat.name, colors.accent, isSelected ? 18 : 20)}
+                    </View>
+                    <SproutText
+                      variant="caption"
+                      color={isSelected ? colors.text : colors.muted}
+                      weight={isSelected ? '700' : '600'}
+                      numberOfLines={2}
+                      style={styles.cardLabel}
+                    >
+                      {cat.name}
+                    </SproutText>
+                  </TouchableOpacity>
+                );
+              })}
+
+              {/* 8th Slot: More Button */}
               <TouchableOpacity
                 activeOpacity={0.75}
                 onPress={() => setIsCategorySheetOpen(true)}
                 style={[
-                  styles.moreCategoriesPill,
-                  { backgroundColor: colors.surfaceElevated, borderColor: colors.line },
+                  styles.categoryCard,
+                  {
+                    width: cardWidth,
+                    backgroundColor: colors.surface,
+                    borderColor: colors.line,
+                    borderStyle: 'dashed',
+                    borderWidth: 1.5,
+                  },
                 ]}
               >
-                <Layers size={13} color={colors.accent} />
-                <SproutText variant="caption" color={colors.accent} weight="700" style={{ marginLeft: 4 }}>
-                  All ({categories.length})
+                <View style={styles.iconWrap}>
+                  <MoreHorizontal size={20} color={colors.accent} strokeWidth={2} />
+                </View>
+                <SproutText
+                  variant="caption"
+                  color={colors.muted}
+                  weight="600"
+                  style={styles.cardLabel}
+                >
+                  More
                 </SproutText>
-                <ChevronDown size={13} color={colors.accent} style={{ marginLeft: 2 }} />
               </TouchableOpacity>
-            </ScrollView>
+            </View>
           </View>
 
           {/* Details Form Fields */}
           <View style={styles.section}>
-            <FieldRow
-              label="Note (Optional)"
-              placeholder="Dinner, cab..."
-              value={description}
-              onChangeText={setDescription}
-              icon={<FileText size={18} color={colors.muted} />}
-            />
+            {/* Note Field Card */}
+            <View style={[styles.fieldCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+              <SproutText variant="eyebrow" color={colors.muted} style={styles.fieldEyebrow}>
+                NOTE (OPTIONAL)
+              </SproutText>
+              <TextInput
+                style={[styles.fieldInput, { color: colors.text }]}
+                placeholder="grocery"
+                placeholderTextColor={colors.muted}
+                value={description}
+                onChangeText={setDescription}
+              />
+            </View>
 
-            <FieldRow
-              label="Date"
-              placeholder="YYYY-MM-DD"
-              value={dateStr}
-              onChangeText={setDateStr}
-              icon={<Calendar size={18} color={colors.muted} />}
-            />
+            {/* Date Field Card */}
+            <View style={[styles.fieldCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+              <SproutText variant="eyebrow" color={colors.muted} style={styles.fieldEyebrow}>
+                DATE
+              </SproutText>
+              <TextInput
+                style={[styles.fieldInput, { color: colors.text }]}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor={colors.muted}
+                value={dateStr}
+                onChangeText={setDateStr}
+              />
+            </View>
           </View>
         </ScrollView>
 
@@ -359,7 +451,7 @@ const styles = StyleSheet.create({
   amountContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: spacing.lg,
+    marginVertical: spacing.md,
   },
   amountEyebrow: {
     marginBottom: spacing.xs,
@@ -369,15 +461,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  currencyPrefix: {
-    fontSize: 48,
-    marginRight: 4,
-  },
   amountInput: {
-    fontSize: 48,
+    fontSize: 52,
     fontFamily: fontFamilies.bold,
     fontWeight: '700',
-    minWidth: 80,
+    minWidth: 120,
     textAlign: 'center',
     padding: 0,
   },
@@ -393,23 +481,58 @@ const styles = StyleSheet.create({
   sectionLabel: {
     marginBottom: 0,
   },
-  allCategoriesLink: {
-    paddingVertical: 2,
+  autoPickedText: {
+    fontSize: 11,
+    letterSpacing: 0.2,
+  },
+  categoryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: spacing.xs,
+  },
+  categoryCard: {
+    minHeight: 82,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
     paddingHorizontal: 4,
   },
-  categoryScroll: {
-    paddingVertical: 6,
-    paddingRight: spacing.sm,
+  iconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'center',
   },
-  moreCategoriesPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: radii.full,
+  iconWrapSelected: {
+    borderRadius: 17,
+  },
+  cardLabel: {
+    fontSize: 10,
+    lineHeight: 12,
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  fieldCard: {
+    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    marginBottom: spacing.md,
     borderWidth: 1,
+  },
+  fieldEyebrow: {
+    fontSize: 10,
+    letterSpacing: 0.8,
+    marginBottom: 4,
+    fontWeight: '700',
+  },
+  fieldInput: {
+    fontSize: 15,
+    fontFamily: fontFamilies.medium,
+    paddingVertical: 2,
+    paddingHorizontal: 0,
   },
   bottomBar: {
     paddingHorizontal: spacing.lg,

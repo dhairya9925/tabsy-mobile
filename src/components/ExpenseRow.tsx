@@ -13,6 +13,7 @@ import {
   Sparkles,
   Clock,
   Film,
+  Heart,
   MoreHorizontal,
 } from 'lucide-react-native';
 
@@ -42,6 +43,9 @@ export function getCategoryIcon(name?: string | null, color?: string, size: numb
   }
   if (lower.includes('entertain') || lower.includes('movie') || lower.includes('cinema') || lower.includes('music') || lower.includes('game') || lower.includes('netflix') || lower.includes('spotify') || lower.includes('fun')) {
     return <Film size={size} color={iconColor} strokeWidth={1.7} />;
+  }
+  if (lower.includes('health') || lower.includes('med') || lower.includes('doctor') || lower.includes('pharm') || lower.includes('gym') || lower.includes('fit')) {
+    return <Heart size={size} color={iconColor} strokeWidth={1.7} />;
   }
   if (lower.includes('other')) {
     return <MoreHorizontal size={size} color={iconColor} strokeWidth={1.7} />;
