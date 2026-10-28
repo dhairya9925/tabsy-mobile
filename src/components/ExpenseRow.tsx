@@ -19,6 +19,7 @@ import {
 export interface ExpenseRowProps {
   expense: PersonalExpense;
   onPress?: () => void;
+  onLongPress?: () => void;
 }
 
 export function getCategoryIcon(name?: string | null, color?: string, size: number = 18) {
@@ -48,7 +49,7 @@ export function getCategoryIcon(name?: string | null, color?: string, size: numb
   return <Sparkles size={size} color={iconColor} strokeWidth={1.7} />;
 }
 
-export const ExpenseRow: React.FC<ExpenseRowProps> = ({ expense, onPress }) => {
+export const ExpenseRow: React.FC<ExpenseRowProps> = ({ expense, onPress, onLongPress }) => {
   const categoryName = typeof expense.category === 'string'
     ? expense.category
     : (expense.category as any)?.name || 'Food';
@@ -76,7 +77,8 @@ export const ExpenseRow: React.FC<ExpenseRowProps> = ({ expense, onPress }) => {
     <TouchableOpacity
       activeOpacity={0.7}
       onPress={onPress}
-      disabled={!onPress}
+      onLongPress={onLongPress}
+      disabled={!onPress && !onLongPress}
       style={[styles.container, { borderBottomColor: colors.line }]}
     >
       <View style={[styles.iconCircle, { backgroundColor: colors.surfaceElevated }]}>{icon}</View>

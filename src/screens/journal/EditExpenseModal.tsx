@@ -7,6 +7,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
@@ -22,7 +23,7 @@ import {
 } from '../../components';
 import { expensesApi } from '../../api/expenses';
 import { Category } from '../../types';
-import { X, FileText, Calendar, Layers, ChevronDown } from 'lucide-react-native';
+import { X, FileText, Calendar, Layers, ChevronDown, Trash2 } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'EditExpenseModal'>;
@@ -66,8 +67,34 @@ export const EditExpenseModal: React.FC<Props> = ({ route, navigation }) => {
 
   const [isCategorySheetOpen, setIsCategorySheetOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+
+  const handleDelete = () => {
+    Alert.alert(
+      'Delete expense?',
+      `This will permanently delete this ₹${Number(expense.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })} expense. This action cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setIsDeleting(true);
+            try {
+              await expensesApi.deletePersonalExpense(expense.id);
+              setIsDeleting(false);
+              navigation.goBack();
+            } catch (err: any) {
+              setIsDeleting(false);
+              setErrorMessage(err.message || 'Failed to delete expense');
+            }
+          },
+        },
+      ]
+    );
+  };
 
   // Quick categories: top 5 categories plus active selection if outside top 5
   const quickCategories = useMemo(() => {
@@ -175,11 +202,16 @@ export const EditExpenseModal: React.FC<Props> = ({ route, navigation }) => {
           <CircleButton
             icon={<X size={20} color={colors.text} />}
             onPress={() => navigation.goBack()}
+            accessibilityLabel="Close"
           />
           <SproutText variant="title" color={colors.text} style={styles.headerTitle}>
             Edit Expense
           </SproutText>
-          <View style={{ width: 44 }} />
+          <CircleButton
+            icon={<Trash2 size={18} color={colors.negative} />}
+            onPress={handleDelete}
+            accessibilityLabel="Delete expense"
+          />
         </View>
 
         <ScrollView
@@ -276,12 +308,20 @@ export const EditExpenseModal: React.FC<Props> = ({ route, navigation }) => {
           </View>
         </ScrollView>
 
-        {/* Bottom Save Action */}
+        {/* Bottom Save & Delete Actions */}
         <View style={[styles.bottomBar, { backgroundColor: colors.background, borderTopColor: colors.line }]}>
+          <SproutButton
+            label="Delete"
+            variant="clay"
+            isLoading={isDeleting}
+            onPress={handleDelete}
+            style={styles.deleteBtn}
+          />
           <SproutButton
             label="Update Expense"
             isLoading={isSubmitting}
             onPress={handleUpdate}
+            style={styles.updateBtn}
           />
         </View>
       </KeyboardAvoidingView>
@@ -378,10 +418,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   bottomBar: {
+    flexDirection: 'row',
+    gap: 12,
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.lg,
     paddingTop: spacing.sm,
     borderTopWidth: 1,
+  },
+  deleteBtn: {
+    flex: 1,
+  },
+  updateBtn: {
+    flex: 1.8,
   },
 });
 

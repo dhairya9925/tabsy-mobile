@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
 import { JournalStackParamList, RootStackParamList } from '../../navigation/types';
@@ -201,6 +201,28 @@ export const JournalScreen: React.FC<Props> = ({ navigation }) => {
     if (selectedMonth === 'all') return null;
     return monthSections.find((s) => s.monthKey === selectedMonth) || monthSections[0] || null;
   }, [selectedMonth, monthSections]);
+
+  const handleLongPressExpense = (item: PersonalExpense) => {
+    Alert.alert(
+      'Delete expense?',
+      `This will permanently delete this ₹${Number(item.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })} expense. This action cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await expensesApi.deletePersonalExpense(item.id);
+              loadData();
+            } catch (err: any) {
+              setErrorMessage(err.message || 'Failed to delete expense');
+            }
+          },
+        },
+      ]
+    );
+  };
 
   return (
     <ScreenShell
@@ -698,6 +720,7 @@ export const JournalScreen: React.FC<Props> = ({ navigation }) => {
                             key={expense.id}
                             expense={expense}
                             onPress={() => navigation.navigate('ExpenseDetail', { expense })}
+                            onLongPress={() => handleLongPressExpense(expense)}
                           />
                         ))}
                       </View>

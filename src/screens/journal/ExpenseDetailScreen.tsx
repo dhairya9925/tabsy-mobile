@@ -16,15 +16,35 @@ import { formatCurrencyExact, formatDate } from '../../utils/formatters';
 import { expensesApi } from '../../api/expenses';
 import { ArrowLeft, Edit3, Trash2, Calendar, FileText, Tag, User } from 'lucide-react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { cacheService, CACHE_KEYS } from '../../services/offline';
+import { PersonalExpense } from '../../types';
 
 type Props = NativeStackScreenProps<JournalStackParamList, 'ExpenseDetail'>;
 
 export const ExpenseDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const rootNavigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
   const [expense, setExpense] = useState(route.params.expense);
   const [isDeleting, setIsDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Sync state if expense was edited or deleted in EditExpenseModal
+  React.useEffect(() => {
+    const unsub = navigation.addListener('focus', async () => {
+      const cached = await cacheService.get<PersonalExpense[]>(CACHE_KEYS.PERSONAL_EXPENSES);
+      if (Array.isArray(cached)) {
+        const found = cached.find((e) => e.id === expense.id);
+        if (!found) {
+          navigation.goBack();
+        } else {
+          setExpense(found);
+        }
+      }
+    });
+    return unsub;
+  }, [navigation, expense.id]);
 
   const categoryName = typeof expense.category === 'string'
     ? expense.category
@@ -73,14 +93,24 @@ export const ExpenseDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         <CircleButton
           icon={<ArrowLeft size={20} color={colors.text} />}
           onPress={() => navigation.goBack()}
+          accessibilityLabel="Back to Journal"
         />
         <SproutText variant="subtitle" color={colors.text} weight="700">
           Expense Details
         </SproutText>
-        <CircleButton
-          icon={<Edit3 size={18} color={colors.accent} />}
-          onPress={handleEdit}
-        />
+        <View style={styles.topBarActions}>
+          <CircleButton
+            icon={<Trash2 size={18} color={colors.negative} />}
+            onPress={handleDelete}
+            style={{ marginRight: 8 }}
+            accessibilityLabel="Delete expense"
+          />
+          <CircleButton
+            icon={<Edit3 size={18} color={colors.accent} />}
+            onPress={handleEdit}
+            accessibilityLabel="Edit expense"
+          />
+        </View>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollBody}>
@@ -148,7 +178,7 @@ export const ExpenseDetailScreen: React.FC<Props> = ({ route, navigation }) => {
       </ScrollView>
 
       {/* Action Buttons */}
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom + 76, 96) }]}>
         <SproutButton
           label="Edit Expense"
           variant="outline"
@@ -177,6 +207,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: spacing.md,
+  },
+  topBarActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   scrollBody: {
     paddingBottom: 24,
