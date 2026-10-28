@@ -3,7 +3,7 @@ import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
 import { JournalStackParamList, RootStackParamList } from '../../navigation/types';
-import { colors, radii, spacing, shadows, fontFamilies } from '../../theme';
+import { colors, radii, spacing, shadows, fontFamilies, useTheme } from '../../theme';
 import {
   SproutText,
   ScreenShell,
@@ -49,6 +49,7 @@ type Props = NativeStackScreenProps<JournalStackParamList, 'JournalList'>;
 export const JournalScreen: React.FC<Props> = ({ navigation }) => {
   const rootNavigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const currentUser = useAuthStore((s) => s.user);
+  const { colors: themeColors } = useTheme();
   const isDark = useThemeStore((s) => s.isDark);
 
   const [expenses, setExpenses] = useState<PersonalExpense[]>([]);
@@ -217,10 +218,10 @@ export const JournalScreen: React.FC<Props> = ({ navigation }) => {
       {/* Header Bar */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <SproutText variant="eyebrow" color={colors.muted} style={styles.eyebrow}>
+          <SproutText variant="eyebrow" color={themeColors.muted} style={styles.eyebrow}>
             PERSONAL
           </SproutText>
-          <SproutText variant="hero" style={styles.title}>
+          <SproutText variant="hero" color={themeColors.text} style={[styles.title, { color: themeColors.text }]}>
             Expenses
           </SproutText>
         </View>
@@ -749,7 +750,6 @@ const styles = StyleSheet.create({
   eyebrow: {
     fontSize: 8,
     letterSpacing: 1.2,
-    color: '#6D7C72',
     textTransform: 'uppercase',
   },
   title: {
@@ -757,7 +757,6 @@ const styles = StyleSheet.create({
     fontSize: 28,
     lineHeight: 30,
     letterSpacing: -1.4,
-    color: colors.text,
     marginTop: 4,
   },
   headerActions: {

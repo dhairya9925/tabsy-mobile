@@ -205,8 +205,8 @@ export const InsightScreen: React.FC = () => {
   if (isLoading && !isRefreshing && !data) {
     return (
       <ScreenShell contentContainerStyle={styles.centerContainer}>
-        <ActivityIndicator size="large" color={colors.accent} />
-        <SproutText variant="caption" color={colors.muted} style={styles.loadingText}>
+        <ActivityIndicator size="large" color={themeColors.accent} />
+        <SproutText variant="caption" color={themeColors.muted} style={styles.loadingText}>
           Crunching your spending rhythm...
         </SproutText>
       </ScreenShell>
@@ -216,19 +216,19 @@ export const InsightScreen: React.FC = () => {
   if (error && !data) {
     return (
       <ScreenShell contentContainerStyle={styles.centerContainer}>
-        <SproutText variant="subtitle" color={colors.negative}>
+        <SproutText variant="subtitle" color={themeColors.negative}>
           Unable to load insights
         </SproutText>
-        <SproutText variant="bodyMuted" style={styles.errorSubtext}>
+        <SproutText variant="bodyMuted" color={themeColors.muted} style={styles.errorSubtext}>
           {error}
         </SproutText>
         <TouchableOpacity
-          style={styles.retryButton}
+          style={[styles.retryButton, { backgroundColor: themeColors.accent }]}
           onPress={() => loadData()}
           activeOpacity={0.8}
         >
-          <RefreshCw size={16} color={colors.surface} />
-          <SproutText variant="buttonSm" color={colors.surface}>
+          <RefreshCw size={16} color={themeColors.surface} />
+          <SproutText variant="buttonSm" color={themeColors.surface}>
             Retry
           </SproutText>
         </TouchableOpacity>
@@ -245,13 +245,13 @@ export const InsightScreen: React.FC = () => {
       {/* 1. Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <SproutText variant="eyebrow" color={colors.muted} style={styles.eyebrow}>
+          <SproutText variant="eyebrow" color={themeColors.muted} style={styles.eyebrow}>
             ANALYTICS
           </SproutText>
-          <SproutText variant="hero" style={styles.title}>
+          <SproutText variant="hero" color={themeColors.text} style={[styles.title, { color: themeColors.text }]}>
             Where it went.
           </SproutText>
-          <SproutText variant="bodyMuted">
+          <SproutText variant="bodyMuted" color={themeColors.muted}>
             See where your money goes with charts and trends.
           </SproutText>
         </View>
@@ -536,7 +536,6 @@ const styles = StyleSheet.create({
   eyebrow: {
     fontSize: 8,
     letterSpacing: 1.2,
-    color: '#6D7C72',
     textTransform: 'uppercase',
   },
   title: {
@@ -544,7 +543,6 @@ const styles = StyleSheet.create({
     fontSize: 28,
     lineHeight: 30,
     letterSpacing: -1.4,
-    color: colors.text,
     marginTop: 4,
     marginBottom: 4,
   },

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import Svg, { Rect, Line, Text as SvgText, G, Path } from 'react-native-svg';
 import { MonthlyTrendPoint } from '../../types';
-import { colors, chartColors, radii, spacing, fontFamilies } from '../../theme';
+import { radii, spacing, fontFamilies, useTheme } from '../../theme';
 import { SproutText } from '../SproutText';
 import { formatCurrencyExact, formatCurrency } from '../../utils/formatters';
 
@@ -54,6 +54,7 @@ export const SixMonthTrendChart: React.FC<SixMonthTrendChartProps> = ({
   width: propWidth,
   height = 180,
 }) => {
+  const { colors: themeColors, chartColors: themeChartColors, isDark } = useTheme();
   const [containerWidth, setContainerWidth] = useState<number>(0);
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
 
@@ -141,26 +142,43 @@ export const SixMonthTrendChart: React.FC<SixMonthTrendChartProps> = ({
         }
       }}
     >
-      {/* Fixed-height inspection strip prevents chart layout shifts */}
-      <View style={[styles.inspectionStrip, activePoint ? styles.inspectionStripActive : styles.inspectionStripDefault]}>
+      {/* Fixed-height inspection strip styled seamlessly with Sprout Night / Sprout */}
+      <View
+        style={[
+          styles.inspectionStrip,
+          activePoint
+            ? [
+                styles.inspectionStripActive,
+                {
+                  backgroundColor: isDark ? themeColors.surfaceElevated : themeColors.background,
+                  borderColor: themeColors.line,
+                },
+              ]
+            : styles.inspectionStripDefault,
+        ]}
+      >
         {activePoint ? (
           <>
             <View style={styles.tooltipRow}>
-              <SproutText variant="eyebrow" color={chartColors.personal}>
+              <SproutText
+                variant="eyebrow"
+                color={themeChartColors?.personal || themeColors.accent}
+                style={styles.tooltipEyebrow}
+              >
                 {activePoint.label.toUpperCase()}
               </SproutText>
-              <SproutText style={styles.tooltipTotal}>
+              <SproutText style={[styles.tooltipTotal, { color: themeColors.text }]}>
                 {formatCurrencyExact(activePoint.total)}
               </SproutText>
             </View>
             <View style={styles.tooltipSubRow}>
-              <SproutText variant="caption" color={colors.muted}>
+              <SproutText variant="caption" color={themeColors.muted}>
                 Personal: {formatCurrency(activePoint.personal)} · Group: {formatCurrency(activePoint.groupShare)}
               </SproutText>
             </View>
           </>
         ) : (
-          <SproutText variant="caption" color={colors.muted} style={styles.hintText}>
+          <SproutText variant="caption" color={themeColors.muted} style={styles.hintText}>
             Tap a bar to inspect monthly breakdown
           </SproutText>
         )}
@@ -180,7 +198,7 @@ export const SixMonthTrendChart: React.FC<SixMonthTrendChartProps> = ({
                   y1={y}
                   x2={effectiveWidth - paddingRight}
                   y2={y}
-                  stroke={colors.line}
+                  stroke={themeColors.line}
                   strokeWidth={StyleSheet.hairlineWidth}
                 />
               );
@@ -217,7 +235,7 @@ export const SixMonthTrendChart: React.FC<SixMonthTrendChartProps> = ({
                       y={paddingTop}
                       width={colWidth}
                       height={chartHeight}
-                      fill={chartColors.selectedWash}
+                      fill={themeChartColors?.selectedWash || (isDark ? '#1F3529' : '#E7F0E6')}
                       rx={6}
                     />
                   )}
@@ -229,24 +247,24 @@ export const SixMonthTrendChart: React.FC<SixMonthTrendChartProps> = ({
                       y={chartBottom - 3}
                       width={barWidth}
                       height={3}
-                      fill={chartColors.track}
+                      fill={themeChartColors?.track || (isDark ? '#1B2C23' : '#DCE7DE')}
                       rx={1.5}
                     />
                   )}
 
-                  {/* Personal bar (Bottom segment - moss green) */}
+                  {/* Personal bar (Bottom segment - moss / mint green) */}
                   {personalH > 0 && (
                     <Path
                       d={personalPath}
-                      fill={chartColors.personal}
+                      fill={themeChartColors?.personal || themeColors.accent}
                     />
                   )}
 
-                  {/* Group Share bar (Top segment - muted slate-blue) */}
+                  {/* Group Share bar (Top segment - slate sage / blue) */}
                   {groupH > 0 && (
                     <Path
                       d={groupPath}
-                      fill={chartColors.groupShare}
+                      fill={themeChartColors?.groupShare || themeColors.muted}
                     />
                   )}
 
@@ -256,7 +274,7 @@ export const SixMonthTrendChart: React.FC<SixMonthTrendChartProps> = ({
                     y={height - 8}
                     fontSize={11}
                     fontFamily={isSelected ? fontFamilies.bold : fontFamilies.medium}
-                    fill={isSelected ? colors.text : colors.muted}
+                    fill={isSelected ? themeColors.text : themeColors.muted}
                     fontWeight={isSelected ? '700' : '500'}
                     textAnchor="middle"
                   >
@@ -291,14 +309,14 @@ export const SixMonthTrendChart: React.FC<SixMonthTrendChartProps> = ({
       {/* Legend */}
       <View style={styles.legendRow}>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: chartColors.personal }]} />
-          <SproutText variant="caption" color={colors.muted}>
+          <View style={[styles.legendDot, { backgroundColor: themeChartColors?.personal || themeColors.accent }]} />
+          <SproutText variant="caption" color={themeColors.muted}>
             Personal
           </SproutText>
         </View>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: chartColors.groupShare }]} />
-          <SproutText variant="caption" color={colors.muted}>
+          <View style={[styles.legendDot, { backgroundColor: themeChartColors?.groupShare || themeColors.muted }]} />
+          <SproutText variant="caption" color={themeColors.muted}>
             Group Share
           </SproutText>
         </View>
@@ -312,10 +330,10 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   inspectionStrip: {
-    height: 52,
-    borderRadius: radii.sm,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 6,
+    minHeight: 52,
+    borderRadius: radii.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 8,
     marginBottom: spacing.xs,
     justifyContent: 'center',
   },
@@ -324,9 +342,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   inspectionStripActive: {
-    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: colors.line,
+  },
+  tooltipEyebrow: {
+    fontSize: 9,
+    letterSpacing: 1.2,
+    fontWeight: '700',
   },
   hintText: {
     fontFamily: fontFamilies.medium,
@@ -340,8 +361,8 @@ const styles = StyleSheet.create({
   },
   tooltipTotal: {
     fontFamily: fontFamilies.bold,
-    fontSize: 14,
-    color: colors.text,
+    fontSize: 15,
+    letterSpacing: -0.3,
   },
   tooltipSubRow: {
     marginTop: 2,

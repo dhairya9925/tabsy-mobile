@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { View, StyleSheet, Animated, Easing } from 'react-native';
 import { WeeklyRhythmDay } from '../../types';
-import { colors, radii, spacing } from '../../theme';
+import { radii, spacing, useTheme } from '../../theme';
 import { SproutText } from '../SproutText';
 import { Check } from 'lucide-react-native';
 
@@ -46,6 +46,7 @@ export const WeeklyRhythmChart: React.FC<WeeklyRhythmChartProps> = ({
   daysLogged,
   maxDayAmount,
 }) => {
+  const { colors: themeColors, isDark } = useTheme();
   const maxBarHeight = 64;
   const minBarHeight = 10;
   const effectiveMax = Math.max(maxDayAmount, 100);
@@ -54,11 +55,11 @@ export const WeeklyRhythmChart: React.FC<WeeklyRhythmChartProps> = ({
     <View style={styles.container}>
       {/* Rhythm Header / Badge */}
       <View style={styles.headerRow}>
-        <View style={[styles.badgeContainer, { backgroundColor: colors.soft }]}>
-          <View style={[styles.checkCircle, { backgroundColor: colors.accent }]}>
-            <Check size={11} color={colors.surface} strokeWidth={2.5} />
+        <View style={[styles.badgeContainer, { backgroundColor: isDark ? themeColors.surfaceElevated : themeColors.soft, borderColor: themeColors.line, borderWidth: 1 }]}>
+          <View style={[styles.checkCircle, { backgroundColor: themeColors.accent }]}>
+            <Check size={11} color={themeColors.onAccent || themeColors.surface} strokeWidth={2.5} />
           </View>
-          <SproutText variant="caption" color={colors.text} style={styles.badgeText}>
+          <SproutText variant="caption" color={themeColors.text} style={styles.badgeText}>
             {daysLogged} of 7 days logged this week
           </SproutText>
         </View>
@@ -74,9 +75,11 @@ export const WeeklyRhythmChart: React.FC<WeeklyRhythmChartProps> = ({
 
           const pillBg = day.hasActivity
             ? day.isToday
-              ? colors.accent
-              : colors.soft
-            : colors.line;
+              ? themeColors.accent
+              : isDark
+              ? themeColors.accentSoft
+              : themeColors.soft
+            : themeColors.line;
 
           return (
             <View key={day.dayKey} style={styles.dayCol}>
@@ -93,12 +96,18 @@ export const WeeklyRhythmChart: React.FC<WeeklyRhythmChartProps> = ({
               <View
                 style={[
                   styles.dayLabelCircle,
-                  day.isToday && [styles.todayCircle, { backgroundColor: colors.surface, borderColor: colors.accent }],
+                  day.isToday && [
+                    styles.todayCircle,
+                    {
+                      backgroundColor: isDark ? themeColors.surfaceElevated : themeColors.surface,
+                      borderColor: themeColors.accent,
+                    },
+                  ],
                 ]}
               >
                 <SproutText
                   variant="caption"
-                  color={day.isToday ? colors.accent : colors.text}
+                  color={day.isToday ? themeColors.accent : themeColors.text}
                   style={day.isToday ? styles.todayLabel : undefined}
                 >
                   {day.dayLabel}
@@ -108,7 +117,7 @@ export const WeeklyRhythmChart: React.FC<WeeklyRhythmChartProps> = ({
               {/* Amount or Dash */}
               <SproutText
                 variant="monoSm"
-                color={day.hasActivity ? colors.text : colors.muted}
+                color={day.hasActivity ? themeColors.text : themeColors.muted}
                 style={styles.amountText}
               >
                 {day.hasActivity ? `₹${Math.round(day.amount)}` : '—'}
