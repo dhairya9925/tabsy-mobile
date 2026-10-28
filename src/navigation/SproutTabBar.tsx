@@ -53,6 +53,7 @@ export const SproutTabBar: React.FC<SproutTabBarProps> = ({
           style={({ pressed }) => [
             styles.aiFloatingButton,
             {
+              backgroundColor: themeColors.surface,
               shadowColor: themeColors.text,
             },
             { bottom: insets.bottom + 66 },
