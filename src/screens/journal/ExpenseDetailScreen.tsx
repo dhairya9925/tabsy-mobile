@@ -6,7 +6,6 @@ import { JournalStackParamList, RootStackParamList } from '../../navigation/type
 import { useTheme, radii, spacing, shadows } from '../../theme';
 import {
   SproutText,
-  SproutButton,
   CircleButton,
   ScreenShell,
   Toast,
@@ -100,20 +99,25 @@ export const ExpenseDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         </SproutText>
         <View style={styles.topBarActions}>
           <CircleButton
-            icon={<Trash2 size={18} color={colors.negative} />}
-            onPress={handleDelete}
-            style={{ marginRight: 8 }}
-            accessibilityLabel="Delete expense"
-          />
-          <CircleButton
             icon={<Edit3 size={18} color={colors.accent} />}
             onPress={handleEdit}
+            disabled={isDeleting}
+            style={{ marginRight: 8 }}
             accessibilityLabel="Edit expense"
+          />
+          <CircleButton
+            icon={<Trash2 size={18} color={colors.negative} />}
+            onPress={handleDelete}
+            disabled={isDeleting}
+            accessibilityLabel="Delete expense"
           />
         </View>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollBody}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[styles.scrollBody, { paddingBottom: Math.max(insets.bottom + 80, 96) }]}
+      >
         {/* Hero Amount Card */}
         <View style={[styles.heroCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
           <SproutText variant="eyebrow" color={colors.muted} style={styles.amountEyebrow}>
@@ -176,23 +180,6 @@ export const ExpenseDetailScreen: React.FC<Props> = ({ route, navigation }) => {
           </View>
         </View>
       </ScrollView>
-
-      {/* Action Buttons */}
-      <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom + 76, 96) }]}>
-        <SproutButton
-          label="Edit Expense"
-          variant="outline"
-          onPress={handleEdit}
-          style={styles.actionBtn}
-        />
-        <SproutButton
-          label="Delete"
-          variant="clay"
-          isLoading={isDeleting}
-          onPress={handleDelete}
-          style={styles.actionBtn}
-        />
-      </View>
     </ScreenShell>
   );
 };
@@ -267,13 +254,5 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
     marginBottom: 2,
-  },
-  bottomBar: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    paddingTop: spacing.sm,
-  },
-  actionBtn: {
-    flex: 1,
   },
 });

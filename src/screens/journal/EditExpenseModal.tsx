@@ -210,6 +210,7 @@ export const EditExpenseModal: React.FC<Props> = ({ route, navigation }) => {
           <CircleButton
             icon={<Trash2 size={18} color={colors.negative} />}
             onPress={handleDelete}
+            disabled={isDeleting || isSubmitting}
             accessibilityLabel="Delete expense"
           />
         </View>
@@ -308,20 +309,13 @@ export const EditExpenseModal: React.FC<Props> = ({ route, navigation }) => {
           </View>
         </ScrollView>
 
-        {/* Bottom Save & Delete Actions */}
+        {/* Bottom Save Action */}
         <View style={[styles.bottomBar, { backgroundColor: colors.background, borderTopColor: colors.line }]}>
-          <SproutButton
-            label="Delete"
-            variant="clay"
-            isLoading={isDeleting}
-            onPress={handleDelete}
-            style={styles.deleteBtn}
-          />
           <SproutButton
             label="Update Expense"
             isLoading={isSubmitting}
+            disabled={isDeleting}
             onPress={handleUpdate}
-            style={styles.updateBtn}
           />
         </View>
       </KeyboardAvoidingView>
@@ -418,18 +412,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   bottomBar: {
-    flexDirection: 'row',
-    gap: 12,
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.lg,
     paddingTop: spacing.sm,
     borderTopWidth: 1,
-  },
-  deleteBtn: {
-    flex: 1,
-  },
-  updateBtn: {
-    flex: 1.8,
   },
 });
 
