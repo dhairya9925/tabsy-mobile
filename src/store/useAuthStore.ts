@@ -3,9 +3,9 @@ import { authApi, LoginPayload, SignupPayload } from '../api/auth';
 import { UserProfile } from '../types';
 import { secureStorage } from '../utils/secureStorage';
 import { QuickAddModule } from '../native/QuickAddModule';
-import { resolveApiBaseUrl } from '../api/client';
+import { resolveApiBaseUrl, setUnauthorizedHandler } from '../api/client';
 import { cacheService, CACHE_KEYS } from '../services/offline/cacheService';
-import { preloadOfflineData, preloadService } from '../services/offline';
+import { preloadOfflineData, preloadService, outboxService } from '../services/offline';
 
 
 interface AuthState {
@@ -18,7 +18,7 @@ interface AuthState {
   initializeSession: () => Promise<void>;
   login: (payload: LoginPayload) => Promise<void>;
   signup: (payload: SignupPayload) => Promise<void>;
-  logout: () => Promise<void>;
+  logout: (options?: { skipServerLogout?: boolean }) => Promise<void>;
   setUser: (user: UserProfile) => void;
 }
 
@@ -125,13 +125,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  logout: async () => {
+  logout: async (options?: { skipServerLogout?: boolean }) => {
     set({ isLoading: true });
+    if (!options?.skipServerLogout) {
+      try {
+        await authApi.logout();
+      } catch {
+        // Ignore network error on logout
+      }
+    }
     try {
-      await authApi.logout();
-    } catch {
-      // Ignore network error on logout
-    } finally {
       try {
         await QuickAddModule.stopQuickAddService();
         await QuickAddModule.clearAuthSession();
@@ -139,9 +142,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         // Non-blocking cleanup
       }
       await secureStorage.clearAll();
-      await cacheService.invalidate(CACHE_KEYS.USER_PROFILE);
+      await cacheService.invalidatePattern('cache:');
+      try {
+        await outboxService.clear();
+      } catch {
+        // Non-blocking cleanup
+      }
       preloadService.reset();
-
+    } finally {
       set({
         token: null,
         user: null,
@@ -157,3 +165,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     cacheService.set(CACHE_KEYS.USER_PROFILE, user).catch(() => {});
   },
 }));
+
+// Automatically log out user if authorization token is missing or invalid (HTTP 401)
+setUnauthorizedHandler(async () => {
+  await useAuthStore.getState().logout({ skipServerLogout: true });
+});

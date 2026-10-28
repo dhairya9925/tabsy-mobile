@@ -81,11 +81,79 @@ export const apiClient = axios.create({
   },
 });
 
+export type UnauthorizedHandler = () => Promise<void> | void;
+
+let unauthorizedHandler: UnauthorizedHandler | null = null;
+
+export function setUnauthorizedHandler(handler: UnauthorizedHandler | null): void {
+  unauthorizedHandler = handler;
+}
+
+export function isPublicAuthEndpoint(url?: string): boolean {
+  if (!url) return false;
+  return url.includes('/auth/login') || url.includes('/auth/signup');
+}
+
+export function isExcludedFromAutoLogout(url?: string): boolean {
+  if (!url) return false;
+  return (
+    url.includes('/auth/login') ||
+    url.includes('/auth/signup') ||
+    url.includes('/auth/logout')
+  );
+}
+
+let activeLogoutPromise: Promise<void> | null = null;
+
+export async function triggerAutoLogout(): Promise<void> {
+  if (activeLogoutPromise) {
+    return activeLogoutPromise;
+  }
+
+  activeLogoutPromise = (async () => {
+    try {
+      // 1. Wipe secure storage immediately
+      await secureStorage.clearAll();
+
+      // 2. Invoke registered auth store unauthorized handler
+      if (unauthorizedHandler) {
+        await unauthorizedHandler();
+      } else {
+        // Dynamic fallback if handler was not set
+        try {
+          const { useAuthStore } = require('../store/useAuthStore');
+          if (useAuthStore?.getState) {
+            await useAuthStore.getState().logout({ skipServerLogout: true });
+          }
+        } catch (err) {
+          console.warn('[Tabsy API] Dynamic useAuthStore logout failed:', err);
+        }
+      }
+    } catch (err) {
+      console.warn('[Tabsy API] Error during triggerAutoLogout:', err);
+    } finally {
+      activeLogoutPromise = null;
+    }
+  })();
+
+  return activeLogoutPromise;
+}
+
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
+    const url = config.url || '';
+    const isPublic = isPublicAuthEndpoint(url);
+    const existingAuth = config.headers?.Authorization;
+
     const token = await secureStorage.getAuthToken();
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if (token) {
+      if (config.headers) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    } else if (!existingAuth && !isPublic) {
+      console.warn(`[Tabsy API] Missing authorization token (bearer) for endpoint: ${url}`);
+      await triggerAutoLogout();
+      return Promise.reject(new Error('Missing authorization token (bearer)'));
     }
     return config;
   },
@@ -152,9 +220,10 @@ apiClient.interceptors.response.use(
       message = error.message;
     }
 
-    if (error.response?.status === 401) {
-      // Session expired or invalid
-      await secureStorage.clearAll();
+    if (error.response?.status === 401 && !isExcludedFromAutoLogout(error.config?.url)) {
+      // Session expired, invalid, or missing token on backend
+      console.warn(`[Tabsy API] 401 Unauthorized for ${error.config?.url}. Triggering auto-logout.`);
+      await triggerAutoLogout();
     }
 
     return Promise.reject(new Error(message));
