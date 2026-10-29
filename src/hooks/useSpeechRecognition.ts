@@ -13,6 +13,10 @@ const isNativeSupported = Boolean(
   NativeSpeechModule && typeof NativeSpeechModule.start === 'function'
 );
 
+export interface UseSpeechRecognitionOptions {
+  onAutoFinish?: (transcript: string) => void;
+}
+
 export interface UseSpeechRecognitionReturn {
   isListening: boolean;
   isSupported: boolean;
@@ -22,13 +26,15 @@ export interface UseSpeechRecognitionReturn {
   hasPermission: boolean | null;
   errorMessage: string | null;
   requestPermission: () => Promise<boolean>;
-  startListening: (options?: { lang?: string }) => Promise<boolean>;
+  startListening: (options?: { lang?: string; continuous?: boolean }) => Promise<boolean>;
   stopListening: () => Promise<string>;
   cancelListening: () => void;
   resetTranscript: () => void;
 }
 
-export const useSpeechRecognition = (): UseSpeechRecognitionReturn => {
+export const useSpeechRecognition = (
+  hookOptions?: UseSpeechRecognitionOptions
+): UseSpeechRecognitionReturn => {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [interimTranscript, setInterimTranscript] = useState('');
@@ -41,12 +47,20 @@ export const useSpeechRecognition = (): UseSpeechRecognitionReturn => {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<number>(0);
   const pendingStopResolveRef = useRef<((text: string) => void) | null>(null);
+  const onAutoFinishRef = useRef(hookOptions?.onAutoFinish);
+
+  useEffect(() => {
+    onAutoFinishRef.current = hookOptions?.onAutoFinish;
+  }, [hookOptions?.onAutoFinish]);
 
   const finishPendingStop = useCallback(() => {
+    const text = transcriptRef.current.trim();
     if (pendingStopResolveRef.current) {
       const resolve = pendingStopResolveRef.current;
       pendingStopResolveRef.current = null;
-      resolve(transcriptRef.current.trim());
+      resolve(text);
+    } else if (text.length > 0) {
+      onAutoFinishRef.current?.(text);
     }
   }, []);
 
@@ -103,7 +117,6 @@ export const useSpeechRecognition = (): UseSpeechRecognitionReturn => {
               if (event.isFinal) {
                 setTranscript(text);
                 setInterimTranscript('');
-                finishPendingStop();
               } else {
                 setInterimTranscript(text);
               }
@@ -245,7 +258,7 @@ export const useSpeechRecognition = (): UseSpeechRecognitionReturn => {
   }, []);
 
   const startListening = useCallback(
-    async (options?: { lang?: string }): Promise<boolean> => {
+    async (options?: { lang?: string; continuous?: boolean }): Promise<boolean> => {
       setErrorMessage(null);
 
       if (!isNativeSupported) {
@@ -268,11 +281,18 @@ export const useSpeechRecognition = (): UseSpeechRecognitionReturn => {
         setDurationSeconds(0);
         startTimeRef.current = Date.now();
 
+        const isContinuous = options?.continuous !== false;
+
         NativeSpeechModule.start({
           lang: options?.lang || 'en-US',
           interimResults: true,
-          continuous: false,
+          continuous: isContinuous,
           addsPunctuation: true,
+          androidIntentOptions: {
+            EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS: 2500,
+            EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS: 3500,
+            EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS: 2500,
+          },
         });
 
         isListeningRef.current = true;

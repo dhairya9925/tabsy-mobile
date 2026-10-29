@@ -128,6 +128,20 @@ export const QuickAddOverlay: React.FC = () => {
   const cancelConfirmation = useAIStore((s) => s.cancelConfirmation);
   const selectOption = useAIStore((s) => s.selectOption);
 
+  const durationSecondsRef = useRef(0);
+
+  const handleAutoFinishVoice = useCallback(async (spokenText: string) => {
+    if (spokenText && spokenText.trim().length > 0) {
+      analytics.track('ai_stt_completed', { durationSeconds: durationSecondsRef.current, source: 'auto_finish' });
+      try {
+        await sendMessage({ text: spokenText.trim(), isVoice: true });
+      } catch (err: any) {
+        haptics.error();
+        setSubmitError(err?.message || 'Failed to process voice expense');
+      }
+    }
+  }, [sendMessage]);
+
   // Speech recognition hook
   const {
     isListening,
@@ -137,7 +151,13 @@ export const QuickAddOverlay: React.FC = () => {
     startListening,
     stopListening,
     cancelListening,
-  } = useSpeechRecognition();
+  } = useSpeechRecognition({
+    onAutoFinish: handleAutoFinishVoice,
+  });
+
+  useEffect(() => {
+    durationSecondsRef.current = durationSeconds;
+  }, [durationSeconds]);
 
   // Animation values
   const pulseAnim = useRef(new Animated.Value(1)).current;

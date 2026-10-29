@@ -97,6 +97,39 @@ export const VoiceRecordButton: React.FC<VoiceRecordButtonProps> = ({
     return `${mins}:${remainingSecs.toString().padStart(2, '0')}`;
   };
 
+  const pressStartTimeRef = useRef<number>(0);
+  const wasRecordingOnPressInRef = useRef<boolean>(false);
+  const longPressTriggeredRef = useRef<boolean>(false);
+
+  const handlePressIn = () => {
+    if (disabled) return;
+    pressStartTimeRef.current = Date.now();
+    wasRecordingOnPressInRef.current = isRecording;
+    longPressTriggeredRef.current = false;
+
+    if (!isRecording) {
+      onStartRecord();
+    }
+  };
+
+  const handlePressOut = () => {
+    if (disabled) return;
+    const duration = Date.now() - pressStartTimeRef.current;
+    if (duration >= 450) {
+      longPressTriggeredRef.current = true;
+      if (isRecording) {
+        onStopRecord();
+      }
+    }
+  };
+
+  const handlePress = () => {
+    if (disabled || longPressTriggeredRef.current) return;
+    if (wasRecordingOnPressInRef.current && isRecording) {
+      onStopRecord();
+    }
+  };
+
   return (
     <View style={styles.container}>
       {isRecording && (
@@ -129,20 +162,13 @@ export const VoiceRecordButton: React.FC<VoiceRecordButtonProps> = ({
         }}
       >
         <TouchableOpacity
-          accessibilityLabel={isRecording ? 'Stop recording voice' : 'Hold to record voice'}
+          accessibilityLabel={isRecording ? 'Stop recording voice' : 'Tap to speak, or hold to record'}
           accessibilityRole="button"
           activeOpacity={0.8}
           disabled={disabled}
-          onPressIn={() => {
-            if (!disabled && !isRecording) {
-              onStartRecord();
-            }
-          }}
-          onPressOut={() => {
-            if (isRecording) {
-              onStopRecord();
-            }
-          }}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          onPress={handlePress}
           style={[
             styles.micButton,
             isRecording ? styles.micButtonRecording : styles.micButtonIdle,

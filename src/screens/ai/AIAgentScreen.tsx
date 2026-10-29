@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   StyleSheet,
@@ -69,6 +69,19 @@ export const AIAgentScreen: React.FC = () => {
     setError,
   } = useAIStore();
 
+  const durationSecondsRef = useRef(0);
+
+  const handleAutoFinishVoice = useCallback(
+    async (spokenText: string) => {
+      if (spokenText && spokenText.trim().length > 0) {
+        await haptics.impact('light');
+        analytics.track('ai_stt_completed', { durationSeconds: durationSecondsRef.current, source: 'auto_finish' });
+        await sendMessage({ text: spokenText.trim(), isVoice: true });
+      }
+    },
+    [sendMessage]
+  );
+
   const {
     isListening,
     isSupported,
@@ -78,7 +91,13 @@ export const AIAgentScreen: React.FC = () => {
     startListening,
     stopListening,
     cancelListening,
-  } = useSpeechRecognition();
+  } = useSpeechRecognition({
+    onAutoFinish: handleAutoFinishVoice,
+  });
+
+  useEffect(() => {
+    durationSecondsRef.current = durationSeconds;
+  }, [durationSeconds]);
 
   // Scroll to bottom when messages update or loading changes
   useEffect(() => {
@@ -128,7 +147,7 @@ export const AIAgentScreen: React.FC = () => {
 
     await haptics.impact('medium');
     analytics.track('ai_stt_started');
-    await startListening();
+    await startListening({ continuous: true });
   };
 
   const handleStopRecord = async () => {
