@@ -130,6 +130,10 @@ class QuickAddOverlayActivity : Activity() {
     private lateinit var targetRow: LinearLayout
     private lateinit var tvTypeLabel: TextView
     private lateinit var tvExpenseTarget: TextView
+    private lateinit var paidByRow: LinearLayout
+    private lateinit var tvPaidByLabel: TextView
+    private lateinit var tvPaidByTarget: TextView
+    private var currentPaidBy: String = "self"
     private lateinit var etParsedNote: EditText
     private lateinit var etParsedDate: EditText
     private lateinit var btnCancel: Button
@@ -182,6 +186,22 @@ class QuickAddOverlayActivity : Activity() {
 
     private fun dpToPx(dp: Float): Float {
         return dp * resources.displayMetrics.density
+    }
+
+    private fun createPillDrawable(
+        bgColor: Int,
+        strokeColor: Int? = null,
+        strokeWidthDp: Float = 0f,
+        cornerRadiusDp: Float = 16f
+    ): GradientDrawable {
+        return GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadius = dpToPx(cornerRadiusDp)
+            setColor(bgColor)
+            if (strokeColor != null && strokeWidthDp > 0f) {
+                setStroke(dpToPx(strokeWidthDp).toInt(), strokeColor)
+            }
+        }
     }
 
     private fun applyTheme() {
@@ -314,35 +334,50 @@ class QuickAddOverlayActivity : Activity() {
 
             findViewById<TextView>(R.id.tvTotalLabel)?.setTextColor(Color.parseColor(themeColors.muted))
 
-            val typeBadgeBg = GradientDrawable().apply {
-                shape = GradientDrawable.RECTANGLE
-                cornerRadius = dpToPx(8f)
-                setColor(Color.parseColor(themeColors.accentSoft))
-                setStroke(dpToPx(1f).toInt(), Color.parseColor(themeColors.accent))
-            }
-            tvTypeBadge.background = typeBadgeBg
+            // Micro capsule badge for expense type (e.g. PERSONAL, SPLIT, GRP)
+            tvTypeBadge.background = createPillDrawable(
+                bgColor = Color.parseColor(themeColors.accentSoft),
+                strokeColor = Color.parseColor(themeColors.line),
+                strokeWidthDp = 0.5f,
+                cornerRadiusDp = 10f
+            )
             tvTypeBadge.setTextColor(Color.parseColor(themeColors.accent))
+
+            updateEditToggleVisual()
 
             tvCurrencySymbol.setTextColor(Color.parseColor(themeColors.text))
             etParsedAmount.setTextColor(Color.parseColor(themeColors.text))
             findViewById<View>(R.id.receiptDivider)?.setBackgroundColor(Color.parseColor(themeColors.line))
+            
+            // Category selector chip
             findViewById<TextView>(R.id.tvCategoryLabel)?.setTextColor(Color.parseColor(themeColors.muted))
+            tvParsedCategory.background = createPillDrawable(
+                bgColor = Color.parseColor(themeColors.innerCardBg),
+                strokeColor = Color.parseColor(themeColors.line),
+                strokeWidthDp = 1f,
+                cornerRadiusDp = 16f
+            )
+            tvParsedCategory.setTextColor(Color.parseColor(themeColors.text))
 
-            val catPillBg = GradientDrawable().apply {
-                shape = GradientDrawable.RECTANGLE
-                cornerRadius = dpToPx(16f)
-                setColor(Color.parseColor(themeColors.accentSoft))
-                setStroke(dpToPx(1f).toInt(), Color.parseColor(themeColors.accent))
-            }
-            btnEditToggle.background = catPillBg
-            btnEditToggle.setTextColor(Color.parseColor(themeColors.accent))
-
-            tvParsedCategory.background = catPillBg
-            tvParsedCategory.setTextColor(Color.parseColor(themeColors.accent))
-
+            // Type selector chip
             findViewById<TextView>(R.id.tvTypeLabel)?.setTextColor(Color.parseColor(themeColors.muted))
-            tvExpenseTarget.background = catPillBg
-            tvExpenseTarget.setTextColor(Color.parseColor(themeColors.accent))
+            tvExpenseTarget.background = createPillDrawable(
+                bgColor = Color.parseColor(themeColors.innerCardBg),
+                strokeColor = Color.parseColor(themeColors.line),
+                strokeWidthDp = 1f,
+                cornerRadiusDp = 16f
+            )
+            tvExpenseTarget.setTextColor(Color.parseColor(themeColors.text))
+
+            // Paid By selector chip
+            tvPaidByLabel.setTextColor(Color.parseColor(themeColors.muted))
+            tvPaidByTarget.background = createPillDrawable(
+                bgColor = Color.parseColor(themeColors.innerCardBg),
+                strokeColor = Color.parseColor(themeColors.line),
+                strokeWidthDp = 1f,
+                cornerRadiusDp = 16f
+            )
+            tvPaidByTarget.setTextColor(Color.parseColor(themeColors.text))
 
             findViewById<TextView>(R.id.tvNoteLabel)?.setTextColor(Color.parseColor(themeColors.muted))
             etParsedNote.setTextColor(Color.parseColor(themeColors.text))
@@ -426,6 +461,9 @@ class QuickAddOverlayActivity : Activity() {
         targetRow = findViewById(R.id.targetRow)
         tvTypeLabel = findViewById(R.id.tvTypeLabel)
         tvExpenseTarget = findViewById(R.id.tvExpenseTarget)
+        paidByRow = findViewById(R.id.paidByRow)
+        tvPaidByLabel = findViewById(R.id.tvPaidByLabel)
+        tvPaidByTarget = findViewById(R.id.tvPaidByTarget)
         etParsedNote = findViewById(R.id.etParsedNote)
         etParsedDate = findViewById(R.id.etParsedDate)
         btnCancel = findViewById(R.id.btnCancel)
@@ -876,7 +914,7 @@ class QuickAddOverlayActivity : Activity() {
             .setItems(items) { _, which ->
                 val chosen = items[which]
                 pendingExpense = pendingExpense?.copy(category = chosen)
-                tvParsedCategory.text = formatCategoryWithEmoji(chosen)
+                tvParsedCategory.text = "${formatCategoryWithEmoji(chosen)}  ▾"
             }
             .setNegativeButton("Cancel", null)
             .show()
@@ -965,11 +1003,106 @@ class QuickAddOverlayActivity : Activity() {
             .setTitle("Expense Type")
             .setItems(displayItems) { _, which ->
                 val selected = options[which].third
-                pendingExpense = selected
-                showConfirmation(selected)
+                currentPaidBy = "self"
+                pendingExpense = selected.copy(paidBy = "self")
+                showConfirmation(pendingExpense!!)
             }
             .setNegativeButton("Cancel", null)
             .show()
+    }
+
+    private fun showPaidBySelectionDialog(expense: ParsedExpenseData) {
+        val options = mutableListOf<Pair<String, String>>()
+        options.add(Pair("👤 You (I paid)", "self"))
+
+        if (expense.expenseType.equals("friend", ignoreCase = true)) {
+            val fName = expense.friendName?.ifEmpty { null } ?: "Friend"
+            options.add(Pair("🤝 $fName paid", "friend"))
+        } else if (expense.expenseType.equals("group", ignoreCase = true)) {
+            try {
+                val prefs = getSharedPreferences(QuickAddService.PREFS_NAME, Context.MODE_PRIVATE)
+                val membersKey = "group_members_${expense.groupId}"
+                val membersJson = prefs.getString(membersKey, null)
+                if (!membersJson.isNullOrEmpty()) {
+                    val arr = JSONArray(membersJson)
+                    for (i in 0 until arr.length()) {
+                        val m = arr.getJSONObject(i)
+                        val mName = m.optString("name", "").trim()
+                        val mId = m.optString("user_id", "").trim()
+                        if (mName.isNotEmpty() && mId.isNotEmpty()) {
+                            options.add(Pair("👥 $mName paid", mId))
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Error fetching cached group members for paid_by", e)
+            }
+        }
+
+        if (options.size <= 1) {
+            Toast.makeText(this, "Paid by You (default)", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val displayItems = options.map { it.first }.toTypedArray()
+        android.app.AlertDialog.Builder(this)
+            .setTitle("Paid By")
+            .setItems(displayItems) { _, which ->
+                currentPaidBy = options[which].second
+                pendingExpense = pendingExpense?.copy(paidBy = currentPaidBy)
+                updatePaidByDisplay(pendingExpense ?: expense)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun updatePaidByDisplay(parsed: ParsedExpenseData) {
+        val friendName = parsed.friendName?.ifEmpty { null } ?: parsed.friendId ?: "Friend"
+
+        val displayText = when {
+            currentPaidBy == "self" || currentPaidBy.isEmpty() -> "👤 You  ▾"
+            currentPaidBy == "friend" -> "🤝 $friendName  ▾"
+            else -> {
+                var memberName: String? = null
+                if (parsed.groupId != null) {
+                    try {
+                        val prefs = getSharedPreferences(QuickAddService.PREFS_NAME, Context.MODE_PRIVATE)
+                        val membersJson = prefs.getString("group_members_${parsed.groupId}", null)
+                        if (!membersJson.isNullOrEmpty()) {
+                            val arr = JSONArray(membersJson)
+                            for (i in 0 until arr.length()) {
+                                val m = arr.getJSONObject(i)
+                                if (m.optString("user_id", "") == currentPaidBy) {
+                                    memberName = m.optString("name", "").trim()
+                                    break
+                                }
+                            }
+                        }
+                    } catch (_: Exception) {}
+                }
+                "👥 ${memberName ?: currentPaidBy}  ▾"
+            }
+        }
+        tvPaidByTarget.text = displayText
+
+        val isSelf = currentPaidBy == "self" || currentPaidBy.isEmpty()
+        val pillBg = if (isSelf) {
+            Color.parseColor(themeColors.innerCardBg)
+        } else {
+            Color.parseColor(themeColors.accentSoft)
+        }
+        val strokeColor = if (isSelf) {
+            Color.parseColor(themeColors.line)
+        } else {
+            Color.parseColor(themeColors.accent)
+        }
+        tvPaidByTarget.background = createPillDrawable(
+            bgColor = pillBg,
+            strokeColor = strokeColor,
+            strokeWidthDp = 1f,
+            cornerRadiusDp = 16f
+        )
+        tvPaidByTarget.setTextColor(if (isSelf) Color.parseColor(themeColors.text) else Color.parseColor(themeColors.accent))
     }
 
     private fun parseLocally(text: String): ParsedExpenseData {
@@ -1058,13 +1191,35 @@ class QuickAddOverlayActivity : Activity() {
         )
     }
 
+    private fun updateEditToggleVisual() {
+        if (isEditMode) {
+            btnEditToggle.text = "✓ Done"
+            btnEditToggle.background = createPillDrawable(
+                bgColor = Color.parseColor(themeColors.accent),
+                strokeColor = Color.parseColor(themeColors.accent),
+                strokeWidthDp = 1f,
+                cornerRadiusDp = 16f
+            )
+            btnEditToggle.setTextColor(Color.parseColor(themeColors.onAccent))
+        } else {
+            btnEditToggle.text = "✎ Edit"
+            btnEditToggle.background = createPillDrawable(
+                bgColor = Color.parseColor(themeColors.accentSoft),
+                strokeColor = Color.parseColor(themeColors.line),
+                strokeWidthDp = 1f,
+                cornerRadiusDp = 16f
+            )
+            btnEditToggle.setTextColor(Color.parseColor(themeColors.accent))
+        }
+    }
+
     private fun toggleEditMode() {
         setEditMode(!isEditMode)
     }
 
     private fun setEditMode(enabled: Boolean) {
         isEditMode = enabled
-        btnEditToggle.text = if (isEditMode) "✓ Done" else "✎ Edit"
+        updateEditToggleVisual()
 
         etParsedAmount.isEnabled = isEditMode
         etParsedAmount.isFocusable = isEditMode
@@ -1121,13 +1276,14 @@ class QuickAddOverlayActivity : Activity() {
 
     private fun showConfirmation(parsed: ParsedExpenseData) {
         pendingExpense = parsed
+        currentPaidBy = parsed.paidBy.ifEmpty { "self" }
         progressSection.visibility = View.GONE
         confirmationSection.visibility = View.VISIBLE
 
         setEditMode(false)
 
         etParsedAmount.setText(String.format(Locale.US, "%.2f", parsed.amount))
-        tvParsedCategory.text = formatCategoryWithEmoji(parsed.category)
+        tvParsedCategory.text = "${formatCategoryWithEmoji(parsed.category)}  ▾"
         tvParsedCategory.setOnClickListener {
             showCategorySelectionDialog()
         }
@@ -1147,19 +1303,19 @@ class QuickAddOverlayActivity : Activity() {
                 typeBadgeText = "GRP"
                 tvTypeLabel.text = "Type"
                 val groupName = parsed.groupName?.ifEmpty { null } ?: parsed.groupId ?: "Group"
-                tvExpenseTarget.text = "👥 Grp • $groupName"
+                tvExpenseTarget.text = "👥 Grp • $groupName  ▾"
             }
             "friend" -> {
                 typeBadgeText = "SPLIT"
                 tvTypeLabel.text = "Type"
                 val friendName = parsed.friendName?.ifEmpty { null } ?: parsed.friendId ?: "Friend"
                 val splitInfo = if (parsed.splitType.equals("full", ignoreCase = true)) " (Full)" else ""
-                tvExpenseTarget.text = "🤝 Split • $friendName$splitInfo"
+                tvExpenseTarget.text = "🤝 Split • $friendName$splitInfo  ▾"
             }
             else -> {
                 typeBadgeText = "PERSONAL"
                 tvTypeLabel.text = "Type"
-                tvExpenseTarget.text = "👤 Personal"
+                tvExpenseTarget.text = "👤 Personal  ▾"
             }
         }
         tvTypeBadge.text = typeBadgeText
@@ -1169,6 +1325,12 @@ class QuickAddOverlayActivity : Activity() {
         }
         tvTypeBadge.setOnClickListener {
             showTypeSelectionDialog()
+        }
+
+        paidByRow.visibility = View.VISIBLE
+        updatePaidByDisplay(parsed)
+        tvPaidByTarget.setOnClickListener {
+            showPaidBySelectionDialog(pendingExpense ?: parsed)
         }
     }
 
@@ -1187,7 +1349,8 @@ class QuickAddOverlayActivity : Activity() {
             amount = finalAmount,
             note = finalNote,
             expenseDate = finalDate,
-            category = finalCat
+            category = finalCat,
+            paidBy = currentPaidBy
         )
 
         hideKeyboard()
@@ -1286,12 +1449,23 @@ class QuickAddOverlayActivity : Activity() {
             Log.w(TAG, "Failed to fetch group members for splits", err)
         }
 
+        val prefs = getSharedPreferences(QuickAddService.PREFS_NAME, Context.MODE_PRIVATE)
+        val currentUserId = prefs.getString("user_id", "") ?: ""
+        val payerId = if (e.paidBy.isNotEmpty() && e.paidBy != "self") {
+            e.paidBy
+        } else {
+            currentUserId.ifEmpty { null }
+        }
+
         val payload = JSONObject().apply {
             put("amount", e.amount)
             put("category", e.category.lowercase(Locale.ROOT))
             put("note", e.note)
             put("expense_date", e.expenseDate)
             put("splits", splits)
+            if (payerId != null) {
+                put("paid_by", payerId)
+            }
         }
         return doPost(URL("$baseUrl/api/v1/groups/${e.groupId}/expenses"), token, payload)
     }
@@ -1299,6 +1473,8 @@ class QuickAddOverlayActivity : Activity() {
     private fun saveFriendExpense(baseUrl: String, token: String, currentUserId: String, e: ParsedExpenseData): Boolean {
         val payerId = if (e.paidBy.equals("friend", ignoreCase = true)) {
             e.friendId ?: currentUserId.ifEmpty { "self" }
+        } else if (e.paidBy.isNotEmpty() && e.paidBy != "self") {
+            e.paidBy
         } else {
             currentUserId.ifEmpty { "self" }
         }
