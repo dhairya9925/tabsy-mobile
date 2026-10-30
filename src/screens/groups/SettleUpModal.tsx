@@ -127,37 +127,16 @@ export const SettleUpModal: React.FC<Props> = ({ route, navigation }) => {
     setErrorMessage('');
     setIsLoading(true);
     try {
-      const res = await groupsApi.settleUp(groupId, {
+      const record = await groupsApi.settleUp(groupId, {
         from_user_id: balance.from_user_id,
         to_user_id: balance.to_user_id,
         amount: balance.amount,
         note: note.trim() || undefined,
       });
 
-      const count = res.settled_count ?? directSplits.length;
+      const count = record?.settled_split_ids?.length ?? directSplits.length;
       setSettledCount(count);
-
-      if (res.settlement_record) {
-        setSettlementReceipt(res.settlement_record);
-      } else {
-        // Fallback receipt in case record wasn't populated
-        setSettlementReceipt({
-          id: 'sr-' + Date.now().toString(36),
-          group_id: groupId,
-          from_user_id: balance.from_user_id,
-          from_name: balance.from_name,
-          to_user_id: balance.to_user_id,
-          to_name: balance.to_name,
-          amount: balance.amount,
-          note: note.trim() || null,
-          settled_by: balance.to_user_id,
-          settled_by_name: 'You',
-          created_at: new Date().toISOString(),
-          editable_until: new Date(Date.now() + 3 * 86400000).toISOString(),
-          is_disputed: false,
-          is_editable: true,
-        });
-      }
+      setSettlementReceipt(record);
 
       setSuccessMessage('Settlement recorded successfully!');
     } catch (err: any) {

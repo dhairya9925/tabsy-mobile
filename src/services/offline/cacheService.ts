@@ -21,6 +21,7 @@ export const CACHE_KEYS = {
   GROUP_DETAIL: (groupId: string) => `cache:group_detail:${groupId}`,
   GROUP_MEMBERS: (groupId: string) => `cache:group_members:${groupId}`,
   GROUP_EXPENSES: (groupId: string) => `cache:group_expenses:${groupId}`,
+  GROUP_SETTLEMENT_RECORDS: (groupId: string) => `cache:group_settlement_records:${groupId}`,
   GROUP_SETTLEMENT: (groupId: string, month: number, year: number) =>
     `cache:group_settlement:${groupId}:${year}-${String(month).padStart(2, '0')}`,
   MONTHLY_LEDGER: (groupId: string, year: number, month: number) =>

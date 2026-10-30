@@ -130,7 +130,7 @@ export const SettlementRecordsScreen: React.FC<Props> = ({ route, navigation }) 
           style: 'destructive',
           onPress: async () => {
             try {
-              await groupsApi.reverseSettlementRecord(groupId, record.id);
+              await groupsApi.deleteSettlementRecord(groupId, record.id);
               setRecords((prev) => prev.filter((r) => r.id !== record.id));
               setSuccessMessage('Settlement reversed. Splits have been reopened.');
             } catch (err: any) {

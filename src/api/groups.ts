@@ -397,21 +397,20 @@ export const groupsApi = {
     }
   },
 
-  /** Settle balances between two members */
-  async settleUp(
-    id: string,
-    payload: GroupSettleUpRequest
-  ): Promise<{ settled_count: number; settlement_record?: GroupSettlementRecord | null }> {
+  /** Settle balances between two members and return the full settlement record */
+  async settleUp(id: string, payload: GroupSettleUpRequest): Promise<GroupSettlementRecord> {
     const res: any = await apiClient.post(`/api/v1/groups/${id}/settle`, payload);
     await cacheService.invalidate(`cache:group_balances:${id}`);
     await cacheService.invalidate(CACHE_KEYS.GROUP_EXPENSES(id));
     await cacheService.invalidate(CACHE_KEYS.GROUPS_LIST);
-    return res || { settled_count: 0 };
+    await cacheService.invalidate(CACHE_KEYS.GROUP_SETTLEMENT_RECORDS(id));
+    const record: GroupSettlementRecord = res?.settlement_record ?? res;
+    return record;
   },
 
   /** List all settlement records for a group */
   async getSettlementRecords(groupId: string): Promise<GroupSettlementRecord[]> {
-    const cacheKey = `cache:group_settlement_records:${groupId}`;
+    const cacheKey = CACHE_KEYS.GROUP_SETTLEMENT_RECORDS(groupId);
     const cached = await cacheService.get<GroupSettlementRecord[]>(cacheKey);
     const hasCached = Array.isArray(cached);
 
@@ -431,8 +430,22 @@ export const groupsApi = {
 
   /** Get a specific settlement record */
   async getSettlementRecord(groupId: string, recordId: string): Promise<GroupSettlementRecord> {
-    const res: any = await apiClient.get(`/api/v1/groups/${groupId}/settlement-records/${recordId}`);
-    return res;
+    const cacheKey = CACHE_KEYS.GROUP_SETTLEMENT_RECORDS(groupId);
+    const cachedList = await cacheService.get<GroupSettlementRecord[]>(cacheKey);
+    const found = cachedList?.find((r) => r.id === recordId);
+
+    if (!networkService.isOnline()) {
+      if (found) return found;
+      throw new Error('Offline — settlement record not found');
+    }
+
+    try {
+      const res: any = await apiClient.get(`/api/v1/groups/${groupId}/settlement-records/${recordId}`);
+      return res;
+    } catch (err) {
+      if (found) return found;
+      throw err;
+    }
   },
 
   /** Update settlement record note */
@@ -445,16 +458,35 @@ export const groupsApi = {
       `/api/v1/groups/${groupId}/settlement-records/${recordId}`,
       payload
     );
-    await cacheService.invalidate(`cache:group_settlement_records:${groupId}`);
+    const cacheKey = CACHE_KEYS.GROUP_SETTLEMENT_RECORDS(groupId);
+    const cached = await cacheService.get<GroupSettlementRecord[]>(cacheKey);
+    if (Array.isArray(cached) && res) {
+      const updated = cached.map((r) => (r.id === recordId ? { ...r, ...res } : r));
+      await cacheService.set(cacheKey, updated);
+    } else {
+      await cacheService.invalidate(cacheKey);
+    }
     return res;
   },
 
-  /** Reverse a settlement record within 3-day window */
-  async reverseSettlementRecord(groupId: string, recordId: string): Promise<void> {
+  /** Delete a settlement record within 3-day window */
+  async deleteSettlementRecord(groupId: string, recordId: string): Promise<void> {
     await apiClient.delete(`/api/v1/groups/${groupId}/settlement-records/${recordId}`);
-    await cacheService.invalidate(`cache:group_settlement_records:${groupId}`);
+    const cacheKey = CACHE_KEYS.GROUP_SETTLEMENT_RECORDS(groupId);
+    const cached = await cacheService.get<GroupSettlementRecord[]>(cacheKey);
+    if (Array.isArray(cached)) {
+      const filtered = cached.filter((r) => r.id !== recordId);
+      await cacheService.set(cacheKey, filtered);
+    } else {
+      await cacheService.invalidate(cacheKey);
+    }
     await cacheService.invalidate(`cache:group_balances:${groupId}`);
     await cacheService.invalidate(CACHE_KEYS.GROUP_EXPENSES(groupId));
+  },
+
+  /** Reverse a settlement record (alias for deleteSettlementRecord) */
+  async reverseSettlementRecord(groupId: string, recordId: string): Promise<void> {
+    return this.deleteSettlementRecord(groupId, recordId);
   },
 
   /** Get monthly settlement status for a specific month and year */
