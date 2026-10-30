@@ -4,7 +4,7 @@ import { colors, fontFamilies, radii, spacing } from '../theme';
 import { SproutText } from './SproutText';
 import { AvatarCircle } from './AvatarCircle';
 import { formatCurrencyExact } from '../utils/formatters';
-import { GroupBalance } from '../types';
+import { GroupBalance, GroupExpense } from '../types';
 import {
   ArrowRight,
   Handshake,
@@ -12,24 +12,40 @@ import {
   ChevronDown,
   ChevronUp,
   Sparkles,
+  Receipt,
+  Info,
+  HelpCircle,
+  X,
 } from 'lucide-react-native';
 
 export interface WhoOwesWhomSectionProps {
   balances: GroupBalance[];
+  expenses?: GroupExpense[];
   currentUserId?: string;
   onSettle?: (balance: GroupBalance) => void;
+  onViewHistory?: () => void;
   isLoading?: boolean;
 }
+
+import { computeBalanceBreakdown } from '../utils/balanceBreakdown';
+export { computeBalanceBreakdown };
 
 const DEFAULT_VISIBLE_COUNT = 4;
 
 export const WhoOwesWhomSection: React.FC<WhoOwesWhomSectionProps> = ({
   balances,
+  expenses = [],
   currentUserId,
   onSettle,
+  onViewHistory,
   isLoading = false,
 }) => {
   const [showAllTransfers, setShowAllTransfers] = useState(false);
+  const [expandedBreakdownKey, setExpandedBreakdownKey] = useState<string | null>(null);
+
+  const toggleBreakdown = (key: string) => {
+    setExpandedBreakdownKey((prev) => (prev === key ? null : key));
+  };
 
   // Group balances into: user-involved vs other member transfers
   const myDebts: GroupBalance[] = [];
@@ -59,9 +75,21 @@ export const WhoOwesWhomSection: React.FC<WhoOwesWhomSectionProps> = ({
         <SproutText variant="subtitle" color={colors.text} weight="700" style={styles.emptyTitle}>
           All settled up!
         </SproutText>
-        <SproutText variant="caption" color={colors.muted}>
+        <SproutText variant="caption" color={colors.muted} style={{ marginBottom: onViewHistory ? spacing.md : 0 }}>
           No outstanding balances in this group.
         </SproutText>
+        {onViewHistory && (
+          <TouchableOpacity
+            activeOpacity={0.75}
+            style={styles.emptyHistoryBtn}
+            onPress={onViewHistory}
+          >
+            <Receipt size={14} color={colors.accent} style={{ marginRight: 6 }} />
+            <SproutText variant="caption" color={colors.accent} weight="700">
+              View Settlement History
+            </SproutText>
+          </TouchableOpacity>
+        )}
       </View>
     );
   }
@@ -86,92 +114,178 @@ export const WhoOwesWhomSection: React.FC<WhoOwesWhomSectionProps> = ({
           </View>
 
           {/* Dues you need to pay */}
-          {myDebts.map((b, idx) => (
-            <View
-              key={`my-debt-${b.to_user_id}-${idx}`}
-              style={[
-                styles.actionRow,
-                idx > 0 && styles.rowBorderTop,
-              ]}
-            >
-              <AvatarCircle name={b.to_name} size={36} />
-              <View style={styles.actionDetails}>
-                <View style={styles.nameRow}>
-                  <SproutText variant="body" color={colors.text} weight="700" numberOfLines={1}>
-                    Pay {b.to_name}
-                  </SproutText>
-                  <View style={[styles.debtTag, { backgroundColor: colors.negativeSoft, borderColor: colors.negative }]}>
-                    <SproutText style={[styles.debtTagText, { color: colors.negative }]}>YOU OWE</SproutText>
+          {myDebts.map((b, idx) => {
+            const key = `my-debt-${b.to_user_id}-${idx}`;
+            const isExpanded = expandedBreakdownKey === key;
+            const breakdown = isExpanded ? computeBalanceBreakdown(b, expenses, currentUserId) : null;
+
+            return (
+              <View
+                key={key}
+                style={[
+                  styles.actionRowContainer,
+                  idx > 0 && styles.rowBorderTop,
+                ]}
+              >
+                <View style={styles.actionRow}>
+                  <AvatarCircle name={b.to_name} size={36} />
+                  <View style={styles.actionDetails}>
+                    <View style={styles.nameRow}>
+                      <SproutText variant="body" color={colors.text} weight="700" numberOfLines={1}>
+                        Pay {b.to_name}
+                      </SproutText>
+                      <View style={[styles.debtTag, { backgroundColor: colors.negativeSoft, borderColor: colors.negative }]}>
+                        <SproutText style={[styles.debtTagText, { color: colors.negative }]}>YOU OWE</SproutText>
+                      </View>
+                    </View>
+                    <View style={styles.subtextRow}>
+                      <SproutText variant="caption" color={colors.muted} style={{ fontSize: 11 }}>
+                        Direct payment to settle
+                      </SproutText>
+                      <TouchableOpacity
+                        activeOpacity={0.7}
+                        style={styles.whyBtn}
+                        onPress={() => toggleBreakdown(key)}
+                      >
+                        <Info size={11} color={colors.accent} style={{ marginRight: 3 }} />
+                        <SproutText variant="caption" color={colors.accent} weight="700" style={{ fontSize: 10.5 }}>
+                          {isExpanded ? 'Hide' : 'Why this amount?'}
+                        </SproutText>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  <View style={styles.actionRight}>
+                    <SproutText variant="body" color={colors.text} weight="700" style={styles.amountText}>
+                      {formatCurrencyExact(b.amount)}
+                    </SproutText>
+                    {onSettle && (
+                      <TouchableOpacity
+                        activeOpacity={0.8}
+                        style={styles.settleBtn}
+                        onPress={() => onSettle(b)}
+                      >
+                        <Handshake size={12} color={colors.surface} style={{ marginRight: 4 }} />
+                        <SproutText style={[styles.settleBtnText, { color: colors.surface }]}>
+                          Settle Up
+                        </SproutText>
+                      </TouchableOpacity>
+                    )}
                   </View>
                 </View>
-                <SproutText variant="caption" color={colors.muted} style={{ fontSize: 11, marginTop: 1 }}>
-                  Direct payment to settle your share
-                </SproutText>
-              </View>
 
-              <View style={styles.actionRight}>
-                <SproutText variant="body" color={colors.text} weight="700" style={styles.amountText}>
-                  {formatCurrencyExact(b.amount)}
-                </SproutText>
-                {onSettle && (
-                  <TouchableOpacity
-                    activeOpacity={0.8}
-                    style={styles.settleBtn}
-                    onPress={() => onSettle(b)}
-                  >
-                    <Handshake size={12} color={colors.surface} style={{ marginRight: 4 }} />
-                    <SproutText style={[styles.settleBtnText, { color: colors.surface }]}>
-                      Settle Up
+                {/* Inline Breakdown Tooltip */}
+                {isExpanded && breakdown && (
+                  <View style={styles.tooltipCard}>
+                    <View style={styles.tooltipHeader}>
+                      <View style={styles.tooltipHeaderLeft}>
+                        <HelpCircle size={12} color={colors.accent} style={{ marginRight: 4 }} />
+                        <SproutText variant="eyebrow" color={colors.accent} style={{ letterSpacing: 0.8, fontSize: 10 }}>
+                          BALANCE BREAKDOWN
+                        </SproutText>
+                      </View>
+                      <TouchableOpacity
+                        onPress={() => setExpandedBreakdownKey(null)}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <X size={13} color={colors.muted} />
+                      </TouchableOpacity>
+                    </View>
+                    <SproutText variant="caption" color={colors.text} style={styles.tooltipExplanation}>
+                      {breakdown.explanation}
                     </SproutText>
-                  </TouchableOpacity>
+                  </View>
                 )}
               </View>
-            </View>
-          ))}
+            );
+          })}
 
           {/* Dues other people owe you */}
-          {myCredits.map((b, idx) => (
-            <View
-              key={`my-credit-${b.from_user_id}-${idx}`}
-              style={[
-                styles.actionRow,
-                (myDebts.length > 0 || idx > 0) && styles.rowBorderTop,
-              ]}
-            >
-              <AvatarCircle name={b.from_name} size={36} />
-              <View style={styles.actionDetails}>
-                <View style={styles.nameRow}>
-                  <SproutText variant="body" color={colors.text} weight="700" numberOfLines={1}>
-                    {b.from_name}
-                  </SproutText>
-                  <View style={[styles.creditTag, { backgroundColor: colors.accentSoft, borderColor: colors.accent }]}>
-                    <SproutText style={[styles.creditTagText, { color: colors.accent }]}>OWES YOU</SproutText>
+          {myCredits.map((b, idx) => {
+            const key = `my-credit-${b.from_user_id}-${idx}`;
+            const isExpanded = expandedBreakdownKey === key;
+            const breakdown = isExpanded ? computeBalanceBreakdown(b, expenses, currentUserId) : null;
+
+            return (
+              <View
+                key={key}
+                style={[
+                  styles.actionRowContainer,
+                  (myDebts.length > 0 || idx > 0) && styles.rowBorderTop,
+                ]}
+              >
+                <View style={styles.actionRow}>
+                  <AvatarCircle name={b.from_name} size={36} />
+                  <View style={styles.actionDetails}>
+                    <View style={styles.nameRow}>
+                      <SproutText variant="body" color={colors.text} weight="700" numberOfLines={1}>
+                        {b.from_name}
+                      </SproutText>
+                      <View style={[styles.creditTag, { backgroundColor: colors.accentSoft, borderColor: colors.accent }]}>
+                        <SproutText style={[styles.creditTagText, { color: colors.accent }]}>OWES YOU</SproutText>
+                      </View>
+                    </View>
+                    <View style={styles.subtextRow}>
+                      <SproutText variant="caption" color={colors.muted} style={{ fontSize: 11 }}>
+                        Awaiting settlement
+                      </SproutText>
+                      <TouchableOpacity
+                        activeOpacity={0.7}
+                        style={styles.whyBtn}
+                        onPress={() => toggleBreakdown(key)}
+                      >
+                        <Info size={11} color={colors.accent} style={{ marginRight: 3 }} />
+                        <SproutText variant="caption" color={colors.accent} weight="700" style={{ fontSize: 10.5 }}>
+                          {isExpanded ? 'Hide' : 'Why this amount?'}
+                        </SproutText>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  <View style={styles.actionRight}>
+                    <SproutText variant="body" color={colors.accent} weight="700" style={styles.amountText}>
+                      +{formatCurrencyExact(b.amount)}
+                    </SproutText>
+                    {onSettle && (
+                      <TouchableOpacity
+                        activeOpacity={0.8}
+                        style={styles.settleCreditBtn}
+                        onPress={() => onSettle(b)}
+                      >
+                        <Handshake size={12} color={colors.text} style={{ marginRight: 4 }} />
+                        <SproutText style={styles.settleCreditText}>
+                          Record
+                        </SproutText>
+                      </TouchableOpacity>
+                    )}
                   </View>
                 </View>
-                <SproutText variant="caption" color={colors.muted} style={{ fontSize: 11, marginTop: 1 }}>
-                  Awaiting settlement from member
-                </SproutText>
-              </View>
 
-              <View style={styles.actionRight}>
-                <SproutText variant="body" color={colors.accent} weight="700" style={styles.amountText}>
-                  +{formatCurrencyExact(b.amount)}
-                </SproutText>
-                {onSettle && (
-                  <TouchableOpacity
-                    activeOpacity={0.8}
-                    style={styles.settleCreditBtn}
-                    onPress={() => onSettle(b)}
-                  >
-                    <Handshake size={12} color={colors.text} style={{ marginRight: 4 }} />
-                    <SproutText style={styles.settleCreditText}>
-                      Record
+                {/* Inline Breakdown Tooltip */}
+                {isExpanded && breakdown && (
+                  <View style={styles.tooltipCard}>
+                    <View style={styles.tooltipHeader}>
+                      <View style={styles.tooltipHeaderLeft}>
+                        <HelpCircle size={12} color={colors.accent} style={{ marginRight: 4 }} />
+                        <SproutText variant="eyebrow" color={colors.accent} style={{ letterSpacing: 0.8, fontSize: 10 }}>
+                          BALANCE BREAKDOWN
+                        </SproutText>
+                      </View>
+                      <TouchableOpacity
+                        onPress={() => setExpandedBreakdownKey(null)}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <X size={13} color={colors.muted} />
+                      </TouchableOpacity>
+                    </View>
+                    <SproutText variant="caption" color={colors.text} style={styles.tooltipExplanation}>
+                      {breakdown.explanation}
                     </SproutText>
-                  </TouchableOpacity>
+                  </View>
                 )}
               </View>
-            </View>
-          ))}
+            );
+          })}
         </View>
       )}
 
@@ -206,55 +320,97 @@ export const WhoOwesWhomSection: React.FC<WhoOwesWhomSectionProps> = ({
 
           {/* Transfer Rows */}
           <View style={styles.rowsContainer}>
-            {visibleTransfers.map((b, idx) => (
-              <View
-                key={`other-${b.from_user_id}-${b.to_user_id}-${idx}`}
-                style={[
-                  styles.tableRow,
-                  idx > 0 && [styles.rowHairlineBorder, { borderTopColor: colors.line }],
-                ]}
-              >
-                {/* Debtor */}
-                <View style={styles.personCol}>
-                  <AvatarCircle name={b.from_name} size={24} />
-                  <SproutText
-                    variant="body"
-                    color={colors.text}
-                    weight="600"
-                    numberOfLines={1}
-                    style={styles.personName}
-                  >
-                    {b.from_name}
-                  </SproutText>
-                </View>
+            {visibleTransfers.map((b, idx) => {
+              const key = `other-${b.from_user_id}-${b.to_user_id}-${idx}`;
+              const isExpanded = expandedBreakdownKey === key;
+              const breakdown = isExpanded ? computeBalanceBreakdown(b, expenses, currentUserId) : null;
 
-                {/* Arrow */}
-                <View style={styles.arrowWrap}>
-                  <ArrowRight size={12} color={colors.muted} />
-                </View>
+              return (
+                <View
+                  key={key}
+                  style={[
+                    styles.tableRowContainer,
+                    idx > 0 && [styles.rowHairlineBorder, { borderTopColor: colors.line }],
+                  ]}
+                >
+                  <View style={styles.tableRow}>
+                    {/* Debtor */}
+                    <View style={styles.personCol}>
+                      <AvatarCircle name={b.from_name} size={24} />
+                      <SproutText
+                        variant="body"
+                        color={colors.text}
+                        weight="600"
+                        numberOfLines={1}
+                        style={styles.personName}
+                      >
+                        {b.from_name}
+                      </SproutText>
+                    </View>
 
-                {/* Recipient */}
-                <View style={styles.personCol}>
-                  <AvatarCircle name={b.to_name} size={24} />
-                  <SproutText
-                    variant="body"
-                    color={colors.text}
-                    weight="600"
-                    numberOfLines={1}
-                    style={styles.personName}
-                  >
-                    {b.to_name}
-                  </SproutText>
-                </View>
+                    {/* Arrow */}
+                    <View style={styles.arrowWrap}>
+                      <ArrowRight size={12} color={colors.muted} />
+                    </View>
 
-                {/* Amount */}
-                <View style={styles.rowAmountCol}>
-                  <SproutText variant="body" color={colors.text} weight="700" style={styles.rowAmount}>
-                    {formatCurrencyExact(b.amount)}
-                  </SproutText>
+                    {/* Recipient */}
+                    <View style={styles.personCol}>
+                      <AvatarCircle name={b.to_name} size={24} />
+                      <SproutText
+                        variant="body"
+                        color={colors.text}
+                        weight="600"
+                        numberOfLines={1}
+                        style={styles.personName}
+                      >
+                        {b.to_name}
+                      </SproutText>
+                    </View>
+
+                    {/* Amount + Info Tooltip Trigger */}
+                    <View style={styles.rowAmountCol}>
+                      <SproutText variant="body" color={colors.text} weight="700" style={styles.rowAmount}>
+                        {formatCurrencyExact(b.amount)}
+                      </SproutText>
+                      <TouchableOpacity
+                        activeOpacity={0.7}
+                        style={styles.otherInfoBtn}
+                        onPress={() => toggleBreakdown(key)}
+                        hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                      >
+                        <Info
+                          size={12}
+                          color={isExpanded ? colors.accent : colors.muted}
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  {/* Inline Breakdown Tooltip */}
+                  {isExpanded && breakdown && (
+                    <View style={[styles.tooltipCard, { marginHorizontal: 2, marginBottom: spacing.sm }]}>
+                      <View style={styles.tooltipHeader}>
+                        <View style={styles.tooltipHeaderLeft}>
+                          <HelpCircle size={12} color={colors.accent} style={{ marginRight: 4 }} />
+                          <SproutText variant="eyebrow" color={colors.accent} style={{ letterSpacing: 0.8, fontSize: 10 }}>
+                            BALANCE BREAKDOWN
+                          </SproutText>
+                        </View>
+                        <TouchableOpacity
+                          onPress={() => setExpandedBreakdownKey(null)}
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        >
+                          <X size={13} color={colors.muted} />
+                        </TouchableOpacity>
+                      </View>
+                      <SproutText variant="caption" color={colors.text} style={styles.tooltipExplanation}>
+                        {breakdown.explanation}
+                      </SproutText>
+                    </View>
+                  )}
                 </View>
-              </View>
-            ))}
+              );
+            })}
           </View>
 
           {/* Show More / Fewer Toggle */}
@@ -277,6 +433,26 @@ export const WhoOwesWhomSection: React.FC<WhoOwesWhomSectionProps> = ({
             </TouchableOpacity>
           )}
         </View>
+      )}
+
+      {/* 4. SETTLEMENT HISTORY LINK AT BOTTOM OF BALANCES */}
+      {onViewHistory && (
+        <TouchableOpacity
+          activeOpacity={0.75}
+          style={styles.historyLinkRow}
+          onPress={onViewHistory}
+        >
+          <Receipt size={16} color={colors.accent} style={{ marginRight: 10 }} />
+          <View style={{ flex: 1 }}>
+            <SproutText variant="body" color={colors.text} weight="700" style={{ fontSize: 13 }}>
+              Settlement History
+            </SproutText>
+            <SproutText variant="caption" color={colors.muted} style={{ fontSize: 11, marginTop: 1 }}>
+              Review all settlement records, notes & 3-day edit audit trail
+            </SproutText>
+          </View>
+          <ArrowRight size={15} color={colors.accent} />
+        </TouchableOpacity>
       )}
     </View>
   );
@@ -329,10 +505,13 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: radii.full,
   },
+  actionRowContainer: {
+    paddingVertical: 4,
+  },
   actionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: 6,
     gap: 10,
   },
   rowBorderTop: {
@@ -341,6 +520,7 @@ const styles = StyleSheet.create({
   },
   actionDetails: {
     flex: 1,
+    justifyContent: 'center',
   },
   nameRow: {
     flexDirection: 'row',
@@ -348,84 +528,115 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   debtTag: {
-    backgroundColor: '#FAF2EE',
-    paddingHorizontal: 6,
-    paddingVertical: 1.5,
-    borderRadius: radii.full,
-    borderWidth: 1,
-    borderColor: '#E7C5B5',
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 4,
+    borderWidth: 0.5,
   },
   debtTagText: {
-    fontSize: 7.5,
-    fontFamily: fontFamilies.bold,
-    color: '#9C4221',
+    fontSize: 8,
+    fontWeight: '800',
     letterSpacing: 0.5,
   },
   creditTag: {
-    backgroundColor: '#EBF5E5',
-    paddingHorizontal: 6,
-    paddingVertical: 1.5,
-    borderRadius: radii.full,
-    borderWidth: 1,
-    borderColor: '#C3D9B5',
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 4,
+    borderWidth: 0.5,
   },
   creditTagText: {
-    fontSize: 7.5,
-    fontFamily: fontFamilies.bold,
-    color: colors.accent,
+    fontSize: 8,
+    fontWeight: '800',
     letterSpacing: 0.5,
+  },
+  subtextRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 2,
+  },
+  whyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 1,
+    paddingHorizontal: 4,
+    borderRadius: radii.sm,
+    backgroundColor: colors.accentSoft,
   },
   actionRight: {
     alignItems: 'flex-end',
     gap: 4,
   },
   amountText: {
-    fontSize: 14.5,
+    fontSize: 14,
     letterSpacing: -0.3,
   },
   settleBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.text,
-    paddingHorizontal: 10,
-    paddingVertical: 4.5,
+    backgroundColor: colors.accent,
+    paddingVertical: 4,
+    paddingHorizontal: 9,
     borderRadius: radii.full,
   },
   settleBtnText: {
     fontSize: 10.5,
-    fontFamily: fontFamilies.bold,
-    color: '#F0BF67',
+    fontWeight: '700',
   },
   settleCreditBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.soft,
-    paddingHorizontal: 10,
-    paddingVertical: 4.5,
+    paddingVertical: 4,
+    paddingHorizontal: 9,
     borderRadius: radii.full,
-    borderWidth: 1,
-    borderColor: colors.line,
   },
   settleCreditText: {
     fontSize: 10.5,
-    fontFamily: fontFamilies.bold,
+    fontWeight: '700',
     color: colors.text,
+  },
+
+  /* Tooltip Card */
+  tooltipCard: {
+    backgroundColor: colors.background,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.line,
+    padding: spacing.md,
+    marginTop: spacing.xs,
+    marginBottom: spacing.xs,
+  },
+  tooltipHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  tooltipHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  tooltipExplanation: {
+    fontSize: 12,
+    lineHeight: 18,
+    color: colors.text,
+    fontFamily: fontFamilies.medium,
   },
 
   /* 2. Squared Away Pill */
   squaredAwayPill: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#EBF5E5',
-    paddingHorizontal: 13,
-    paddingVertical: 9,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#D8E8CB',
   },
 
-  /* 3. Table Card (All other transfers) */
+  /* 3. Table Card */
   tableCard: {
     backgroundColor: colors.surface,
     borderRadius: 18,
@@ -434,65 +645,68 @@ const styles = StyleSheet.create({
     padding: 13,
     shadowColor: colors.text,
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 3,
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
     elevation: 1,
   },
   tableHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
-    paddingBottom: 6,
+    justifyContent: 'space-between',
+    paddingBottom: 8,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.line,
   },
   tableEyebrow: {
-    fontSize: 8,
+    fontSize: 8.5,
     letterSpacing: 1.1,
+    fontFamily: fontFamilies.extraBold,
     marginBottom: 1,
   },
   countBadge: {
-    backgroundColor: colors.soft,
     paddingHorizontal: 8,
-    paddingVertical: 2.5,
+    paddingVertical: 2,
     borderRadius: radii.full,
   },
   rowsContainer: {
-    gap: 0,
+    paddingTop: 2,
+  },
+  tableRowContainer: {
+    paddingVertical: 2,
   },
   tableRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 9,
+    paddingVertical: 8,
   },
   rowHairlineBorder: {
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.line,
   },
   personCol: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
     flex: 1,
-    minWidth: 0,
+    gap: 6,
   },
   personName: {
-    fontSize: 12.5,
-    flexShrink: 1,
+    fontSize: 12,
+    flex: 1,
   },
   arrowWrap: {
     paddingHorizontal: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   rowAmountCol: {
-    alignItems: 'flex-end',
+    flexDirection: 'row',
+    alignItems: 'center',
     marginLeft: 6,
+    gap: 6,
   },
   rowAmount: {
     fontSize: 13,
     letterSpacing: -0.2,
+  },
+  otherInfoBtn: {
+    padding: 2,
   },
   toggleBtn: {
     flexDirection: 'row',
@@ -518,5 +732,25 @@ const styles = StyleSheet.create({
   emptyTitle: {
     marginTop: spacing.sm,
     marginBottom: 2,
+  },
+  emptyHistoryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.accentSoft,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.full,
+    marginTop: spacing.xs,
+  },
+  historyLinkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surfaceElevated,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.line,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    marginTop: spacing.xs,
   },
 });

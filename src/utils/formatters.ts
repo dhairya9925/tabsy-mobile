@@ -105,3 +105,48 @@ export function formatDateTime(dateString?: string | null): string {
     minute: '2-digit',
   });
 }
+
+export function getRemainingWindow(
+  editableUntilString?: string | null,
+  referenceNowMs?: number
+): {
+  isEditable: boolean;
+  label: string;
+} {
+  if (!editableUntilString) {
+    return { isEditable: false, label: 'Locked' };
+  }
+  const expiry = new Date(editableUntilString).getTime();
+  if (isNaN(expiry)) {
+    return { isEditable: false, label: 'Locked' };
+  }
+  const now = referenceNowMs ?? Date.now();
+  const diffMs = expiry - now;
+
+  if (diffMs <= 0) {
+    return { isEditable: false, label: 'Locked' };
+  }
+
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffHours / 24);
+  const remHours = diffHours % 24;
+  const remMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+  if (diffDays >= 1) {
+    return {
+      isEditable: true,
+      label: `Editable for ${diffDays}d ${remHours}h`,
+    };
+  }
+  if (diffHours >= 1) {
+    return {
+      isEditable: true,
+      label: `Editable for ${diffHours}h ${remMinutes}m`,
+    };
+  }
+  const minDisplay = Math.max(1, remMinutes);
+  return {
+    isEditable: true,
+    label: `Editable for ${minDisplay}m`,
+  };
+}

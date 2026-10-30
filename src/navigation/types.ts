@@ -13,6 +13,7 @@ export type SharedStackParamList = {
   GroupSettings: { groupId: string };
   FriendDetail: { friendId: string; friendName?: string };
   MonthlySettlementDetail: { groupId: string; groupName?: string; month?: number; year?: number };
+  SettlementRecords: { groupId: string; groupName?: string };
 };
 
 export type MainTabsParamList = {
@@ -52,5 +53,6 @@ export type RootStackParamList = {
   FriendSettleUpModal: { friendId: string; friendName: string; netBalance: number };
   AIAgent: undefined;
   QuickAddModal: { initialMode?: 'voice' | 'text'; mode?: 'voice' | 'text' } | undefined;
+  SettlementRecords: { groupId: string; groupName?: string };
 };
 

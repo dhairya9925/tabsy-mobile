@@ -9,6 +9,7 @@ import { EditExpenseModal } from '../screens/journal/EditExpenseModal';
 import { CreateGroupModal } from '../screens/groups/CreateGroupModal';
 import { AddGroupExpenseModal } from '../screens/groups/AddGroupExpenseModal';
 import { SettleUpModal } from '../screens/groups/SettleUpModal';
+import { SettlementRecordsScreen } from '../screens/groups/SettlementRecordsScreen';
 import { JoinGroupModal } from '../screens/groups/JoinGroupModal';
 import { AddFriendModal } from '../screens/friends/AddFriendModal';
 import { AddFriendExpenseModal } from '../screens/friends/AddFriendExpenseModal';
@@ -136,6 +137,14 @@ export const RootNavigator: React.FC = () => {
               options={{
                 presentation: 'modal',
                 animation: 'slide_from_bottom',
+              }}
+            />
+            <RootStack.Screen
+              name="SettlementRecords"
+              component={SettlementRecordsScreen}
+              options={{
+                headerShown: false,
+                animation: 'slide_from_right',
               }}
             />
             <RootStack.Screen

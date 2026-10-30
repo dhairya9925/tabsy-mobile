@@ -41,3 +41,4 @@ export * from './OfflineBanner';
 export * from './TabsyLogo';
 export * from './CategoryPickerSheet';
 export * from './AIIcon';
+export * from './SettlementRecordCard';
