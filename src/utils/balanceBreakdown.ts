@@ -1,24 +1,41 @@
 import { GroupBalance, GroupExpense } from '../types';
-import { formatCurrencyExact } from './formatters';
+import { formatCurrencyExact, formatDate } from './formatters';
+
+export interface BreakdownItem {
+  expenseId: string;
+  title: string;
+  shareLabel: string;
+  amount: number;
+  date?: string;
+  category?: string;
+}
+
+export interface BalanceBreakdownResult {
+  headline: string;
+  explanation: string;
+  debts: BreakdownItem[];
+  credits: BreakdownItem[];
+  totalDebt: number;
+  totalCredit: number;
+  netAmount: number;
+  debtSectionTitle: string;
+  creditSectionTitle: string;
+  isSimplified: boolean;
+  involvedExpenses: string[];
+}
 
 /**
  * Computes an itemized breakdown explaining how a balance row is derived
  * from the group's expenses and splits.
  *
- * Example:
- * "Vikram owes you ₹2,217.33 based on: Hotel (his share ₹5,000.67) + Dinner (₹217.33) – Music Concert (your share ₹1,500.00)"
+ * Provides both structured itemized collections (for rich receipt display)
+ * and human-readable explanation strings.
  */
 export function computeBalanceBreakdown(
   b: GroupBalance,
   expenses: GroupExpense[] = [],
   currentUserId?: string
-): {
-  headline: string;
-  explanation: string;
-  debts: Array<{ title: string; shareLabel: string; amount: number }>;
-  credits: Array<{ title: string; shareLabel: string; amount: number }>;
-  isSimplified: boolean;
-} {
+): BalanceBreakdownResult {
   const iAmRecipient = currentUserId === b.to_user_id;
   const iAmPayer = currentUserId === b.from_user_id;
 
@@ -28,12 +45,25 @@ export function computeBalanceBreakdown(
     ? `${b.from_name} owes you ${formatCurrencyExact(b.amount)}`
     : `${b.from_name} owes ${b.to_name} ${formatCurrencyExact(b.amount)}`;
 
-  const debts: Array<{ title: string; shareLabel: string; amount: number }> = [];
-  const credits: Array<{ title: string; shareLabel: string; amount: number }> = [];
+  const debtSectionTitle = iAmPayer
+    ? `What you owe ${b.to_name}`
+    : iAmRecipient
+    ? `What ${b.from_name} owes you`
+    : `What ${b.from_name} owes ${b.to_name}`;
+
+  const creditSectionTitle = iAmRecipient
+    ? `Offsets you owe ${b.from_name}`
+    : iAmPayer
+    ? `Offsets ${b.to_name} owes you`
+    : `Offsets ${b.to_name} owes ${b.from_name}`;
+
+  const debts: BreakdownItem[] = [];
+  const credits: BreakdownItem[] = [];
 
   expenses.forEach((exp) => {
     const payerId = exp.paid_by || exp.user_id;
     const title = exp.note?.trim() || exp.category || 'Expense';
+    const date = exp.expense_date ? formatDate(exp.expense_date) : undefined;
 
     (exp.splits || []).forEach((split) => {
       if (split.is_settled) return;
@@ -45,7 +75,14 @@ export function computeBalanceBreakdown(
           : iAmRecipient
           ? 'his share'
           : `${b.from_name}'s share`;
-        debts.push({ title, shareLabel, amount: split.amount });
+        debts.push({
+          expenseId: exp.id,
+          title,
+          shareLabel,
+          amount: split.amount,
+          date,
+          category: exp.category,
+        });
       }
 
       // Expense paid by payer, split belongs to recipient (counter offset / credit)
@@ -55,10 +92,20 @@ export function computeBalanceBreakdown(
           : iAmPayer
           ? `${b.to_name}'s share`
           : `${b.to_name}'s share`;
-        credits.push({ title, shareLabel, amount: split.amount });
+        credits.push({
+          expenseId: exp.id,
+          title,
+          shareLabel,
+          amount: split.amount,
+          date,
+          category: exp.category,
+        });
       }
     });
   });
+
+  const totalDebt = debts.reduce((acc, d) => acc + d.amount, 0);
+  const totalCredit = credits.reduce((acc, c) => acc + c.amount, 0);
 
   if (debts.length > 0 || credits.length > 0) {
     const debtParts = debts.map((d, i) =>
@@ -83,7 +130,13 @@ export function computeBalanceBreakdown(
       explanation,
       debts,
       credits,
+      totalDebt,
+      totalCredit,
+      netAmount: b.amount,
+      debtSectionTitle,
+      creditSectionTitle,
       isSimplified: false,
+      involvedExpenses: [],
     };
   }
 
@@ -96,7 +149,7 @@ export function computeBalanceBreakdown(
     }
   });
 
-  const uniqueInvolved = Array.from(new Set(involvedExpenses)).slice(0, 3);
+  const uniqueInvolved = Array.from(new Set(involvedExpenses)).slice(0, 4);
   const expListStr = uniqueInvolved.length > 0 ? ` (${uniqueInvolved.join(', ')})` : '';
 
   const explanation = `${headline} based on: Multi-party group debt simplification across shared expenses${expListStr}.`;
@@ -105,6 +158,13 @@ export function computeBalanceBreakdown(
     explanation,
     debts: [],
     credits: [],
+    totalDebt: 0,
+    totalCredit: 0,
+    netAmount: b.amount,
+    debtSectionTitle,
+    creditSectionTitle,
     isSimplified: true,
+    involvedExpenses: uniqueInvolved,
   };
 }
+

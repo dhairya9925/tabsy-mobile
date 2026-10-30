@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { colors, useTheme, fontFamilies, radii, spacing } from '../theme';
 import { SproutText } from './SproutText';
 import { AvatarCircle } from './AvatarCircle';
@@ -27,8 +27,157 @@ export interface WhoOwesWhomSectionProps {
   isLoading?: boolean;
 }
 
-import { computeBalanceBreakdown } from '../utils/balanceBreakdown';
+import { computeBalanceBreakdown, BalanceBreakdownResult } from '../utils/balanceBreakdown';
 export { computeBalanceBreakdown };
+export type { BalanceBreakdownResult };
+
+interface ItemizedBreakdownCardProps {
+  breakdown: BalanceBreakdownResult;
+  onClose: () => void;
+  style?: any;
+}
+
+const ItemizedBreakdownCard: React.FC<ItemizedBreakdownCardProps> = ({
+  breakdown,
+  onClose,
+  style,
+}) => {
+  const { colors } = useTheme();
+  const totalItemCount = breakdown.debts.length + breakdown.credits.length;
+
+  return (
+    <View style={[styles.itemizedCard, { backgroundColor: colors.surfaceElevated, borderColor: colors.line }, style]}>
+      {/* Header */}
+      <View style={styles.itemizedHeader}>
+        <View style={styles.itemizedHeaderLeft}>
+          <Receipt size={13} color={colors.accent} style={{ marginRight: 5 }} />
+          <SproutText variant="eyebrow" color={colors.accent} style={{ letterSpacing: 0.8, fontSize: 10 }}>
+            ITEMIZED BREAKDOWN
+          </SproutText>
+        </View>
+        <TouchableOpacity
+          onPress={onClose}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityRole="button"
+          accessibilityLabel="Close breakdown"
+        >
+          <X size={13} color={colors.muted} />
+        </TouchableOpacity>
+      </View>
+
+      {!breakdown.isSimplified ? (
+        <View style={styles.itemizedContent}>
+          {/* Scroll container if more than 5 expenses */}
+          <ScrollView
+            nestedScrollEnabled
+            style={totalItemCount > 5 ? { maxHeight: 220 } : undefined}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* 1. Debts List: What Payer owes Recipient */}
+            {breakdown.debts.length > 0 && (
+              <View style={styles.itemizedSection}>
+                <View style={[styles.itemizedSectionHeader, { borderBottomColor: colors.line }]}>
+                  <SproutText variant="caption" color={colors.muted} weight="700" style={{ fontSize: 10.5 }}>
+                    {breakdown.debtSectionTitle}
+                  </SproutText>
+                  <SproutText variant="caption" color={colors.text} weight="700" style={{ fontSize: 11 }}>
+                    +{formatCurrencyExact(breakdown.totalDebt)}
+                  </SproutText>
+                </View>
+                {breakdown.debts.map((item, idx) => (
+                  <View key={`debt-${item.expenseId || idx}`} style={styles.itemizedRow}>
+                    <View style={styles.itemizedRowLeft}>
+                      <SproutText variant="caption" color={colors.text} weight="600" numberOfLines={1} style={{ fontSize: 11.5 }}>
+                        {item.title}
+                      </SproutText>
+                      <SproutText variant="caption" color={colors.muted} style={{ fontSize: 10, marginTop: 1 }}>
+                        {item.date ? `${item.date} • ` : ''}{item.shareLabel}
+                      </SproutText>
+                    </View>
+                    <SproutText variant="caption" color={colors.negative || '#E57373'} weight="700" style={{ fontSize: 11.5 }}>
+                      +{formatCurrencyExact(item.amount)}
+                    </SproutText>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {/* 2. Credits / Counter Offsets: What Recipient owes Payer */}
+            {breakdown.credits.length > 0 && (
+              <View style={[styles.itemizedSection, { marginTop: spacing.xs }]}>
+                <View style={[styles.itemizedSectionHeader, { borderBottomColor: colors.line }]}>
+                  <SproutText variant="caption" color={colors.muted} weight="700" style={{ fontSize: 10.5 }}>
+                    {breakdown.creditSectionTitle}
+                  </SproutText>
+                  <SproutText variant="caption" color={colors.accent} weight="700" style={{ fontSize: 11 }}>
+                    –{formatCurrencyExact(breakdown.totalCredit)}
+                  </SproutText>
+                </View>
+                {breakdown.credits.map((item, idx) => (
+                  <View key={`credit-${item.expenseId || idx}`} style={styles.itemizedRow}>
+                    <View style={styles.itemizedRowLeft}>
+                      <SproutText variant="caption" color={colors.text} weight="600" numberOfLines={1} style={{ fontSize: 11.5 }}>
+                        {item.title}
+                      </SproutText>
+                      <SproutText variant="caption" color={colors.muted} style={{ fontSize: 10, marginTop: 1 }}>
+                        {item.date ? `${item.date} • ` : ''}{item.shareLabel}
+                      </SproutText>
+                    </View>
+                    <SproutText variant="caption" color={colors.accent} weight="700" style={{ fontSize: 11.5 }}>
+                      –{formatCurrencyExact(item.amount)}
+                    </SproutText>
+                  </View>
+                ))}
+              </View>
+            )}
+          </ScrollView>
+
+          {/* Net Calculation Summary Footer */}
+          <View style={[styles.itemizedFooter, { borderTopColor: colors.line }]}>
+            <SproutText variant="caption" color={colors.muted} weight="700" style={{ fontSize: 11 }}>
+              Net Amount to Settle
+            </SproutText>
+            <SproutText variant="body" color={colors.text} weight="800" style={{ fontSize: 13 }}>
+              {formatCurrencyExact(breakdown.netAmount)}
+            </SproutText>
+          </View>
+        </View>
+      ) : (
+        /* Multi-Party Debt Simplification Fallback */
+        <View style={styles.itemizedSimplified}>
+          <View style={styles.simplifiedHeaderRow}>
+            <Sparkles size={13} color={colors.accent} style={{ marginRight: 5 }} />
+            <SproutText variant="caption" color={colors.text} weight="700" style={{ fontSize: 11.5 }}>
+              Group Debt Simplification
+            </SproutText>
+          </View>
+          <SproutText variant="caption" color={colors.muted} style={{ fontSize: 11, lineHeight: 16, marginTop: 3 }}>
+            This payment resolves net group dues across multiple shared expenses to minimize individual transfers.
+          </SproutText>
+          {breakdown.involvedExpenses.length > 0 && (
+            <View style={styles.chipsRow}>
+              {breakdown.involvedExpenses.map((expTitle, idx) => (
+                <View key={`chip-${idx}`} style={[styles.chipPill, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+                  <SproutText variant="caption" color={colors.text} style={{ fontSize: 10 }}>
+                    {expTitle}
+                  </SproutText>
+                </View>
+              ))}
+            </View>
+          )}
+          <View style={[styles.itemizedFooter, { borderTopColor: colors.line, marginTop: spacing.xs }]}>
+            <SproutText variant="caption" color={colors.muted} weight="700" style={{ fontSize: 11 }}>
+              Net Simplified Amount
+            </SproutText>
+            <SproutText variant="body" color={colors.text} weight="800" style={{ fontSize: 13 }}>
+              {formatCurrencyExact(breakdown.netAmount)}
+            </SproutText>
+          </View>
+        </View>
+      )}
+    </View>
+  );
+};
 
 const DEFAULT_VISIBLE_COUNT = 4;
 
@@ -186,27 +335,12 @@ export const WhoOwesWhomSection: React.FC<WhoOwesWhomSectionProps> = ({
                   </View>
                 </View>
 
-                {/* Inline Breakdown Dropdown Card */}
+                {/* Inline Itemized Breakdown Dropdown Card */}
                 {isExpanded && breakdown && (
-                  <View style={[styles.tooltipCard, { backgroundColor: colors.surfaceElevated, borderColor: colors.line }]}>
-                    <View style={styles.tooltipHeader}>
-                      <View style={styles.tooltipHeaderLeft}>
-                        <HelpCircle size={12} color={colors.accent} style={{ marginRight: 4 }} />
-                        <SproutText variant="eyebrow" color={colors.accent} style={{ letterSpacing: 0.8, fontSize: 10 }}>
-                          BALANCE BREAKDOWN
-                        </SproutText>
-                      </View>
-                      <TouchableOpacity
-                        onPress={() => setExpandedBreakdownKey(null)}
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      >
-                        <X size={13} color={colors.muted} />
-                      </TouchableOpacity>
-                    </View>
-                    <SproutText variant="caption" color={colors.text} style={styles.tooltipExplanation}>
-                      {breakdown.explanation}
-                    </SproutText>
-                  </View>
+                  <ItemizedBreakdownCard
+                    breakdown={breakdown}
+                    onClose={() => setExpandedBreakdownKey(null)}
+                  />
                 )}
               </View>
             );
@@ -291,27 +425,12 @@ export const WhoOwesWhomSection: React.FC<WhoOwesWhomSectionProps> = ({
                   </View>
                 </View>
 
-                {/* Inline Breakdown Dropdown Card */}
+                {/* Inline Itemized Breakdown Dropdown Card */}
                 {isExpanded && breakdown && (
-                  <View style={[styles.tooltipCard, { backgroundColor: colors.surfaceElevated, borderColor: colors.line }]}>
-                    <View style={styles.tooltipHeader}>
-                      <View style={styles.tooltipHeaderLeft}>
-                        <HelpCircle size={12} color={colors.accent} style={{ marginRight: 4 }} />
-                        <SproutText variant="eyebrow" color={colors.accent} style={{ letterSpacing: 0.8, fontSize: 10 }}>
-                          BALANCE BREAKDOWN
-                        </SproutText>
-                      </View>
-                      <TouchableOpacity
-                        onPress={() => setExpandedBreakdownKey(null)}
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      >
-                        <X size={13} color={colors.muted} />
-                      </TouchableOpacity>
-                    </View>
-                    <SproutText variant="caption" color={colors.text} style={styles.tooltipExplanation}>
-                      {breakdown.explanation}
-                    </SproutText>
-                  </View>
+                  <ItemizedBreakdownCard
+                    breakdown={breakdown}
+                    onClose={() => setExpandedBreakdownKey(null)}
+                  />
                 )}
               </View>
             );
@@ -418,27 +537,13 @@ export const WhoOwesWhomSection: React.FC<WhoOwesWhomSectionProps> = ({
                     </View>
                   </TouchableOpacity>
 
-                  {/* Inline Breakdown Dropdown Card */}
+                  {/* Inline Itemized Breakdown Dropdown Card */}
                   {isExpanded && breakdown && (
-                    <View style={[styles.tooltipCard, { backgroundColor: colors.surfaceElevated, borderColor: colors.line, marginHorizontal: 2, marginBottom: spacing.sm }]}>
-                      <View style={styles.tooltipHeader}>
-                        <View style={styles.tooltipHeaderLeft}>
-                          <HelpCircle size={12} color={colors.accent} style={{ marginRight: 4 }} />
-                          <SproutText variant="eyebrow" color={colors.accent} style={{ letterSpacing: 0.8, fontSize: 10 }}>
-                            BALANCE BREAKDOWN
-                          </SproutText>
-                        </View>
-                        <TouchableOpacity
-                          onPress={() => setExpandedBreakdownKey(null)}
-                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                        >
-                          <X size={13} color={colors.muted} />
-                        </TouchableOpacity>
-                      </View>
-                      <SproutText variant="caption" color={colors.text} style={styles.tooltipExplanation}>
-                        {breakdown.explanation}
-                      </SproutText>
-                    </View>
+                    <ItemizedBreakdownCard
+                      breakdown={breakdown}
+                      onClose={() => setExpandedBreakdownKey(null)}
+                      style={{ marginHorizontal: 2, marginBottom: spacing.sm }}
+                    />
                   )}
                 </View>
               );
@@ -632,9 +737,9 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
 
-  /* Tooltip Card */
-  tooltipCard: {
-    backgroundColor: colors.background,
+  /* Itemized Breakdown Card Styles */
+  itemizedCard: {
+    backgroundColor: colors.surfaceElevated,
     borderRadius: radii.md,
     borderWidth: 1,
     borderColor: colors.line,
@@ -642,21 +747,68 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
     marginBottom: spacing.xs,
   },
-  tooltipHeader: {
+  itemizedHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 4,
+    paddingBottom: 6,
   },
-  tooltipHeaderLeft: {
+  itemizedHeaderLeft: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  tooltipExplanation: {
-    fontSize: 12,
-    lineHeight: 18,
-    color: colors.text,
-    fontFamily: fontFamilies.medium,
+  itemizedContent: {
+    marginTop: 4,
+    gap: spacing.xs,
+  },
+  itemizedSection: {
+    gap: 4,
+  },
+  itemizedSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 3,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.line,
+    marginBottom: 4,
+  },
+  itemizedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 3,
+  },
+  itemizedRowLeft: {
+    flex: 1,
+    marginRight: 8,
+  },
+  itemizedFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 8,
+    marginTop: 4,
+    borderTopWidth: 1,
+  },
+  itemizedSimplified: {
+    marginTop: 4,
+  },
+  simplifiedHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  chipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 8,
+  },
+  chipPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radii.full,
+    borderWidth: 1,
   },
 
   /* 2. Squared Away Pill */
