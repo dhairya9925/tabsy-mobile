@@ -210,9 +210,29 @@ export interface GroupBalance {
   amount: number;
 }
 
+export interface GroupSettlementRecord {
+  id: string;
+  group_id: string;
+  from_user_id: string;
+  from_name?: string | null;
+  to_user_id: string;
+  to_name?: string | null;
+  amount: number;
+  note?: string | null;
+  settled_by: string;
+  settled_by_name?: string | null;
+  created_at: string;
+  editable_until: string;
+  is_disputed: boolean;
+  is_editable: boolean;
+  settled_split_ids?: string[] | null;
+}
+
 export interface GroupSettleUpRequest {
   from_user_id: string;
   to_user_id: string;
+  amount?: number;
+  note?: string;
 }
 
 // ==============================================================================

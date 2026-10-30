@@ -93,3 +93,15 @@ export function toLocalDateString(d: Date): string {
   const date = String(d.getDate()).padStart(2, '0');
   return `${year}-${month}-${date}`;
 }
+
+export function formatDateTime(dateString?: string | null): string {
+  if (!dateString) return '';
+  const d = new Date(dateString);
+  if (isNaN(d.getTime())) return String(dateString);
+  return d.toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}

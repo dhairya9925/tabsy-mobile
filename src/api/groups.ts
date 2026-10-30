@@ -11,6 +11,7 @@ import {
   GroupExpenseUpdate,
   GroupBalance,
   GroupSettleUpRequest,
+  GroupSettlementRecord,
   MonthlySettlement,
   MemberMonthlyStatus,
   SettlementExpense,
@@ -397,9 +398,63 @@ export const groupsApi = {
   },
 
   /** Settle balances between two members */
-  async settleUp(id: string, payload: GroupSettleUpRequest): Promise<{ settled_count: number }> {
+  async settleUp(
+    id: string,
+    payload: GroupSettleUpRequest
+  ): Promise<{ settled_count: number; settlement_record?: GroupSettlementRecord | null }> {
     const res: any = await apiClient.post(`/api/v1/groups/${id}/settle`, payload);
+    await cacheService.invalidate(`cache:group_balances:${id}`);
+    await cacheService.invalidate(CACHE_KEYS.GROUP_EXPENSES(id));
+    await cacheService.invalidate(CACHE_KEYS.GROUPS_LIST);
     return res || { settled_count: 0 };
+  },
+
+  /** List all settlement records for a group */
+  async getSettlementRecords(groupId: string): Promise<GroupSettlementRecord[]> {
+    const cacheKey = `cache:group_settlement_records:${groupId}`;
+    const cached = await cacheService.get<GroupSettlementRecord[]>(cacheKey);
+    const hasCached = Array.isArray(cached);
+
+    if (!networkService.isOnline()) {
+      return hasCached ? cached! : [];
+    }
+
+    try {
+      const res: any = await apiClient.get(`/api/v1/groups/${groupId}/settlement-records`);
+      const records = Array.isArray(res) ? res : [];
+      await cacheService.set(cacheKey, records);
+      return records;
+    } catch (err) {
+      return hasCached ? cached! : [];
+    }
+  },
+
+  /** Get a specific settlement record */
+  async getSettlementRecord(groupId: string, recordId: string): Promise<GroupSettlementRecord> {
+    const res: any = await apiClient.get(`/api/v1/groups/${groupId}/settlement-records/${recordId}`);
+    return res;
+  },
+
+  /** Update settlement record note */
+  async updateSettlementRecord(
+    groupId: string,
+    recordId: string,
+    payload: { note?: string }
+  ): Promise<GroupSettlementRecord> {
+    const res: any = await apiClient.patch(
+      `/api/v1/groups/${groupId}/settlement-records/${recordId}`,
+      payload
+    );
+    await cacheService.invalidate(`cache:group_settlement_records:${groupId}`);
+    return res;
+  },
+
+  /** Reverse a settlement record within 3-day window */
+  async reverseSettlementRecord(groupId: string, recordId: string): Promise<void> {
+    await apiClient.delete(`/api/v1/groups/${groupId}/settlement-records/${recordId}`);
+    await cacheService.invalidate(`cache:group_settlement_records:${groupId}`);
+    await cacheService.invalidate(`cache:group_balances:${groupId}`);
+    await cacheService.invalidate(CACHE_KEYS.GROUP_EXPENSES(groupId));
   },
 
   /** Get monthly settlement status for a specific month and year */
