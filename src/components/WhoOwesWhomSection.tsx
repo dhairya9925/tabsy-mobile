@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { colors, fontFamilies, radii, spacing } from '../theme';
+import { colors, useTheme, fontFamilies, radii, spacing } from '../theme';
 import { SproutText } from './SproutText';
 import { AvatarCircle } from './AvatarCircle';
 import { formatCurrencyExact } from '../utils/formatters';
@@ -40,6 +40,7 @@ export const WhoOwesWhomSection: React.FC<WhoOwesWhomSectionProps> = ({
   onViewHistory,
   isLoading = false,
 }) => {
+  const { colors, isDark } = useTheme();
   const [showAllTransfers, setShowAllTransfers] = useState(false);
   const [expandedBreakdownKey, setExpandedBreakdownKey] = useState<string | null>(null);
 
@@ -70,7 +71,7 @@ export const WhoOwesWhomSection: React.FC<WhoOwesWhomSectionProps> = ({
 
   if (balances.length === 0 && !isLoading) {
     return (
-      <View style={styles.emptyCard}>
+      <View style={[styles.emptyCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
         <CheckCircle2 size={40} color={colors.accent} strokeWidth={1.5} />
         <SproutText variant="subtitle" color={colors.text} weight="700" style={styles.emptyTitle}>
           All settled up!
@@ -81,7 +82,7 @@ export const WhoOwesWhomSection: React.FC<WhoOwesWhomSectionProps> = ({
         {onViewHistory && (
           <TouchableOpacity
             activeOpacity={0.75}
-            style={styles.emptyHistoryBtn}
+            style={[styles.emptyHistoryBtn, { backgroundColor: colors.accentSoft }]}
             onPress={onViewHistory}
           >
             <Receipt size={14} color={colors.accent} style={{ marginRight: 6 }} />
@@ -98,7 +99,7 @@ export const WhoOwesWhomSection: React.FC<WhoOwesWhomSectionProps> = ({
     <View style={styles.wrapper}>
       {/* 1. PRIORITY SECTION: User's Actionable Settlements (You Owe / Owed to You) */}
       {hasMyBalances && (
-        <View style={[styles.myBalancesCard, { backgroundColor: colors.surfaceElevated, borderColor: colors.line }]}>
+        <View style={[styles.myBalancesCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
           <View style={[styles.myBalancesHeader, { borderBottomColor: colors.line }]}>
             <View style={styles.myHeaderLeft}>
               <View style={[styles.pulseDot, { backgroundColor: colors.accent }]} />
@@ -106,7 +107,7 @@ export const WhoOwesWhomSection: React.FC<WhoOwesWhomSectionProps> = ({
                 YOUR PENDING SETTLEMENTS
               </SproutText>
             </View>
-            <View style={styles.myBadge}>
+            <View style={[styles.myBadge, { backgroundColor: colors.accentSoft }]}>
               <SproutText variant="caption" color={colors.accent} weight="700" style={{ fontSize: 10.5 }}>
                 {myDebts.length + myCredits.length} to settle
               </SproutText>
@@ -124,49 +125,60 @@ export const WhoOwesWhomSection: React.FC<WhoOwesWhomSectionProps> = ({
                 key={key}
                 style={[
                   styles.actionRowContainer,
-                  idx > 0 && styles.rowBorderTop,
+                  idx > 0 && [styles.rowBorderTop, { borderTopColor: colors.line }],
                 ]}
               >
                 <View style={styles.actionRow}>
-                  <AvatarCircle name={b.to_name} size={36} />
-                  <View style={styles.actionDetails}>
-                    <View style={styles.nameRow}>
-                      <SproutText variant="body" color={colors.text} weight="700" numberOfLines={1}>
-                        Pay {b.to_name}
-                      </SproutText>
-                      <View style={[styles.debtTag, { backgroundColor: colors.negativeSoft, borderColor: colors.negative }]}>
-                        <SproutText style={[styles.debtTagText, { color: colors.negative }]}>YOU OWE</SproutText>
+                  {/* Tappable Tile Area (Avatar, Name, Tag & Subtext with Dropdown Chevron) */}
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    style={styles.tilePressableArea}
+                    onPress={() => toggleBreakdown(key)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Toggle balance breakdown for ${b.to_name}`}
+                  >
+                    <AvatarCircle name={b.to_name} size={36} />
+                    <View style={styles.actionDetails}>
+                      <View style={styles.nameRow}>
+                        <SproutText variant="body" color={colors.text} weight="700" numberOfLines={1}>
+                          Pay {b.to_name}
+                        </SproutText>
+                        <View style={[styles.debtTag, { backgroundColor: colors.negativeSoft, borderColor: colors.negative }]}>
+                          <SproutText style={[styles.debtTagText, { color: colors.negative }]}>YOU OWE</SproutText>
+                        </View>
+                      </View>
+                      <View style={styles.subtextRow}>
+                        <SproutText variant="caption" color={colors.muted} style={{ fontSize: 11 }} numberOfLines={1}>
+                          Direct payment to settle
+                        </SproutText>
+                        <View style={styles.dropdownIndicator}>
+                          {isExpanded ? (
+                            <ChevronUp size={13} color={colors.accent} strokeWidth={2.2} />
+                          ) : (
+                            <ChevronDown size={13} color={colors.muted} strokeWidth={2.2} />
+                          )}
+                        </View>
                       </View>
                     </View>
-                    <View style={styles.subtextRow}>
-                      <SproutText variant="caption" color={colors.muted} style={{ fontSize: 11 }}>
-                        Direct payment to settle
-                      </SproutText>
-                      <TouchableOpacity
-                        activeOpacity={0.7}
-                        style={styles.whyBtn}
-                        onPress={() => toggleBreakdown(key)}
-                      >
-                        <Info size={11} color={colors.accent} style={{ marginRight: 3 }} />
-                        <SproutText variant="caption" color={colors.accent} weight="700" style={{ fontSize: 10.5 }}>
-                          {isExpanded ? 'Hide' : 'Why this amount?'}
-                        </SproutText>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
+                  </TouchableOpacity>
 
                   <View style={styles.actionRight}>
-                    <SproutText variant="body" color={colors.text} weight="700" style={styles.amountText}>
-                      {formatCurrencyExact(b.amount)}
-                    </SproutText>
+                    <TouchableOpacity
+                      activeOpacity={0.7}
+                      onPress={() => toggleBreakdown(key)}
+                    >
+                      <SproutText variant="body" color={colors.text} weight="700" style={styles.amountText}>
+                        {formatCurrencyExact(b.amount)}
+                      </SproutText>
+                    </TouchableOpacity>
                     {onSettle && (
                       <TouchableOpacity
                         activeOpacity={0.8}
-                        style={styles.settleBtn}
+                        style={[styles.settleBtn, { backgroundColor: colors.accent }]}
                         onPress={() => onSettle(b)}
                       >
-                        <Handshake size={12} color={colors.surface} style={{ marginRight: 4 }} />
-                        <SproutText style={[styles.settleBtnText, { color: colors.surface }]}>
+                        <Handshake size={12} color={colors.onAccent || colors.surface} style={{ marginRight: 4 }} />
+                        <SproutText style={[styles.settleBtnText, { color: colors.onAccent || colors.surface }]}>
                           Settle Up
                         </SproutText>
                       </TouchableOpacity>
@@ -174,9 +186,9 @@ export const WhoOwesWhomSection: React.FC<WhoOwesWhomSectionProps> = ({
                   </View>
                 </View>
 
-                {/* Inline Breakdown Tooltip */}
+                {/* Inline Breakdown Dropdown Card */}
                 {isExpanded && breakdown && (
-                  <View style={styles.tooltipCard}>
+                  <View style={[styles.tooltipCard, { backgroundColor: colors.surfaceElevated, borderColor: colors.line }]}>
                     <View style={styles.tooltipHeader}>
                       <View style={styles.tooltipHeaderLeft}>
                         <HelpCircle size={12} color={colors.accent} style={{ marginRight: 4 }} />
@@ -211,49 +223,67 @@ export const WhoOwesWhomSection: React.FC<WhoOwesWhomSectionProps> = ({
                 key={key}
                 style={[
                   styles.actionRowContainer,
-                  (myDebts.length > 0 || idx > 0) && styles.rowBorderTop,
+                  (myDebts.length > 0 || idx > 0) && [styles.rowBorderTop, { borderTopColor: colors.line }],
                 ]}
               >
                 <View style={styles.actionRow}>
-                  <AvatarCircle name={b.from_name} size={36} />
-                  <View style={styles.actionDetails}>
-                    <View style={styles.nameRow}>
-                      <SproutText variant="body" color={colors.text} weight="700" numberOfLines={1}>
-                        {b.from_name}
-                      </SproutText>
-                      <View style={[styles.creditTag, { backgroundColor: colors.accentSoft, borderColor: colors.accent }]}>
-                        <SproutText style={[styles.creditTagText, { color: colors.accent }]}>OWES YOU</SproutText>
+                  {/* Tappable Tile Area (Avatar, Name, Tag & Subtext with Dropdown Chevron) */}
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    style={styles.tilePressableArea}
+                    onPress={() => toggleBreakdown(key)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Toggle balance breakdown for ${b.from_name}`}
+                  >
+                    <AvatarCircle name={b.from_name} size={36} />
+                    <View style={styles.actionDetails}>
+                      <View style={styles.nameRow}>
+                        <SproutText variant="body" color={colors.text} weight="700" numberOfLines={1}>
+                          {b.from_name}
+                        </SproutText>
+                        <View style={[styles.creditTag, { backgroundColor: colors.accentSoft, borderColor: colors.accent }]}>
+                          <SproutText style={[styles.creditTagText, { color: colors.accent }]}>OWES YOU</SproutText>
+                        </View>
+                      </View>
+                      <View style={styles.subtextRow}>
+                        <SproutText variant="caption" color={colors.muted} style={{ fontSize: 11 }} numberOfLines={1}>
+                          Awaiting settlement
+                        </SproutText>
+                        <View style={styles.dropdownIndicator}>
+                          {isExpanded ? (
+                            <ChevronUp size={13} color={colors.accent} strokeWidth={2.2} />
+                          ) : (
+                            <ChevronDown size={13} color={colors.muted} strokeWidth={2.2} />
+                          )}
+                        </View>
                       </View>
                     </View>
-                    <View style={styles.subtextRow}>
-                      <SproutText variant="caption" color={colors.muted} style={{ fontSize: 11 }}>
-                        Awaiting settlement
-                      </SproutText>
-                      <TouchableOpacity
-                        activeOpacity={0.7}
-                        style={styles.whyBtn}
-                        onPress={() => toggleBreakdown(key)}
-                      >
-                        <Info size={11} color={colors.accent} style={{ marginRight: 3 }} />
-                        <SproutText variant="caption" color={colors.accent} weight="700" style={{ fontSize: 10.5 }}>
-                          {isExpanded ? 'Hide' : 'Why this amount?'}
-                        </SproutText>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
+                  </TouchableOpacity>
 
                   <View style={styles.actionRight}>
-                    <SproutText variant="body" color={colors.accent} weight="700" style={styles.amountText}>
-                      +{formatCurrencyExact(b.amount)}
-                    </SproutText>
+                    <TouchableOpacity
+                      activeOpacity={0.7}
+                      onPress={() => toggleBreakdown(key)}
+                    >
+                      <SproutText variant="body" color={colors.accent} weight="700" style={styles.amountText}>
+                        +{formatCurrencyExact(b.amount)}
+                      </SproutText>
+                    </TouchableOpacity>
                     {onSettle && (
                       <TouchableOpacity
                         activeOpacity={0.8}
-                        style={styles.settleCreditBtn}
+                        style={[
+                          styles.settleCreditBtn,
+                          {
+                            backgroundColor: colors.accentSoft,
+                            borderWidth: 1,
+                            borderColor: isDark ? colors.line : 'transparent',
+                          },
+                        ]}
                         onPress={() => onSettle(b)}
                       >
-                        <Handshake size={12} color={colors.text} style={{ marginRight: 4 }} />
-                        <SproutText style={styles.settleCreditText}>
+                        <Handshake size={12} color={colors.accent} style={{ marginRight: 4 }} />
+                        <SproutText style={[styles.settleCreditText, { color: colors.accent }]}>
                           Record
                         </SproutText>
                       </TouchableOpacity>
@@ -261,9 +291,9 @@ export const WhoOwesWhomSection: React.FC<WhoOwesWhomSectionProps> = ({
                   </View>
                 </View>
 
-                {/* Inline Breakdown Tooltip */}
+                {/* Inline Breakdown Dropdown Card */}
                 {isExpanded && breakdown && (
-                  <View style={styles.tooltipCard}>
+                  <View style={[styles.tooltipCard, { backgroundColor: colors.surfaceElevated, borderColor: colors.line }]}>
                     <View style={styles.tooltipHeader}>
                       <View style={styles.tooltipHeaderLeft}>
                         <HelpCircle size={12} color={colors.accent} style={{ marginRight: 4 }} />
@@ -301,7 +331,7 @@ export const WhoOwesWhomSection: React.FC<WhoOwesWhomSectionProps> = ({
 
       {/* 3. COHESIVE GROUP TRANSFERS TABLE (All other roommates) */}
       {otherTransfers.length > 0 && (
-        <View style={[styles.tableCard, { backgroundColor: colors.surfaceElevated, borderColor: colors.line }]}>
+        <View style={[styles.tableCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
           <View style={[styles.tableHeader, { borderBottomColor: colors.line }]}>
             <View>
               <SproutText variant="eyebrow" color={colors.muted} style={styles.tableEyebrow}>
@@ -333,7 +363,13 @@ export const WhoOwesWhomSection: React.FC<WhoOwesWhomSectionProps> = ({
                     idx > 0 && [styles.rowHairlineBorder, { borderTopColor: colors.line }],
                   ]}
                 >
-                  <View style={styles.tableRow}>
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    style={styles.tableRow}
+                    onPress={() => toggleBreakdown(key)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Toggle breakdown between ${b.from_name} and ${b.to_name}`}
+                  >
                     {/* Debtor */}
                     <View style={styles.personCol}>
                       <AvatarCircle name={b.from_name} size={24} />
@@ -367,28 +403,24 @@ export const WhoOwesWhomSection: React.FC<WhoOwesWhomSectionProps> = ({
                       </SproutText>
                     </View>
 
-                    {/* Amount + Info Tooltip Trigger */}
+                    {/* Amount + Dropdown Chevron */}
                     <View style={styles.rowAmountCol}>
                       <SproutText variant="body" color={colors.text} weight="700" style={styles.rowAmount}>
                         {formatCurrencyExact(b.amount)}
                       </SproutText>
-                      <TouchableOpacity
-                        activeOpacity={0.7}
-                        style={styles.otherInfoBtn}
-                        onPress={() => toggleBreakdown(key)}
-                        hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                      >
-                        <Info
-                          size={12}
-                          color={isExpanded ? colors.accent : colors.muted}
-                        />
-                      </TouchableOpacity>
+                      <View style={{ marginLeft: 3 }}>
+                        {isExpanded ? (
+                          <ChevronUp size={12} color={colors.accent} strokeWidth={2.2} />
+                        ) : (
+                          <ChevronDown size={12} color={colors.muted} strokeWidth={2.2} />
+                        )}
+                      </View>
                     </View>
-                  </View>
+                  </TouchableOpacity>
 
-                  {/* Inline Breakdown Tooltip */}
+                  {/* Inline Breakdown Dropdown Card */}
                   {isExpanded && breakdown && (
-                    <View style={[styles.tooltipCard, { marginHorizontal: 2, marginBottom: spacing.sm }]}>
+                    <View style={[styles.tooltipCard, { backgroundColor: colors.surfaceElevated, borderColor: colors.line, marginHorizontal: 2, marginBottom: spacing.sm }]}>
                       <View style={styles.tooltipHeader}>
                         <View style={styles.tooltipHeaderLeft}>
                           <HelpCircle size={12} color={colors.accent} style={{ marginRight: 4 }} />
@@ -439,7 +471,7 @@ export const WhoOwesWhomSection: React.FC<WhoOwesWhomSectionProps> = ({
       {onViewHistory && (
         <TouchableOpacity
           activeOpacity={0.75}
-          style={styles.historyLinkRow}
+          style={[styles.historyLinkRow, { backgroundColor: colors.surfaceElevated, borderColor: colors.line }]}
           onPress={onViewHistory}
         >
           <Receipt size={16} color={colors.accent} style={{ marginRight: 10 }} />
@@ -549,19 +581,22 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 0.5,
   },
+  tilePressableArea: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    minWidth: 0,
+  },
   subtextRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     marginTop: 2,
   },
-  whyBtn: {
-    flexDirection: 'row',
+  dropdownIndicator: {
+    marginLeft: 5,
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 1,
-    paddingHorizontal: 4,
-    borderRadius: radii.sm,
-    backgroundColor: colors.accentSoft,
   },
   actionRight: {
     alignItems: 'flex-end',
@@ -704,9 +739,6 @@ const styles = StyleSheet.create({
   rowAmount: {
     fontSize: 13,
     letterSpacing: -0.2,
-  },
-  otherInfoBtn: {
-    padding: 2,
   },
   toggleBtn: {
     flexDirection: 'row',

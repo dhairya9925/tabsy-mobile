@@ -16,7 +16,7 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SharedStackParamList } from '../../navigation/types';
-import { colors, radii, spacing, fontFamilies } from '../../theme';
+import { colors, useTheme, radii, spacing, fontFamilies } from '../../theme';
 import {
   SproutText,
   CircleButton,
@@ -41,6 +41,7 @@ type Props = NativeStackScreenProps<SharedStackParamList, 'SettlementRecords'>;
 
 export const SettlementRecordsScreen: React.FC<Props> = ({ route, navigation }) => {
   const { groupId, groupName } = route.params;
+  const { colors, isDark } = useTheme();
 
   const [records, setRecords] = useState<GroupSettlementRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -143,7 +144,7 @@ export const SettlementRecordsScreen: React.FC<Props> = ({ route, navigation }) 
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
       <Toast
         visible={!!errorMessage}
         message={errorMessage}
@@ -188,7 +189,7 @@ export const SettlementRecordsScreen: React.FC<Props> = ({ route, navigation }) 
         }
       >
         {/* Summary Metric Header Card */}
-        <View style={styles.summaryCard}>
+        <View style={[styles.summaryCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
           <View style={styles.summaryRow}>
             <View style={styles.summaryItem}>
               <SproutText variant="eyebrow" color={colors.muted} style={{ letterSpacing: 1.1 }}>
@@ -199,7 +200,7 @@ export const SettlementRecordsScreen: React.FC<Props> = ({ route, navigation }) 
               </SproutText>
             </View>
 
-            <View style={styles.summaryDivider} />
+            <View style={[styles.summaryDivider, { backgroundColor: colors.line }]} />
 
             <View style={styles.summaryItem}>
               <SproutText variant="eyebrow" color={colors.muted} style={{ letterSpacing: 1.1 }}>
@@ -212,12 +213,12 @@ export const SettlementRecordsScreen: React.FC<Props> = ({ route, navigation }) 
 
             {activeEditableCount > 0 && (
               <>
-                <View style={styles.summaryDivider} />
+                <View style={[styles.summaryDivider, { backgroundColor: colors.line }]} />
                 <View style={styles.summaryItem}>
                   <SproutText variant="eyebrow" color={colors.accent} style={{ letterSpacing: 1.1 }}>
                     EDITABLE
                   </SproutText>
-                  <View style={styles.editablePill}>
+                  <View style={[styles.editablePill, { backgroundColor: colors.accentSoft }]}>
                     <Clock size={11} color={colors.accent} style={{ marginRight: 3 }} />
                     <SproutText variant="caption" color={colors.accent} weight="700">
                       {activeEditableCount} active
@@ -229,7 +230,7 @@ export const SettlementRecordsScreen: React.FC<Props> = ({ route, navigation }) 
           </View>
 
           {/* Audit Trail Guarantee Footnote */}
-          <View style={styles.guaranteeRow}>
+          <View style={[styles.guaranteeRow, { backgroundColor: colors.surfaceElevated }]}>
             <ShieldCheck size={14} color={colors.accent} style={{ marginRight: 6 }} />
             <SproutText variant="caption" color={colors.muted} style={{ flex: 1, fontSize: 11 }}>
               Visible to all group members. Editable and reversible for 3 days after creation.
@@ -256,8 +257,8 @@ export const SettlementRecordsScreen: React.FC<Props> = ({ route, navigation }) 
 
         {/* Empty State */}
         {!isLoading && records.length === 0 && (
-          <View style={styles.emptyCard}>
-            <View style={styles.emptyIconCircle}>
+          <View style={[styles.emptyCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+            <View style={[styles.emptyIconCircle, { backgroundColor: colors.accentSoft }]}>
               <Receipt size={32} color={colors.accent} strokeWidth={1.75} />
             </View>
             <SproutText variant="subtitle" color={colors.text} weight="700" style={styles.emptyTitle}>
@@ -298,7 +299,7 @@ export const SettlementRecordsScreen: React.FC<Props> = ({ route, navigation }) 
             onPress={() => setEditingRecord(null)}
           />
 
-          <View style={styles.editCard}>
+          <View style={[styles.editCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
             <View style={styles.editHeader}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <FileText size={18} color={colors.accent} style={{ marginRight: 6 }} />
@@ -321,7 +322,7 @@ export const SettlementRecordsScreen: React.FC<Props> = ({ route, navigation }) 
             )}
 
             <TextInput
-              style={styles.modalTextInput}
+              style={[styles.modalTextInput, { backgroundColor: colors.surfaceElevated, borderColor: colors.line, color: colors.text }]}
               placeholder="e.g. Paid via Google Pay, UPI ref 123456..."
               placeholderTextColor={colors.muted}
               value={editNoteText}
@@ -334,7 +335,7 @@ export const SettlementRecordsScreen: React.FC<Props> = ({ route, navigation }) 
             <View style={styles.modalActions}>
               <TouchableOpacity
                 activeOpacity={0.7}
-                style={styles.cancelBtn}
+                style={[styles.cancelBtn, { backgroundColor: colors.surfaceElevated, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line }]}
                 onPress={() => setEditingRecord(null)}
               >
                 <SproutText variant="body" color={colors.muted} weight="600">

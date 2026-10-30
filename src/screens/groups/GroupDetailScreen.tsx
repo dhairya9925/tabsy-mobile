@@ -343,30 +343,6 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             </View>
           </TouchableOpacity>
 
-          {/* Settlement History Banner */}
-          <TouchableOpacity
-            style={[styles.settlementBanner, { backgroundColor: colors.surfaceElevated, borderColor: colors.line, marginTop: spacing.xs }]}
-            activeOpacity={0.75}
-            onPress={handleViewSettlementHistory}
-          >
-            <View style={styles.settlementBannerLeft}>
-              <View style={[styles.settlementIconCircle, { backgroundColor: colors.accentSoft }]}>
-                <Receipt size={18} color={colors.accent} strokeWidth={2} />
-              </View>
-              <View style={styles.settlementTextCol}>
-                <SproutText variant="body" color={colors.text} weight="700" numberOfLines={1} style={styles.settlementBannerTitle}>
-                  Settlement History
-                </SproutText>
-                <SproutText variant="caption" color={colors.muted} numberOfLines={1} ellipsizeMode="tail" style={styles.settlementBannerDesc}>
-                  View all settlement records, notes & 3-day edit audit trail
-                </SproutText>
-              </View>
-            </View>
-            <View style={[styles.settlementChevronWrap, { backgroundColor: colors.accentSoft }]}>
-              <ChevronRight size={15} color={colors.accent} strokeWidth={2.5} />
-            </View>
-          </TouchableOpacity>
-
           {/* Redesigned Simplified Debts & Settlements Section */}
           <WhoOwesWhomSection
             balances={balances}
@@ -444,7 +420,7 @@ export const GroupDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
 const styles = StyleSheet.create({
   container: {
-    paddingBottom: 116,
+    paddingBottom: 156,
   },
   topBar: {
     flexDirection: 'row',

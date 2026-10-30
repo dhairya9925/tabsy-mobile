@@ -12,7 +12,7 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RootStackParamList } from '../../navigation/types';
-import { colors, radii, spacing, fontFamilies } from '../../theme';
+import { colors, useTheme, radii, spacing, fontFamilies } from '../../theme';
 import {
   SproutText,
   SproutButton,
@@ -39,6 +39,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'SettleUpModal'>;
 
 export const SettleUpModal: React.FC<Props> = ({ route, navigation }) => {
   const { groupId, balance } = route.params;
+  const { colors, isDark } = useTheme();
 
   // Form & Execution state
   const [note, setNote] = useState('');
@@ -160,7 +161,7 @@ export const SettleUpModal: React.FC<Props> = ({ route, navigation }) => {
       : `#SR-${settlementReceipt.id.slice(0, 8).toUpperCase()}`;
 
     return (
-      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
         {/* Header */}
         <View style={styles.header}>
           <CircleButton
@@ -179,7 +180,7 @@ export const SettleUpModal: React.FC<Props> = ({ route, navigation }) => {
         >
           {/* Success Hero Badge */}
           <View style={styles.receiptSuccessHeader}>
-            <View style={styles.receiptSuccessBadge}>
+            <View style={[styles.receiptSuccessBadge, { backgroundColor: colors.accentSoft }]}>
               <CheckCircle2 size={44} color={colors.accent} strokeWidth={2.5} />
             </View>
             <SproutText variant="title" color={colors.text} weight="800" style={styles.receiptSuccessTitle}>
@@ -191,7 +192,7 @@ export const SettleUpModal: React.FC<Props> = ({ route, navigation }) => {
           </View>
 
           {/* Receipt Card */}
-          <View style={styles.receiptCard}>
+          <View style={[styles.receiptCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
             <SproutText variant="eyebrow" color={colors.muted} style={{ letterSpacing: 1.2 }}>
               AMOUNT SETTLED
             </SproutText>
@@ -200,7 +201,7 @@ export const SettleUpModal: React.FC<Props> = ({ route, navigation }) => {
             </SproutText>
 
             {/* Direction flow */}
-            <View style={styles.directionBox}>
+            <View style={[styles.directionBox, { borderTopColor: colors.line }]}>
               <View style={styles.memberBox}>
                 <AvatarCircle name={settlementReceipt.from_name || balance.from_name} size={42} />
                 <SproutText variant="subtitle" color={colors.text} weight="700" numberOfLines={1} style={{ marginTop: 6 }}>
@@ -227,8 +228,8 @@ export const SettleUpModal: React.FC<Props> = ({ route, navigation }) => {
             </View>
 
             {/* Key-Value Details */}
-            <View style={styles.receiptDetailsTable}>
-              <View style={styles.receiptDetailRow}>
+            <View style={[styles.receiptDetailsTable, { borderTopColor: colors.line }]}>
+              <View style={[styles.receiptDetailRow, { borderBottomColor: colors.line }]}>
                 <SproutText variant="caption" color={colors.muted}>
                   Reference
                 </SproutText>
@@ -237,7 +238,7 @@ export const SettleUpModal: React.FC<Props> = ({ route, navigation }) => {
                 </SproutText>
               </View>
 
-              <View style={styles.receiptDetailRow}>
+              <View style={[styles.receiptDetailRow, { borderBottomColor: colors.line }]}>
                 <SproutText variant="caption" color={colors.muted}>
                   Settled At
                 </SproutText>
@@ -246,7 +247,7 @@ export const SettleUpModal: React.FC<Props> = ({ route, navigation }) => {
                 </SproutText>
               </View>
 
-              <View style={styles.receiptDetailRow}>
+              <View style={[styles.receiptDetailRow, { borderBottomColor: colors.line }]}>
                 <SproutText variant="caption" color={colors.muted}>
                   Recorded By
                 </SproutText>
@@ -256,7 +257,7 @@ export const SettleUpModal: React.FC<Props> = ({ route, navigation }) => {
               </View>
 
               {settledCount > 0 && (
-                <View style={styles.receiptDetailRow}>
+                <View style={[styles.receiptDetailRow, { borderBottomColor: colors.line }]}>
                   <SproutText variant="caption" color={colors.muted}>
                     Splits Cleared
                   </SproutText>
@@ -267,7 +268,7 @@ export const SettleUpModal: React.FC<Props> = ({ route, navigation }) => {
               )}
 
               {settlementReceipt.note ? (
-                <View style={[styles.receiptDetailRow, { borderBottomWidth: 0, paddingBottom: 0 }]}>
+                <View style={[styles.receiptDetailRow, { borderBottomWidth: 0, paddingBottom: 0, borderBottomColor: colors.line }]}>
                   <SproutText variant="caption" color={colors.muted}>
                     Note
                   </SproutText>
@@ -285,7 +286,7 @@ export const SettleUpModal: React.FC<Props> = ({ route, navigation }) => {
           </View>
 
           {/* 3-Day Protection Notice Banner */}
-          <View style={styles.protectionBanner}>
+          <View style={[styles.protectionBanner, { backgroundColor: colors.surface, borderColor: colors.line }]}>
             <Clock size={20} color={colors.accent} style={{ marginRight: spacing.sm }} />
             <View style={{ flex: 1 }}>
               <SproutText variant="body" color={colors.text} weight="700">
@@ -300,7 +301,7 @@ export const SettleUpModal: React.FC<Props> = ({ route, navigation }) => {
         </ScrollView>
 
         {/* Done Button */}
-        <View style={styles.bottomBar}>
+        <View style={[styles.bottomBar, { backgroundColor: colors.background, borderTopColor: colors.line }]}>
           <SproutButton
             label="Done"
             onPress={handleDismiss}
@@ -314,7 +315,7 @@ export const SettleUpModal: React.FC<Props> = ({ route, navigation }) => {
   // VIEW: Pre-Settlement Form & Split Breakdown
   // ============================================================================
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}
@@ -350,8 +351,8 @@ export const SettleUpModal: React.FC<Props> = ({ route, navigation }) => {
           keyboardShouldPersistTaps="handled"
         >
           {/* Settlement Hero Card */}
-          <View style={styles.card}>
-            <View style={styles.iconBadge}>
+          <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+            <View style={[styles.iconBadge, { backgroundColor: colors.accentSoft }]}>
               <Handshake size={32} color={colors.accent} strokeWidth={2} />
             </View>
 
@@ -364,7 +365,7 @@ export const SettleUpModal: React.FC<Props> = ({ route, navigation }) => {
             </SproutText>
 
             {/* Direction Row */}
-            <View style={styles.directionBox}>
+            <View style={[styles.directionBox, { borderTopColor: colors.line }]}>
               <View style={styles.memberBox}>
                 <AvatarCircle name={balance.from_name} size={44} />
                 <SproutText variant="subtitle" color={colors.text} weight="700" numberOfLines={1} style={{ marginTop: 6 }}>
@@ -403,7 +404,7 @@ export const SettleUpModal: React.FC<Props> = ({ route, navigation }) => {
               {loadingExpenses ? (
                 <ActivityIndicator size="small" color={colors.accent} />
               ) : directSplits.length > 0 ? (
-                <View style={styles.splitCountBadge}>
+                <View style={[styles.splitCountBadge, { backgroundColor: colors.accentSoft }]}>
                   <SproutText variant="caption" color={colors.accent} weight="700" style={{ fontSize: 11 }}>
                     {directSplits.length} split{directSplits.length > 1 ? 's' : ''}
                   </SproutText>
@@ -412,20 +413,20 @@ export const SettleUpModal: React.FC<Props> = ({ route, navigation }) => {
             </View>
 
             {loadingExpenses ? (
-              <View style={styles.loadingBox}>
+              <View style={[styles.loadingBox, { backgroundColor: colors.surface, borderColor: colors.line }]}>
                 <ActivityIndicator size="small" color={colors.accent} />
                 <SproutText variant="caption" color={colors.muted} style={{ marginTop: 6 }}>
                   Calculating splits...
                 </SproutText>
               </View>
             ) : directSplits.length > 0 ? (
-              <View style={styles.splitsContainer}>
+              <View style={[styles.splitsContainer, { backgroundColor: colors.surface, borderColor: colors.line }]}>
                 {directSplits.map((item, idx) => (
                   <View
                     key={`split-${item.expenseId}-${idx}`}
                     style={[
                       styles.splitItemRow,
-                      idx > 0 && styles.splitItemBorder,
+                      idx > 0 && [styles.splitItemBorder, { borderTopColor: colors.line }],
                     ]}
                   >
                     <View style={styles.splitItemLeft}>
@@ -452,7 +453,7 @@ export const SettleUpModal: React.FC<Props> = ({ route, navigation }) => {
                 ))}
               </View>
             ) : (
-              <View style={styles.simplifiedNoteCard}>
+              <View style={[styles.simplifiedNoteCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
                 <Sparkles size={18} color={colors.accent} style={{ marginRight: spacing.sm, marginTop: 1 }} />
                 <View style={{ flex: 1 }}>
                   <SproutText variant="caption" color={colors.text} weight="700">
@@ -481,7 +482,14 @@ export const SettleUpModal: React.FC<Props> = ({ route, navigation }) => {
             </View>
 
             <TextInput
-              style={styles.noteInput}
+              style={[
+                styles.noteInput,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.line,
+                  color: colors.text,
+                },
+              ]}
               placeholder="e.g. Paid via UPI / GPay, Cash in person..."
               placeholderTextColor={colors.muted}
               value={note}
@@ -492,7 +500,7 @@ export const SettleUpModal: React.FC<Props> = ({ route, navigation }) => {
           </View>
 
           {/* 3-Day Protection Notice */}
-          <View style={styles.noticeBox}>
+          <View style={[styles.noticeBox, { backgroundColor: colors.surface, borderColor: colors.line }]}>
             <ShieldCheck size={20} color={colors.accent} style={{ marginRight: spacing.sm }} />
             <View style={{ flex: 1 }}>
               <SproutText variant="caption" color={colors.text} weight="700">
@@ -506,7 +514,7 @@ export const SettleUpModal: React.FC<Props> = ({ route, navigation }) => {
         </ScrollView>
 
         {/* Action CTA */}
-        <View style={styles.bottomBar}>
+        <View style={[styles.bottomBar, { backgroundColor: colors.background, borderTopColor: colors.line }]}>
           <SproutButton
             label="Confirm Settlement"
             isLoading={isLoading}

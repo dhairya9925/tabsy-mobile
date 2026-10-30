@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { GroupSettlementRecord } from '../types';
-import { colors, radii, spacing, fontFamilies } from '../theme';
+import { colors, useTheme, radii, spacing, fontFamilies } from '../theme';
 import { SproutText } from './SproutText';
 import { AvatarCircle } from './AvatarCircle';
 import { formatCurrencyExact, formatDateTime, getRemainingWindow } from '../utils/formatters';
@@ -27,6 +27,7 @@ export const SettlementRecordCard: React.FC<SettlementRecordCardProps> = ({
   onEditNote,
   onReverse,
 }) => {
+  const { colors, isDark } = useTheme();
   const windowStatus = getRemainingWindow(record.editable_until);
   const isEditable = record.is_editable && windowStatus.isEditable && !record.is_disputed;
 
@@ -35,7 +36,7 @@ export const SettlementRecordCard: React.FC<SettlementRecordCardProps> = ({
     : `#SR-${record.id.slice(0, 8).toUpperCase()}`;
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
       {/* Top Meta Row */}
       <View style={styles.topRow}>
         <View style={styles.topLeft}>
@@ -53,21 +54,21 @@ export const SettlementRecordCard: React.FC<SettlementRecordCardProps> = ({
 
         {/* 3-day Window Status Badge */}
         {record.is_disputed ? (
-          <View style={[styles.badge, styles.disputedBadge]}>
+          <View style={[styles.badge, { backgroundColor: colors.negativeSoft }]}>
             <AlertTriangle size={11} color={colors.negative} style={{ marginRight: 3 }} />
             <SproutText variant="caption" color={colors.negative} weight="700" style={styles.badgeText}>
               Disputed
             </SproutText>
           </View>
         ) : isEditable ? (
-          <View style={[styles.badge, styles.editableBadge]}>
+          <View style={[styles.badge, { backgroundColor: colors.accentSoft }]}>
             <Clock size={11} color={colors.accent} style={{ marginRight: 4 }} />
             <SproutText variant="caption" color={colors.accent} weight="700" style={styles.badgeText}>
               {windowStatus.label}
             </SproutText>
           </View>
         ) : (
-          <View style={[styles.badge, styles.lockedBadge]}>
+          <View style={[styles.badge, { backgroundColor: isDark ? colors.surfaceElevated : '#EBEFEA' }]}>
             <Lock size={11} color={colors.muted} style={{ marginRight: 3 }} />
             <SproutText variant="caption" color={colors.muted} weight="600" style={styles.badgeText}>
               Locked
@@ -118,7 +119,7 @@ export const SettlementRecordCard: React.FC<SettlementRecordCardProps> = ({
 
       {/* Note Section if present */}
       {record.note ? (
-        <View style={styles.noteBox}>
+        <View style={[styles.noteBox, { backgroundColor: colors.surfaceElevated, borderColor: colors.line }]}>
           <FileText size={12} color={colors.muted} style={{ marginRight: 6, marginTop: 2 }} />
           <SproutText variant="caption" color={colors.text} weight="500" style={styles.noteText}>
             "{record.note}"
@@ -138,7 +139,7 @@ export const SettlementRecordCard: React.FC<SettlementRecordCardProps> = ({
             {onEditNote && (
               <TouchableOpacity
                 activeOpacity={0.7}
-                style={styles.actionBtn}
+                style={[styles.actionBtn, { backgroundColor: colors.accentSoft }]}
                 onPress={() => onEditNote(record)}
               >
                 <Pencil size={12} color={colors.accent} style={{ marginRight: 4 }} />
@@ -151,7 +152,7 @@ export const SettlementRecordCard: React.FC<SettlementRecordCardProps> = ({
             {onReverse && (
               <TouchableOpacity
                 activeOpacity={0.7}
-                style={[styles.actionBtn, styles.reverseBtn]}
+                style={[styles.actionBtn, { backgroundColor: colors.negativeSoft }]}
                 onPress={() => onReverse(record)}
               >
                 <RotateCcw size={12} color={colors.negative} style={{ marginRight: 4 }} />
